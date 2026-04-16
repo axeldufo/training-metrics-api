@@ -17,6 +17,7 @@
 
     <properties>
         <java.version>21</java.version>
+        <sonar.organization>axeldufo</sonar.organization>
     </properties>
 
     <dependencies>
