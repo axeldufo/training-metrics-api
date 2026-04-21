@@ -21,6 +21,12 @@
         <sonar.coverage.jacoco.xmlReportPaths>
             ${project.build.directory}/site/jacoco/jacoco.xml
         </sonar.coverage.jacoco.xmlReportPaths>
+        <sonar.cpd.exclusions>
+            <!-- Data structures excluded from duplication analysis:
+            getters/setters are structurally symmetric with domain by design -->
+            **/dto/**,
+            **/repository/*JpaEntity.java
+        </sonar.cpd.exclusions>
     </properties>
 
     <dependencies>

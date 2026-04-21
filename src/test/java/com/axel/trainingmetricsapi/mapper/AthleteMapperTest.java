@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class AthleteMapperTest {
+class AthleteMapperTest {
 
     private final AthleteMapper athleteMapper = new AthleteMapper();
 

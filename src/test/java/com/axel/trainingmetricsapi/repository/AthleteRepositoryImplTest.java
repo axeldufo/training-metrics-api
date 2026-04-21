@@ -20,7 +20,7 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @ExtendWith(InstancioExtension.class)
-public class AthleteRepositoryImplTest {
+class AthleteRepositoryImplTest {
 
     @Mock
     private AthleteJpaRepository athleteJpaRepository;
@@ -89,6 +89,16 @@ public class AthleteRepositoryImplTest {
 
         verify(athleteMapper, times(sizePersisted)).toDomain(any(AthleteJpaEntity.class));
         assertThat(athletesFound).hasSize(sizePersisted);
+    }
+
+    @Test
+    void deleteById_shouldDeleteIfExists() {
+        Long existingId = 4L;
+        when(athleteJpaRepository.existsById(existingId)).thenReturn(true);
+
+        athleteRepositoryImpl.deleteById(existingId);
+
+        verify(athleteJpaRepository).deleteById(existingId);
     }
 
     @Test
