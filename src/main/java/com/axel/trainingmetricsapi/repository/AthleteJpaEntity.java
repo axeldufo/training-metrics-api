@@ -29,7 +29,8 @@ public class AthleteJpaEntity {
     @Column(name = "weight_in_kg")
     private Double weightInKg;
 
-    protected AthleteJpaEntity() {}
+    protected AthleteJpaEntity() {
+    }
 
     public AthleteJpaEntity(String firstName, String lastName, LocalDate birthDate, Sport sport, Double weightInKg) {
         this.firstName = firstName;
@@ -79,7 +80,9 @@ public class AthleteJpaEntity {
         this.sport = sport;
     }
 
-    public Double getWeightInKg() { return weightInKg; }
+    public Double getWeightInKg() {
+        return weightInKg;
+    }
 
     public void setWeightInKg(Double weightInKg) {
         this.weightInKg = weightInKg;
