@@ -18,6 +18,15 @@
     <properties>
         <java.version>21</java.version>
         <sonar.organization>axeldufo</sonar.organization>
+        <sonar.coverage.jacoco.xmlReportPaths>
+            ${project.build.directory}/site/jacoco/jacoco.xml
+        </sonar.coverage.jacoco.xmlReportPaths>
+        <sonar.cpd.exclusions>
+            <!-- Data structures excluded from duplication analysis:
+            getters/setters are structurally symmetric with domain by design -->
+            **/dto/**,
+            **/repository/*JpaEntity.java
+        </sonar.cpd.exclusions>
     </properties>
 
     <dependencies>
@@ -65,6 +74,12 @@
             <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.instancio</groupId>
+            <artifactId>instancio-junit</artifactId>
+            <version>5.4.0</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -72,6 +87,24 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
