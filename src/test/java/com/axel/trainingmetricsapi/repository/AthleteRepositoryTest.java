@@ -19,8 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@ExtendWith(InstancioExtension.class)
-class AthleteRepositoryImplTest {
+class AthleteRepositoryTest {
 
     @Mock
     private AthleteJpaRepository athleteJpaRepository;

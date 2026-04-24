@@ -21,12 +21,6 @@
         <sonar.coverage.jacoco.xmlReportPaths>
             ${project.build.directory}/site/jacoco/jacoco.xml
         </sonar.coverage.jacoco.xmlReportPaths>
-        <sonar.cpd.exclusions>
-            <!-- Data structures excluded from duplication analysis:
-            getters/setters are structurally symmetric with domain by design -->
-            **/dto/**,
-            **/repository/*JpaEntity.java
-        </sonar.cpd.exclusions>
     </properties>
 
     <dependencies>
@@ -34,6 +28,11 @@
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>3.0.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
@@ -91,6 +90,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.14</version>
                 <executions>
                     <execution>
                         <goals>
