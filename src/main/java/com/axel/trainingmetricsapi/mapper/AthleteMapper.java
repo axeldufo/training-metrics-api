@@ -1,6 +1,7 @@
 package com.axel.trainingmetricsapi.mapper;
 
 import com.axel.trainingmetricsapi.domain.Athlete;
+import com.axel.trainingmetricsapi.dto.response.AthleteResponse;
 import com.axel.trainingmetricsapi.repository.AthleteJpaEntity;
 import org.springframework.stereotype.Component;
 
@@ -8,14 +9,13 @@ import org.springframework.stereotype.Component;
 public class AthleteMapper {
 
     public AthleteJpaEntity toEntity(Athlete athlete) {
-        AthleteJpaEntity athleteJpaEntity = new AthleteJpaEntity(
+        return new AthleteJpaEntity(
+            athlete.getId(),
             athlete.getFirstName(),
             athlete.getLastName(),
             athlete.getBirthDate(),
             athlete.getSport(),
             athlete.getWeightInKg());
-        athleteJpaEntity.setId(athlete.getId());
-        return athleteJpaEntity;
     }
 
     public Athlete toDomain(AthleteJpaEntity athleteJpaEntity) {
@@ -27,5 +27,15 @@ public class AthleteMapper {
             athleteJpaEntity.getWeightInKg());
         athlete.setId(athleteJpaEntity.getId());
         return athlete;
+    }
+
+    public AthleteResponse toResponse(Athlete athlete){
+        return new AthleteResponse(
+            athlete.getId(),
+            athlete.getFirstName(),
+            athlete.getLastName(),
+            athlete.getBirthDate(),
+            athlete.getSport(),
+            athlete.getWeightInKg());
     }
 }

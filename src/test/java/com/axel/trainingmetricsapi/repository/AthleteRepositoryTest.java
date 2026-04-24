@@ -4,7 +4,6 @@ import com.axel.trainingmetricsapi.domain.Athlete;
 import com.axel.trainingmetricsapi.exception.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.mapper.AthleteMapper;
 import org.instancio.Instancio;
-import org.instancio.junit.InstancioExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -19,8 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@ExtendWith(InstancioExtension.class)
-class AthleteRepositoryImplTest {
+class AthleteRepositoryTest {
 
     @Mock
     private AthleteJpaRepository athleteJpaRepository;
