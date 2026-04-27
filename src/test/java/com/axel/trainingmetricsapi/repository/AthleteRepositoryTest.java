@@ -27,7 +27,7 @@ class AthleteRepositoryTest {
     private AthleteMapper athleteMapper;
 
     @InjectMocks
-    private AthleteRepositoryImpl athleteRepositoryImpl;
+    private AthleteJpaAdapter athleteJpaAdapter;
 
     @Test
     void save_shouldMapAndSaveAthlete() {
@@ -43,7 +43,7 @@ class AthleteRepositoryTest {
         when(athleteJpaRepository.save(athleteEntity)).thenReturn(savedAthleteEntity);
         when(athleteMapper.entityToDomain(savedAthleteEntity)).thenReturn(expectedAthlete);
 
-        Athlete savedAthlete = athleteRepositoryImpl.save(athlete);
+        Athlete savedAthlete = athleteJpaAdapter.save(athlete);
 
         verify(athleteMapper).domainToEntity(athlete);
         verify(athleteJpaRepository).save(athleteEntity);
@@ -61,7 +61,7 @@ class AthleteRepositoryTest {
         when(athleteJpaRepository.findById(persistedId)).thenReturn(Optional.of(persistedAthleteEntity));
         when(athleteMapper.entityToDomain(persistedAthleteEntity)).thenReturn(expectedAthlete);
 
-        Optional<Athlete> athleteFound = athleteRepositoryImpl.findById(persistedId);
+        Optional<Athlete> athleteFound = athleteJpaAdapter.findById(persistedId);
 
         verify(athleteMapper).entityToDomain(persistedAthleteEntity);
         assertThat(athleteFound).isPresent();
@@ -70,7 +70,7 @@ class AthleteRepositoryTest {
 
     @Test
     void findById_shouldBeEmptyIfNotFound() {
-        Optional<Athlete> athleteFound = athleteRepositoryImpl.findById(18L);
+        Optional<Athlete> athleteFound = athleteJpaAdapter.findById(18L);
 
         assertThat(athleteFound).isEmpty();
     }
@@ -83,7 +83,7 @@ class AthleteRepositoryTest {
         when(athleteJpaRepository.findAll()).thenReturn(persistedAthletes);
         when(athleteMapper.entityToDomain(any(AthleteJpaEntity.class))).thenReturn(Instancio.create(Athlete.class));
 
-        List<Athlete> athletesFound = athleteRepositoryImpl.findAll();
+        List<Athlete> athletesFound = athleteJpaAdapter.findAll();
 
         verify(athleteMapper, times(sizePersisted)).entityToDomain(any(AthleteJpaEntity.class));
         assertThat(athletesFound).hasSize(sizePersisted);
@@ -94,14 +94,14 @@ class AthleteRepositoryTest {
         Long existingId = 4L;
         when(athleteJpaRepository.existsById(existingId)).thenReturn(true);
 
-        athleteRepositoryImpl.deleteById(existingId);
+        athleteJpaAdapter.deleteById(existingId);
 
         verify(athleteJpaRepository).deleteById(existingId);
     }
 
     @Test
     void deleteById_shouldThrowExceptionIfDoesntExist() {
-        assertThatThrownBy(() -> athleteRepositoryImpl.deleteById(4L)).isInstanceOf(AthleteNotFoundException.class);
+        assertThatThrownBy(() -> athleteJpaAdapter.deleteById(4L)).isInstanceOf(AthleteNotFoundException.class);
 
         verify(athleteJpaRepository, never()).deleteById(any(Long.class));
     }

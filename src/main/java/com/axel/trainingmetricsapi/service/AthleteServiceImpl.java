@@ -1,7 +1,7 @@
 package com.axel.trainingmetricsapi.service;
 
 import com.axel.trainingmetricsapi.domain.Athlete;
-import com.axel.trainingmetricsapi.repository.AthleteRepository;
+import com.axel.trainingmetricsapi.domain.AthleteRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

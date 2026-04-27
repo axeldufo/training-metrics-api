@@ -1,6 +1,7 @@
 package com.axel.trainingmetricsapi.repository;
 
 import com.axel.trainingmetricsapi.domain.Athlete;
+import com.axel.trainingmetricsapi.domain.AthleteRepository;
 import com.axel.trainingmetricsapi.exception.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.mapper.AthleteMapper;
 import org.springframework.stereotype.Repository;
@@ -9,12 +10,12 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public class AthleteRepositoryImpl implements AthleteRepository {
+public class AthleteJpaAdapter implements AthleteRepository {
 
     private final AthleteJpaRepository athleteJpaRepository;
     private final AthleteMapper athleteMapper;
 
-    public AthleteRepositoryImpl(AthleteJpaRepository athleteJpaRepository, AthleteMapper athleteMapper) {
+    public AthleteJpaAdapter(AthleteJpaRepository athleteJpaRepository, AthleteMapper athleteMapper) {
         this.athleteJpaRepository = athleteJpaRepository;
         this.athleteMapper = athleteMapper;
     }
