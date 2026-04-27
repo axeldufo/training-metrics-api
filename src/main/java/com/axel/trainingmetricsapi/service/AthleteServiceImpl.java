@@ -19,4 +19,9 @@ public class AthleteServiceImpl implements AthleteService {
     public List<Athlete> findAll() {
         return athleteRepository.findAll();
     }
+
+    @Override
+    public Athlete save(Athlete athlete) {
+        return athleteRepository.save(athlete);
+    }
 }

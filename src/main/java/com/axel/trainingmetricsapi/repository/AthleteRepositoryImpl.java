@@ -21,18 +21,18 @@ public class AthleteRepositoryImpl implements AthleteRepository {
 
     @Override
     public Athlete save(Athlete athlete) {
-        AthleteJpaEntity savedAthlete = athleteJpaRepository.save(athleteMapper.toEntity(athlete));
-        return athleteMapper.toDomain(savedAthlete);
+        AthleteJpaEntity savedAthlete = athleteJpaRepository.save(athleteMapper.domainToEntity(athlete));
+        return athleteMapper.entityToDomain(savedAthlete);
     }
 
     @Override
     public Optional<Athlete> findById(Long id) {
-        return athleteJpaRepository.findById(id).map(athleteMapper::toDomain);
+        return athleteJpaRepository.findById(id).map(athleteMapper::entityToDomain);
     }
 
     @Override
     public List<Athlete> findAll() {
-        return athleteJpaRepository.findAll().stream().map(athleteMapper::toDomain).toList();
+        return athleteJpaRepository.findAll().stream().map(athleteMapper::entityToDomain).toList();
     }
 
     @Override

@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface AthleteService {
     List<Athlete> findAll();
+    Athlete save(Athlete athlete);
 }

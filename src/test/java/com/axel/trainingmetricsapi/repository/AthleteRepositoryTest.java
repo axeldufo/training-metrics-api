@@ -39,13 +39,13 @@ class AthleteRepositoryTest {
         Athlete expectedAthlete = Instancio.create(Athlete.class);
         expectedAthlete.setId(persistedId);
 
-        when(athleteMapper.toEntity(athlete)).thenReturn(athleteEntity);
+        when(athleteMapper.domainToEntity(athlete)).thenReturn(athleteEntity);
         when(athleteJpaRepository.save(athleteEntity)).thenReturn(savedAthleteEntity);
-        when(athleteMapper.toDomain(savedAthleteEntity)).thenReturn(expectedAthlete);
+        when(athleteMapper.entityToDomain(savedAthleteEntity)).thenReturn(expectedAthlete);
 
         Athlete savedAthlete = athleteRepositoryImpl.save(athlete);
 
-        verify(athleteMapper).toEntity(athlete);
+        verify(athleteMapper).domainToEntity(athlete);
         verify(athleteJpaRepository).save(athleteEntity);
         assertThat(savedAthlete.getId()).isEqualTo(persistedId);
     }
@@ -59,11 +59,11 @@ class AthleteRepositoryTest {
         expectedAthlete.setId(persistedId);
 
         when(athleteJpaRepository.findById(persistedId)).thenReturn(Optional.of(persistedAthleteEntity));
-        when(athleteMapper.toDomain(persistedAthleteEntity)).thenReturn(expectedAthlete);
+        when(athleteMapper.entityToDomain(persistedAthleteEntity)).thenReturn(expectedAthlete);
 
         Optional<Athlete> athleteFound = athleteRepositoryImpl.findById(persistedId);
 
-        verify(athleteMapper).toDomain(persistedAthleteEntity);
+        verify(athleteMapper).entityToDomain(persistedAthleteEntity);
         assertThat(athleteFound).isPresent();
         assertThat(athleteFound.get().getId()).isEqualTo(persistedId);
     }
@@ -81,11 +81,11 @@ class AthleteRepositoryTest {
         List<AthleteJpaEntity> persistedAthletes =
             Instancio.ofList(AthleteJpaEntity.class).size(sizePersisted).create();
         when(athleteJpaRepository.findAll()).thenReturn(persistedAthletes);
-        when(athleteMapper.toDomain(any(AthleteJpaEntity.class))).thenReturn(Instancio.create(Athlete.class));
+        when(athleteMapper.entityToDomain(any(AthleteJpaEntity.class))).thenReturn(Instancio.create(Athlete.class));
 
         List<Athlete> athletesFound = athleteRepositoryImpl.findAll();
 
-        verify(athleteMapper, times(sizePersisted)).toDomain(any(AthleteJpaEntity.class));
+        verify(athleteMapper, times(sizePersisted)).entityToDomain(any(AthleteJpaEntity.class));
         assertThat(athletesFound).hasSize(sizePersisted);
     }
 
