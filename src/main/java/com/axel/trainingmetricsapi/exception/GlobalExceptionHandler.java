@@ -1,6 +1,7 @@
 package com.axel.trainingmetricsapi.exception;
 
-import com.axel.trainingmetricsapi.dto.response.ErrorResponse;
+import com.axel.trainingmetricsapi.dto.response.ApiError;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -13,12 +14,18 @@ import java.util.List;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<List<ErrorResponse>> handleValidationErrors(MethodArgumentNotValidException exception) {
+    public ResponseEntity<List<ApiError>> handleValidationErrors(MethodArgumentNotValidException exception) {
         List<FieldError> fieldErrors = exception.getBindingResult().getFieldErrors();
-        List<ErrorResponse> errorResponses = fieldErrors.stream()
-            .map(fieldError -> new ErrorResponse(fieldError.getField(), fieldError.getDefaultMessage()))
+        List<ApiError> apiErrors = fieldErrors.stream()
+            .map(fieldError -> new ApiError("VALIDATION_ERROR", fieldError.getField(), fieldError.getDefaultMessage()))
             .toList();
-        return ResponseEntity.badRequest().body(errorResponses);
+        return ResponseEntity.badRequest().body(apiErrors);
+    }
+
+    @ExceptionHandler(AthleteNotFoundException.class)
+    public ResponseEntity<List<ApiError>> handleAthleteNotFound(AthleteNotFoundException exception) {
+        ApiError apiError = new ApiError("NOT_FOUND", null, exception.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(List.of(apiError));
     }
 
 }

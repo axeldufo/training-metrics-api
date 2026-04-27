@@ -37,4 +37,11 @@ public class AthleteController {
         URI location = URI.create("/athletes/" + persistedAthlete.getId());
         return ResponseEntity.created(location).body(athleteResponse);
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<AthleteResponse> getById(@PathVariable Long id){
+        Athlete athleteFound = athleteService.findById(id);
+        AthleteResponse athleteResponse = athleteMapper.domainToResponse(athleteFound);
+        return ResponseEntity.ok(athleteResponse);
+    }
 }
