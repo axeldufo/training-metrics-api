@@ -46,4 +46,17 @@ class AthleteServiceTest {
         verify(athleteRepository).findAll();
         assertThat(returnedAthletes).isEmpty();
     }
+
+    @Test
+    void save_shouldSaveInRepositoryAndReturnPersistedAthlete() {
+        Athlete athlete = Instancio.create(Athlete.class);
+        Athlete persistedAthlete = Instancio.create(Athlete.class);
+        when(athleteRepository.save(athlete)).thenReturn(persistedAthlete);
+
+        Athlete returnedAthlete = athleteService.save(athlete);
+
+        verify(athleteRepository).save(athlete);
+        assertThat(returnedAthlete).isEqualTo(persistedAthlete);
+        assertThat(returnedAthlete.getId()).isEqualTo(persistedAthlete.getId());
+    }
 }

@@ -1,13 +1,15 @@
 package com.axel.trainingmetricsapi.controller;
 
+import com.axel.trainingmetricsapi.domain.Athlete;
+import com.axel.trainingmetricsapi.dto.request.AthleteRequest;
 import com.axel.trainingmetricsapi.dto.response.AthleteResponse;
 import com.axel.trainingmetricsapi.mapper.AthleteMapper;
 import com.axel.trainingmetricsapi.service.AthleteService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
 
 @RequestMapping("/athletes")
@@ -24,6 +26,15 @@ public class AthleteController {
 
     @GetMapping
     public ResponseEntity<List<AthleteResponse>> getAll() {
-        return ResponseEntity.ok(athleteService.findAll().stream().map(athleteMapper::toResponse).toList());
+        return ResponseEntity.ok(athleteService.findAll().stream().map(athleteMapper::domainToResponse).toList());
+    }
+
+    @PostMapping
+    public ResponseEntity<AthleteResponse> create(@RequestBody @Valid AthleteRequest athleteRequest) {
+        Athlete athlete = athleteMapper.requestToDomain(athleteRequest);
+        Athlete persistedAthlete = athleteService.save(athlete);
+        AthleteResponse athleteResponse = athleteMapper.domainToResponse(persistedAthlete);
+        URI location = URI.create("/athletes/" + persistedAthlete.getId());
+        return ResponseEntity.created(location).body(athleteResponse);
     }
 }
