@@ -57,6 +57,6 @@ class AthleteServiceTest {
 
         verify(athleteRepository).save(athlete);
         assertThat(returnedAthlete).isEqualTo(persistedAthlete);
-        assertThat(returnedAthlete.getId()).isEqualTo(persistedAthlete.getId());
+        assertThat(returnedAthlete.getId()).isEqualTo(persistedAthlete.getId()); // id excluded from Athlete.isEqualTo()
     }
 }
