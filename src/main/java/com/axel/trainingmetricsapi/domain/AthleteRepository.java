@@ -1,6 +1,4 @@
-package com.axel.trainingmetricsapi.repository;
-
-import com.axel.trainingmetricsapi.domain.Athlete;
+package com.axel.trainingmetricsapi.domain;
 
 import java.util.List;
 import java.util.Optional;
