@@ -38,9 +38,11 @@ public class AthleteJpaAdapter implements AthleteRepository {
 
     @Override
     public void deleteById(Long id) {
-        if (!athleteJpaRepository.existsById(id)) {
-            throw new AthleteNotFoundException(id);
-        }
         athleteJpaRepository.deleteById(id);
+    }
+
+    @Override
+    public boolean existsById(Long athleteId) {
+        return athleteJpaRepository.existsById(athleteId);
     }
 }

@@ -39,4 +39,12 @@ public class AthleteServiceImpl implements AthleteService {
             .orElseThrow(() -> new AthleteNotFoundException(athleteId));
         return athleteRepository.save(athlete);
     }
+
+    @Override
+    public void deleteById(Long athleteId) {
+        if(!athleteRepository.existsById(athleteId)) {
+            throw new AthleteNotFoundException(athleteId);
+        }
+        athleteRepository.deleteById(athleteId);
+    }
 }

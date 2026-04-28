@@ -8,4 +8,5 @@ public interface AthleteRepository {
     Optional<Athlete> findById(Long id);
     List<Athlete> findAll();
     void deleteById(Long id);
+    boolean existsById(Long athleteId);
 }

@@ -112,7 +112,7 @@ class AthleteControllerTest {
     }
 
     @Test
-    void update_shouldReturnUpdatedAthlete() throws Exception {
+    void updateById_shouldReturnUpdatedAthlete() throws Exception {
         Athlete athlete = Instancio.create(Athlete.class);
         when(athleteMapper.requestToDomain(any(AthleteRequest.class))).thenReturn(athlete);
         Athlete persistedAthlete = Instancio.create(Athlete.class);
@@ -131,7 +131,7 @@ class AthleteControllerTest {
     }
 
     @Test
-    void update_shouldReturnNotFound_whenAthleteNotFoundException() throws Exception {
+    void updateById_shouldReturnNotFound_whenAthleteNotFoundException() throws Exception {
         long athleteId = 4L;
         Athlete athlete = Instancio.create(Athlete.class);
         when(athleteMapper.requestToDomain(any(AthleteRequest.class))).thenReturn(athlete);
@@ -145,13 +145,34 @@ class AthleteControllerTest {
     }
 
     @Test
-    void update_shouldReturnBadRequest_whenArgumentsNotValid() throws Exception {
+    void updateById_shouldReturnBadRequest_whenArgumentsNotValid() throws Exception {
         AthleteRequest athleteRequest = new AthleteRequest("   ", "", null, null, null);
 
         mvc.perform(put("/athletes/" + 4L).contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(athleteRequest)))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$", hasSize(3)));
+    }
+
+    @Test
+    void deleteById_shouldReturnOK_whenAthleteIsDeleted() throws Exception {
+        long athleteId = 4L;
+
+        mvc.perform(delete("/athletes/" + athleteId))
+            .andExpect(status().isNoContent());
+
+        verify(athleteService).deleteById(athleteId);
+    }
+
+    @Test
+    void deleteById_shouldReturnNotFound_whenAthleteNotFoundException() throws Exception {
+        long athleteId = 4L;
+        doThrow(new AthleteNotFoundException(athleteId)).when(athleteService).deleteById(athleteId);
+
+        mvc.perform(delete("/athletes/" + athleteId))
+            .andExpect(status().isNotFound());
+
+        verify(athleteService).deleteById(athleteId);
     }
 
     private void assertJsonMatchesAthleteResponse(ResultActions result, AthleteResponse athleteResponse) throws Exception {
