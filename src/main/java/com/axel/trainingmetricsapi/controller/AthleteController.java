@@ -41,13 +41,10 @@ public class AthleteController {
 
     @PostMapping
     @Operation(summary = "Create new athlete")
-    @ApiResponses({
-        @ApiResponse(responseCode = "201", description = "Athlete created", content = @Content(mediaType =
-            "application/json", schema = @Schema(implementation = AthleteResponse.class))),
-        @ApiResponse(responseCode = "400", description = "Invalid request body", content =
-            @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation =
-                ApiError.class))))
-    })
+    @ApiResponse(responseCode = "201", description = "Athlete created", content = @Content(mediaType =
+            "application/json", schema = @Schema(implementation = AthleteResponse.class)))
+    @ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content(mediaType =
+        "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
     public ResponseEntity<AthleteResponse> create(@RequestBody @Valid AthleteRequest athleteRequest) {
         Athlete athlete = athleteMapper.requestToDomain(athleteRequest);
         Athlete persistedAthlete = athleteService.save(athlete);
@@ -57,13 +54,10 @@ public class AthleteController {
     }
 
     @Operation(summary = "Retrieve athlete")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Athlete found and returned", content = @Content(mediaType =
-            "application/json", schema = @Schema(implementation = AthleteResponse.class))),
-        @ApiResponse(responseCode = "404", description = "Athlete not found", content =
-            @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation =
-                ApiError.class))))
-    })
+    @ApiResponse(responseCode = "200", description = "Athlete found and returned", content = @Content(mediaType =
+        "application/json", schema = @Schema(implementation = AthleteResponse.class)))
+    @ApiResponse(responseCode = "404", description = "Athlete not found", content = @Content(mediaType =
+        "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
     @GetMapping("/{id}")
     public ResponseEntity<AthleteResponse> getById(@PathVariable Long id){
         Athlete athleteFound = athleteService.findById(id);
@@ -72,16 +66,12 @@ public class AthleteController {
     }
 
     @Operation(summary = "Update athlete")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Athlete found and updated", content = @Content(mediaType =
-            "application/json", schema = @Schema(implementation = AthleteResponse.class))),
-        @ApiResponse(responseCode = "400", description = "Invalid request body", content =
-            @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation =
-                ApiError.class)))),
-        @ApiResponse(responseCode = "404", description = "Athlete not found", content =
-            @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation =
-                ApiError.class))))
-    })
+    @ApiResponse(responseCode = "200", description = "Athlete found and updated", content = @Content(mediaType =
+        "application/json", schema = @Schema(implementation = AthleteResponse.class)))
+    @ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content(mediaType =
+        "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
+    @ApiResponse(responseCode = "404", description = "Athlete not found", content = @Content(mediaType =
+        "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
     @PutMapping("/{id}")
     public ResponseEntity<AthleteResponse> updateById(@PathVariable Long id,
                                                       @RequestBody @Valid AthleteRequest athleteRequest) {
@@ -93,12 +83,9 @@ public class AthleteController {
     }
 
     @Operation(summary = "Delete athlete")
-    @ApiResponses({
-        @ApiResponse(responseCode = "204", description = "Athlete deleted"),
-        @ApiResponse(responseCode = "404", description = "Athlete not found", content =
-        @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation =
-            ApiError.class))))
-    })
+    @ApiResponse(responseCode = "204", description = "Athlete deleted")
+    @ApiResponse(responseCode = "404", description = "Athlete not found", content = @Content(mediaType =
+        "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
     @DeleteMapping("{id}")
     public ResponseEntity<Void> deleteById(@PathVariable Long id) {
         athleteService.deleteById(id);
