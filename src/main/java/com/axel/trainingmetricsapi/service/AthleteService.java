@@ -8,4 +8,5 @@ public interface AthleteService {
     List<Athlete> findAll();
     Athlete save(Athlete athlete);
     Athlete findById(Long athleteId);
+    Athlete update(Athlete athlete);
 }
