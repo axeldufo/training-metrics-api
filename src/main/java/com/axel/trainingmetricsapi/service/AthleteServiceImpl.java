@@ -31,4 +31,12 @@ public class AthleteServiceImpl implements AthleteService {
         return athleteRepository.findById(athleteId)
             .orElseThrow(() -> new AthleteNotFoundException(athleteId));
     }
+
+    @Override
+    public Athlete update(Athlete athlete) {
+        long athleteId = athlete.getId();
+        athleteRepository.findById(athleteId)
+            .orElseThrow(() -> new AthleteNotFoundException(athleteId));
+        return athleteRepository.save(athlete);
+    }
 }

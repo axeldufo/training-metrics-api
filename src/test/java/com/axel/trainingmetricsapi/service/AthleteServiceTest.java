@@ -15,8 +15,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AthleteServiceTest {
@@ -83,5 +82,34 @@ class AthleteServiceTest {
             .isInstanceOf(AthleteNotFoundException.class);
 
         verify(athleteRepository).findById(id);
+    }
+
+    @Test
+    void update_shouldReturnPersistedAthlete_whenAthleteIsUpdated() {
+        Athlete athlete = Instancio.create(Athlete.class);
+        Athlete persistedAthlete = Instancio.create(Athlete.class);
+        Long athleteId = athlete.getId();
+        when(athleteRepository.findById(athleteId)).thenReturn(Optional.of(athlete));
+        when(athleteRepository.save(athlete)).thenReturn(persistedAthlete);
+
+        Athlete returnedAthlete = athleteService.update(athlete);
+
+        verify(athleteRepository).findById(athleteId);
+        verify(athleteRepository).save(athlete);
+        assertThat(returnedAthlete).isEqualTo(persistedAthlete);
+        assertThat(returnedAthlete.getId()).isEqualTo(persistedAthlete.getId()); // id is excluded from Athlete.isEqualTo()
+    }
+
+    @Test
+    void update_shouldThrowException_whenAthleteNotFound() {
+        Athlete athlete = Instancio.create(Athlete.class);
+        Long athleteId = athlete.getId();
+        when(athleteRepository.findById(athleteId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> athleteService.update(athlete))
+            .isInstanceOf(AthleteNotFoundException.class);
+
+        verify(athleteRepository).findById(athleteId);
+        verify(athleteRepository, never()).save(athlete);
     }
 }

@@ -44,4 +44,14 @@ public class AthleteController {
         AthleteResponse athleteResponse = athleteMapper.domainToResponse(athleteFound);
         return ResponseEntity.ok(athleteResponse);
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<AthleteResponse> updateById(@PathVariable Long id,
+                                                      @RequestBody @Valid AthleteRequest athleteRequest) {
+        Athlete athleteToUpdate = athleteMapper.requestToDomain(athleteRequest);
+        athleteToUpdate.setId(id);
+        Athlete persistedAthlete = athleteService.update(athleteToUpdate);
+        AthleteResponse athleteResponse = athleteMapper.domainToResponse(persistedAthlete);
+        return ResponseEntity.ok(athleteResponse);
+    }
 }
