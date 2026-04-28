@@ -2,7 +2,6 @@ package com.axel.trainingmetricsapi.repository;
 
 import com.axel.trainingmetricsapi.domain.Athlete;
 import com.axel.trainingmetricsapi.domain.AthleteRepository;
-import com.axel.trainingmetricsapi.exception.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.mapper.AthleteMapper;
 import org.springframework.stereotype.Repository;
 
