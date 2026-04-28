@@ -1,4 +1,4 @@
 package com.axel.trainingmetricsapi.dto.response;
 
-public record ApiError(String code, String field, String message) {
+public record ApiError(ErrorCode code, String field, String message) {
 }
