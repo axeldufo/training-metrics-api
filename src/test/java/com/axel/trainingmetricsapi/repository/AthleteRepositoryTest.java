@@ -1,7 +1,6 @@
 package com.axel.trainingmetricsapi.repository;
 
 import com.axel.trainingmetricsapi.domain.Athlete;
-import com.axel.trainingmetricsapi.exception.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.mapper.AthleteMapper;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
@@ -14,7 +13,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -91,19 +89,30 @@ class AthleteRepositoryTest {
 
     @Test
     void deleteById_shouldDeleteIfExists() {
-        Long existingId = 4L;
-        when(athleteJpaRepository.existsById(existingId)).thenReturn(true);
+        long athleteId = 4L;
 
-        athleteJpaAdapter.deleteById(existingId);
+        athleteJpaAdapter.deleteById(athleteId);
 
-        verify(athleteJpaRepository).deleteById(existingId);
+        verify(athleteJpaRepository).deleteById(athleteId);
     }
 
     @Test
-    void deleteById_shouldThrowExceptionIfDoesntExist() {
-        assertThatThrownBy(() -> athleteJpaAdapter.deleteById(4L)).isInstanceOf(AthleteNotFoundException.class);
+    void existsById_shouldReturnTrue_whenExists() {
+        long athleteId = 4L;
+        when(athleteJpaRepository.existsById(athleteId)).thenReturn(true);
 
-        verify(athleteJpaRepository, never()).deleteById(any(Long.class));
+        assertThat(athleteJpaAdapter.existsById(athleteId)).isTrue();
+
+        verify(athleteJpaRepository).existsById(athleteId);
     }
 
+    @Test
+    void existsById_shouldReturnFalse_whenDoesntExist() {
+        long athleteId = 4L;
+        when(athleteJpaRepository.existsById(athleteId)).thenReturn(false);
+
+        assertThat(athleteJpaAdapter.existsById(athleteId)).isFalse();
+
+        verify(athleteJpaRepository).existsById(athleteId);
+    }
 }

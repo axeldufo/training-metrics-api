@@ -2,7 +2,6 @@ package com.axel.trainingmetricsapi.repository;
 
 import com.axel.trainingmetricsapi.domain.Athlete;
 import com.axel.trainingmetricsapi.domain.AthleteRepository;
-import com.axel.trainingmetricsapi.exception.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.mapper.AthleteMapper;
 import org.springframework.stereotype.Repository;
 
@@ -38,9 +37,11 @@ public class AthleteJpaAdapter implements AthleteRepository {
 
     @Override
     public void deleteById(Long id) {
-        if (!athleteJpaRepository.existsById(id)) {
-            throw new AthleteNotFoundException(id);
-        }
         athleteJpaRepository.deleteById(id);
+    }
+
+    @Override
+    public boolean existsById(Long athleteId) {
+        return athleteJpaRepository.existsById(athleteId);
     }
 }

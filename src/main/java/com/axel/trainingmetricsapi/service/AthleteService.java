@@ -9,4 +9,5 @@ public interface AthleteService {
     Athlete save(Athlete athlete);
     Athlete findById(Long athleteId);
     Athlete update(Athlete athlete);
+    void deleteById(Long athleteId);
 }

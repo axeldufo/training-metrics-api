@@ -112,4 +112,27 @@ class AthleteServiceTest {
         verify(athleteRepository).findById(athleteId);
         verify(athleteRepository, never()).save(athlete);
     }
+
+    @Test
+    void deleteById_shouldDeleteAthlete_whenExists() {
+        long athleteId = 4L;
+        when(athleteRepository.existsById(athleteId)).thenReturn(true);
+
+        athleteService.deleteById(athleteId);
+
+        verify(athleteRepository).existsById(athleteId);
+        verify(athleteRepository).deleteById(athleteId);
+    }
+
+    @Test
+    void deleteById_shouldThrowException_whenAthleteDoesntExist() {
+        long athleteId = 4L;
+        when(athleteRepository.existsById(athleteId)).thenReturn(false);
+
+        assertThatThrownBy(() -> athleteService.deleteById(athleteId))
+            .isInstanceOf(AthleteNotFoundException.class);
+
+        verify(athleteRepository).existsById(athleteId);
+        verify(athleteRepository, never()).deleteById(athleteId);
+    }
 }

@@ -54,4 +54,10 @@ public class AthleteController {
         AthleteResponse athleteResponse = athleteMapper.domainToResponse(persistedAthlete);
         return ResponseEntity.ok(athleteResponse);
     }
+
+    @DeleteMapping("{id}")
+    public ResponseEntity<Void> deleteById(@PathVariable Long id) {
+        athleteService.deleteById(id);
+        return ResponseEntity.noContent().build();
+    }
 }
