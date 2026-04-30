@@ -1,10 +1,9 @@
 package com.axel.trainingmetricsapi.controller;
 
 import com.axel.trainingmetricsapi.domain.Athlete;
+import com.axel.trainingmetricsapi.domain.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.dto.request.AthleteRequest;
 import com.axel.trainingmetricsapi.dto.response.AthleteResponse;
-import com.axel.trainingmetricsapi.domain.AthleteNotFoundException;
-import com.axel.trainingmetricsapi.mapper.AthleteMapper;
 import com.axel.trainingmetricsapi.service.AthleteService;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
@@ -28,7 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class AthleteControllerTest {
 
     @MockitoBean
-    private AthleteMapper athleteMapper;
+    private AthleteWebMapper athleteWebMapper;
 
     @MockitoBean
     private AthleteService athleteService;
@@ -44,33 +43,33 @@ class AthleteControllerTest {
 
         List<Athlete> athletes = Instancio.ofList(Athlete.class).size(3).create();
         when(athleteService.findAll()).thenReturn(athletes);
-        when(athleteMapper.domainToResponse(any(Athlete.class))).thenReturn(Instancio.create(AthleteResponse.class));
+        when(athleteWebMapper.domainToResponse(any(Athlete.class))).thenReturn(Instancio.create(AthleteResponse.class));
 
         mvc.perform(get("/athletes"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(3)));
 
-        verify(athleteMapper, times(3)).domainToResponse(any(Athlete.class));
+        verify(athleteWebMapper, times(3)).domainToResponse(any(Athlete.class));
     }
 
     @Test
     void create_shouldReturnCreatedAthlete_whenRequestIsValid() throws Exception {
 
         Athlete athlete = Instancio.create(Athlete.class);
-        when(athleteMapper.requestToDomain(any(AthleteRequest.class))).thenReturn(athlete);
+        when(athleteWebMapper.requestToDomain(any(AthleteRequest.class))).thenReturn(athlete);
         Athlete persistedAthlete = Instancio.create(Athlete.class);
         when(athleteService.save(athlete)).thenReturn(persistedAthlete);
         AthleteResponse athleteResponse = Instancio.create(AthleteResponse.class);
-        when(athleteMapper.domainToResponse(persistedAthlete)).thenReturn(athleteResponse);
+        when(athleteWebMapper.domainToResponse(persistedAthlete)).thenReturn(athleteResponse);
 
         ResultActions result = mvc.perform(post("/athletes").contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(Instancio.create(AthleteRequest.class))))
             .andExpect(status().isCreated());
 
         assertJsonMatchesAthleteResponse(result, athleteResponse);
-        verify(athleteMapper).requestToDomain(any(AthleteRequest.class));
+        verify(athleteWebMapper).requestToDomain(any(AthleteRequest.class));
         verify(athleteService).save(athlete);
-        verify(athleteMapper).domainToResponse(persistedAthlete);
+        verify(athleteWebMapper).domainToResponse(persistedAthlete);
     }
 
     @Test
@@ -90,14 +89,14 @@ class AthleteControllerTest {
         Athlete persistedAthlete = Instancio.create(Athlete.class);
         when(athleteService.findById(athleteId)).thenReturn(persistedAthlete);
         AthleteResponse athleteResponse = Instancio.create(AthleteResponse.class);
-        when(athleteMapper.domainToResponse(persistedAthlete)).thenReturn(athleteResponse);
+        when(athleteWebMapper.domainToResponse(persistedAthlete)).thenReturn(athleteResponse);
 
         ResultActions result = mvc.perform(get("/athletes/" + athleteId))
             .andExpect(status().isOk());
 
         assertJsonMatchesAthleteResponse(result, athleteResponse);
         verify(athleteService).findById(athleteId);
-        verify(athleteMapper).domainToResponse(persistedAthlete);
+        verify(athleteWebMapper).domainToResponse(persistedAthlete);
     }
 
     @Test
@@ -114,27 +113,27 @@ class AthleteControllerTest {
     @Test
     void updateById_shouldReturnUpdatedAthlete() throws Exception {
         Athlete athlete = Instancio.create(Athlete.class);
-        when(athleteMapper.requestToDomain(any(AthleteRequest.class))).thenReturn(athlete);
+        when(athleteWebMapper.requestToDomain(any(AthleteRequest.class))).thenReturn(athlete);
         Athlete persistedAthlete = Instancio.create(Athlete.class);
         when(athleteService.update(athlete)).thenReturn(persistedAthlete);
         AthleteResponse athleteResponse = Instancio.create(AthleteResponse.class);
-        when(athleteMapper.domainToResponse(persistedAthlete)).thenReturn(athleteResponse);
+        when(athleteWebMapper.domainToResponse(persistedAthlete)).thenReturn(athleteResponse);
 
         ResultActions result = mvc.perform(put("/athletes/" + 4L).contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(Instancio.create(AthleteRequest.class))))
             .andExpect(status().isOk());
 
         assertJsonMatchesAthleteResponse(result, athleteResponse);
-        verify(athleteMapper).requestToDomain(any(AthleteRequest.class));
+        verify(athleteWebMapper).requestToDomain(any(AthleteRequest.class));
         verify(athleteService).update(athlete);
-        verify(athleteMapper).domainToResponse(persistedAthlete);
+        verify(athleteWebMapper).domainToResponse(persistedAthlete);
     }
 
     @Test
     void updateById_shouldReturnNotFound_whenAthleteNotFoundException() throws Exception {
         long athleteId = 4L;
         Athlete athlete = Instancio.create(Athlete.class);
-        when(athleteMapper.requestToDomain(any(AthleteRequest.class))).thenReturn(athlete);
+        when(athleteWebMapper.requestToDomain(any(AthleteRequest.class))).thenReturn(athlete);
         when(athleteService.update(athlete)).thenThrow(new AthleteNotFoundException(athleteId));
 
         mvc.perform(put("/athletes/" + athleteId).contentType(MediaType.APPLICATION_JSON)

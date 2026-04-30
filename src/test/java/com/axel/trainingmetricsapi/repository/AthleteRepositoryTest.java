@@ -1,7 +1,6 @@
 package com.axel.trainingmetricsapi.repository;
 
 import com.axel.trainingmetricsapi.domain.Athlete;
-import com.axel.trainingmetricsapi.mapper.AthleteMapper;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,7 +21,7 @@ class AthleteRepositoryTest {
     private AthleteJpaRepository athleteJpaRepository;
 
     @Mock
-    private AthleteMapper athleteMapper;
+    private AthletePersistenceMapper athletePersistenceMapper;
 
     @InjectMocks
     private AthleteJpaAdapter athleteJpaAdapter;
@@ -37,13 +36,13 @@ class AthleteRepositoryTest {
         Athlete expectedAthlete = Instancio.create(Athlete.class);
         expectedAthlete.setId(persistedId);
 
-        when(athleteMapper.domainToEntity(athlete)).thenReturn(athleteEntity);
+        when(athletePersistenceMapper.domainToEntity(athlete)).thenReturn(athleteEntity);
         when(athleteJpaRepository.save(athleteEntity)).thenReturn(savedAthleteEntity);
-        when(athleteMapper.entityToDomain(savedAthleteEntity)).thenReturn(expectedAthlete);
+        when(athletePersistenceMapper.entityToDomain(savedAthleteEntity)).thenReturn(expectedAthlete);
 
         Athlete savedAthlete = athleteJpaAdapter.save(athlete);
 
-        verify(athleteMapper).domainToEntity(athlete);
+        verify(athletePersistenceMapper).domainToEntity(athlete);
         verify(athleteJpaRepository).save(athleteEntity);
         assertThat(savedAthlete.getId()).isEqualTo(persistedId);
     }
@@ -57,11 +56,11 @@ class AthleteRepositoryTest {
         expectedAthlete.setId(persistedId);
 
         when(athleteJpaRepository.findById(persistedId)).thenReturn(Optional.of(persistedAthleteEntity));
-        when(athleteMapper.entityToDomain(persistedAthleteEntity)).thenReturn(expectedAthlete);
+        when(athletePersistenceMapper.entityToDomain(persistedAthleteEntity)).thenReturn(expectedAthlete);
 
         Optional<Athlete> athleteFound = athleteJpaAdapter.findById(persistedId);
 
-        verify(athleteMapper).entityToDomain(persistedAthleteEntity);
+        verify(athletePersistenceMapper).entityToDomain(persistedAthleteEntity);
         assertThat(athleteFound).isPresent();
         assertThat(athleteFound.get().getId()).isEqualTo(persistedId);
     }
@@ -79,11 +78,11 @@ class AthleteRepositoryTest {
         List<AthleteJpaEntity> persistedAthletes =
             Instancio.ofList(AthleteJpaEntity.class).size(sizePersisted).create();
         when(athleteJpaRepository.findAll()).thenReturn(persistedAthletes);
-        when(athleteMapper.entityToDomain(any(AthleteJpaEntity.class))).thenReturn(Instancio.create(Athlete.class));
+        when(athletePersistenceMapper.entityToDomain(any(AthleteJpaEntity.class))).thenReturn(Instancio.create(Athlete.class));
 
         List<Athlete> athletesFound = athleteJpaAdapter.findAll();
 
-        verify(athleteMapper, times(sizePersisted)).entityToDomain(any(AthleteJpaEntity.class));
+        verify(athletePersistenceMapper, times(sizePersisted)).entityToDomain(any(AthleteJpaEntity.class));
         assertThat(athletesFound).hasSize(sizePersisted);
     }
 

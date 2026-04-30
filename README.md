@@ -78,15 +78,14 @@ These tests serve as living documentation — if a rule changes, the test must b
 
 ```
 src/main/java/com/axel/trainingmetricsapi/
-├── controller/     # REST endpoints and exception handlers
+├── controller/     # REST endpoints, mapper, and exception handlers
 ├── service/        # Business logic
-├── repository/     # Data access (JPA adapters and Spring Data interfaces)
+├── repository/     # Data access (JPA adapters and Spring Data interfaces) and mapper
 ├── domain/         # Domain entities, enum, and business exceptions
 ├── dto/            # Request / Response objects
 │   ├── request/
 │   └── response/
 ├── config/         # Spring configuration
-└── mapper/         # Object mapping (Domain <-> Entity, Domain <-> DTO)
 ```
 
 ## Roadmap
