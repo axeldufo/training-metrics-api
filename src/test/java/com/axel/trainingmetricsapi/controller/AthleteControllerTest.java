@@ -3,7 +3,7 @@ package com.axel.trainingmetricsapi.controller;
 import com.axel.trainingmetricsapi.domain.Athlete;
 import com.axel.trainingmetricsapi.dto.request.AthleteRequest;
 import com.axel.trainingmetricsapi.dto.response.AthleteResponse;
-import com.axel.trainingmetricsapi.exception.AthleteNotFoundException;
+import com.axel.trainingmetricsapi.domain.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.mapper.AthleteMapper;
 import com.axel.trainingmetricsapi.service.AthleteService;
 import org.instancio.Instancio;

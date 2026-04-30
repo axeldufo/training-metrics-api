@@ -1,4 +1,4 @@
-package com.axel.trainingmetricsapi.exception;
+package com.axel.trainingmetricsapi.domain;
 
 public class AthleteNotFoundException extends RuntimeException {
 

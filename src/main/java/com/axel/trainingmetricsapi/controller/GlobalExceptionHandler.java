@@ -1,5 +1,6 @@
-package com.axel.trainingmetricsapi.exception;
+package com.axel.trainingmetricsapi.controller;
 
+import com.axel.trainingmetricsapi.domain.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.dto.response.ApiError;
 import com.axel.trainingmetricsapi.dto.response.ErrorCode;
 import org.springframework.http.HttpStatus;
