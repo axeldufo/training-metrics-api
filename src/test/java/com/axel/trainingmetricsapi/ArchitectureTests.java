@@ -17,6 +17,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.*;
 import static com.tngtech.archunit.library.Architectures.layeredArchitecture;
 import static com.tngtech.archunit.library.GeneralCodingRules.BE_ANNOTATED_WITH_AN_INJECTION_ANNOTATION;
 import static com.tngtech.archunit.library.GeneralCodingRules.THROW_GENERIC_EXCEPTIONS;
+import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices;
 
 class ArchitectureTests {
 
@@ -38,14 +39,12 @@ class ArchitectureTests {
                 .layer("Service").definedBy("..service..")
                 .layer("Repository").definedBy("..repository..")
                 .layer("Domain").definedBy("..domain..")
-                .layer("Mapper").definedBy("..mapper..")
 
                 .whereLayer("Controller").mayNotBeAccessedByAnyLayer()
-                .whereLayer("DTO").mayOnlyBeAccessedByLayers("Controller", "Mapper")
+                .whereLayer("DTO").mayOnlyBeAccessedByLayers("Controller")
                 .whereLayer("Service").mayOnlyBeAccessedByLayers("Controller")
-                .whereLayer("Repository").mayOnlyBeAccessedByLayers("Service", "Mapper")
-                .whereLayer("Domain").mayOnlyBeAccessedByLayers("Controller", "Service", "Repository", "DTO", "Mapper")
-                .whereLayer("Mapper").mayOnlyBeAccessedByLayers("Controller", "Repository")
+                .whereLayer("Repository").mayOnlyBeAccessedByLayers("Service")
+                .whereLayer("Domain").mayOnlyBeAccessedByLayers("Controller", "Service", "Repository", "DTO")
 
                 .because("Each layer should only depend on its allowed neighbors — " +
                     "enforces separation of concerns and prevents architecture erosion");
@@ -53,13 +52,13 @@ class ArchitectureTests {
             rule.check(allClasses); // test classes as well : tests should isolate and respect productions rules
         }
 
-        /*@Test
+        @Test
         void no_cyclic_dependencies() {
             ArchRule rule = slices().matching("com.axel.trainingmetricsapi.(*)..")
                 .should().beFreeOfCycles();
 
             rule.check(allClasses); // test classes as well : tests should isolate and respect productions rules
-        }*/
+        }
     }
 
     @Nested

@@ -2,7 +2,6 @@ package com.axel.trainingmetricsapi.repository;
 
 import com.axel.trainingmetricsapi.domain.Athlete;
 import com.axel.trainingmetricsapi.domain.AthleteRepository;
-import com.axel.trainingmetricsapi.mapper.AthleteMapper;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -12,27 +11,27 @@ import java.util.Optional;
 public class AthleteJpaAdapter implements AthleteRepository {
 
     private final AthleteJpaRepository athleteJpaRepository;
-    private final AthleteMapper athleteMapper;
+    private final AthletePersistenceMapper athletePersistenceMapper;
 
-    public AthleteJpaAdapter(AthleteJpaRepository athleteJpaRepository, AthleteMapper athleteMapper) {
+    public AthleteJpaAdapter(AthleteJpaRepository athleteJpaRepository, AthletePersistenceMapper athletePersistenceMapper) {
         this.athleteJpaRepository = athleteJpaRepository;
-        this.athleteMapper = athleteMapper;
+        this.athletePersistenceMapper = athletePersistenceMapper;
     }
 
     @Override
     public Athlete save(Athlete athlete) {
-        AthleteJpaEntity savedAthlete = athleteJpaRepository.save(athleteMapper.domainToEntity(athlete));
-        return athleteMapper.entityToDomain(savedAthlete);
+        AthleteJpaEntity savedAthlete = athleteJpaRepository.save(athletePersistenceMapper.domainToEntity(athlete));
+        return athletePersistenceMapper.entityToDomain(savedAthlete);
     }
 
     @Override
     public Optional<Athlete> findById(Long id) {
-        return athleteJpaRepository.findById(id).map(athleteMapper::entityToDomain);
+        return athleteJpaRepository.findById(id).map(athletePersistenceMapper::entityToDomain);
     }
 
     @Override
     public List<Athlete> findAll() {
-        return athleteJpaRepository.findAll().stream().map(athleteMapper::entityToDomain).toList();
+        return athleteJpaRepository.findAll().stream().map(athletePersistenceMapper::entityToDomain).toList();
     }
 
     @Override

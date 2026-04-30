@@ -4,7 +4,6 @@ import com.axel.trainingmetricsapi.domain.Athlete;
 import com.axel.trainingmetricsapi.dto.request.AthleteRequest;
 import com.axel.trainingmetricsapi.dto.response.ApiError;
 import com.axel.trainingmetricsapi.dto.response.AthleteResponse;
-import com.axel.trainingmetricsapi.mapper.AthleteMapper;
 import com.axel.trainingmetricsapi.service.AthleteService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -22,11 +21,11 @@ import java.util.List;
 @RestController
 public class AthleteController {
 
-    private final AthleteMapper athleteMapper;
+    private final AthleteWebMapper athleteWebMapper;
     private final AthleteService athleteService;
 
-    public AthleteController(AthleteMapper athleteMapper, AthleteService athleteService) {
-        this.athleteMapper = athleteMapper;
+    public AthleteController(AthleteWebMapper athleteWebMapper, AthleteService athleteService) {
+        this.athleteWebMapper = athleteWebMapper;
         this.athleteService = athleteService;
     }
 
@@ -35,7 +34,7 @@ public class AthleteController {
     @ApiResponse(responseCode = "200", description = "Athletes retrieved", content = @Content(mediaType =
         "application/json", array = @ArraySchema(schema = @Schema(implementation = AthleteResponse.class))))
     public ResponseEntity<List<AthleteResponse>> getAll() {
-        return ResponseEntity.ok(athleteService.findAll().stream().map(athleteMapper::domainToResponse).toList());
+        return ResponseEntity.ok(athleteService.findAll().stream().map(athleteWebMapper::domainToResponse).toList());
     }
 
     @PostMapping
@@ -45,9 +44,9 @@ public class AthleteController {
     @ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content(mediaType =
         "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
     public ResponseEntity<AthleteResponse> create(@RequestBody @Valid AthleteRequest athleteRequest) {
-        Athlete athlete = athleteMapper.requestToDomain(athleteRequest);
+        Athlete athlete = athleteWebMapper.requestToDomain(athleteRequest);
         Athlete persistedAthlete = athleteService.save(athlete);
-        AthleteResponse athleteResponse = athleteMapper.domainToResponse(persistedAthlete);
+        AthleteResponse athleteResponse = athleteWebMapper.domainToResponse(persistedAthlete);
         URI location = URI.create("/athletes/" + persistedAthlete.getId());
         return ResponseEntity.created(location).body(athleteResponse);
     }
@@ -60,7 +59,7 @@ public class AthleteController {
     @GetMapping("/{id}")
     public ResponseEntity<AthleteResponse> getById(@PathVariable Long id){
         Athlete athleteFound = athleteService.findById(id);
-        AthleteResponse athleteResponse = athleteMapper.domainToResponse(athleteFound);
+        AthleteResponse athleteResponse = athleteWebMapper.domainToResponse(athleteFound);
         return ResponseEntity.ok(athleteResponse);
     }
 
@@ -74,10 +73,10 @@ public class AthleteController {
     @PutMapping("/{id}")
     public ResponseEntity<AthleteResponse> updateById(@PathVariable Long id,
                                                       @RequestBody @Valid AthleteRequest athleteRequest) {
-        Athlete athleteToUpdate = athleteMapper.requestToDomain(athleteRequest);
+        Athlete athleteToUpdate = athleteWebMapper.requestToDomain(athleteRequest);
         athleteToUpdate.setId(id);
         Athlete persistedAthlete = athleteService.update(athleteToUpdate);
-        AthleteResponse athleteResponse = athleteMapper.domainToResponse(persistedAthlete);
+        AthleteResponse athleteResponse = athleteWebMapper.domainToResponse(persistedAthlete);
         return ResponseEntity.ok(athleteResponse);
     }
 
