@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import static com.tngtech.archunit.core.domain.properties.CanBeAnnotated.Predicates.annotatedWith;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.*;
 import static com.tngtech.archunit.library.Architectures.layeredArchitecture;
 import static com.tngtech.archunit.library.GeneralCodingRules.BE_ANNOTATED_WITH_AN_INJECTION_ANNOTATION;
@@ -51,6 +52,14 @@ class ArchitectureTests {
 
             rule.check(allClasses); // test classes as well : tests should isolate and respect productions rules
         }
+
+        /*@Test
+        void no_cyclic_dependencies() {
+            ArchRule rule = slices().matching("com.axel.trainingmetricsapi.(*)..")
+                .should().beFreeOfCycles();
+
+            rule.check(allClasses); // test classes as well : tests should isolate and respect productions rules
+        }*/
     }
 
     @Nested
@@ -68,7 +77,7 @@ class ArchitectureTests {
         }
 
         @Test
-        void no_framework_annotations_in_domain() {
+        void no_framework_dependency_in_domain() {
             ArchRule rule = noClasses()
                 .that().resideInAPackage("..domain..")
                 .should().dependOnClassesThat()
@@ -88,7 +97,7 @@ class ArchitectureTests {
     class SpringRules {
 
         @Test
-        void rest_should_be_in_controller() {
+        void rest_annotations_should_be_in_controller() {
             ArchRule rule = classes().that()
                 .areAnnotatedWith(RestController.class)
                 .or().areAnnotatedWith(RestControllerAdvice.class)
@@ -99,7 +108,7 @@ class ArchitectureTests {
         }
 
         @Test
-        void services_should_be_in_service() {
+        void service_annotations_should_be_in_service() {
             ArchRule rule = classes().that().areAnnotatedWith(Service.class)
                 .should().resideInAPackage("..service..")
                 .because("Service annotations should be in service layer");
@@ -108,7 +117,7 @@ class ArchitectureTests {
         }
 
         @Test
-        void entity_and_repository_should_be_in_repository() {
+        void entity_and_repository_annotations_should_be_in_repository() {
             ArchRule rule = classes().that()
                 .areAnnotatedWith(Entity.class)
                 .or().areAnnotatedWith(Repository.class)
@@ -130,17 +139,6 @@ class ArchitectureTests {
                 .because("Use constructor injection instead of field injection");
 
             rule.check(productionClasses); // production only : Autowired annotations used to isolate web layer tests
-        }
-
-        @Test
-        void no_jpa_annotations_outside_repository() {
-            ArchRule rule = noClasses()
-                .that().resideOutsideOfPackage("..repository..")
-                .should().dependOnClassesThat()
-                .resideInAnyPackage("jakarta.persistence..")
-                .because("JPA annotations should be confined to the repository layer");
-
-            rule.check(productionClasses); // production only : this test references jakarta.persistence to define the rule
         }
 
         @Test
@@ -169,6 +167,30 @@ class ArchitectureTests {
                 .because("Use SLF4J for logging instead of java.util.logging or System.out.println");
 
             rule.check(allClasses); // test classes as well : tests should respect productions rules
+        }
+    }
+
+    @Nested
+    class JpaRules {
+
+        @Test
+        void no_jpa_dependency_outside_repository() {
+            ArchRule rule = noClasses()
+                .that().resideOutsideOfPackage("..repository..")
+                .should().dependOnClassesThat().resideInAnyPackage("jakarta.persistence..")
+                .because("JPA dependency should be confined to the repository layer");
+
+            rule.check(productionClasses); // production only : this test references jakarta.persistence to define the rule
+        }
+
+        @Test
+        void controllers_should_not_return_entities() {
+            ArchRule rule = noMethods()
+                .that().areDeclaredInClassesThat().resideInAPackage("..controller..")
+                .should().haveRawReturnType(annotatedWith(Entity.class))
+                .because("Controllers should return DTOs, not JPA entities");
+
+            rule.check(allClasses);
         }
     }
 
