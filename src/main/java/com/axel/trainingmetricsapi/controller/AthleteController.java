@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URI;
 import java.util.List;
 
-@RequestMapping("/athletes")
+@RequestMapping(ApiConstants.API_VERSION + "/athletes")
 @RestController
 public class AthleteController {
 
