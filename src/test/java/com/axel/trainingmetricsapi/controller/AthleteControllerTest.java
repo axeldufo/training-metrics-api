@@ -26,6 +26,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(AthleteController.class)
 class AthleteControllerTest {
 
+    static final String URL_PREFIX = ApiConstants.API_VERSION + "/athletes";
+
     @MockitoBean
     private AthleteWebMapper athleteWebMapper;
 
@@ -45,7 +47,7 @@ class AthleteControllerTest {
         when(athleteService.findAll()).thenReturn(athletes);
         when(athleteWebMapper.domainToResponse(any(Athlete.class))).thenReturn(Instancio.create(AthleteResponse.class));
 
-        mvc.perform(get("/athletes"))
+        mvc.perform(get(URL_PREFIX))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(3)));
 
@@ -62,7 +64,7 @@ class AthleteControllerTest {
         AthleteResponse athleteResponse = Instancio.create(AthleteResponse.class);
         when(athleteWebMapper.domainToResponse(persistedAthlete)).thenReturn(athleteResponse);
 
-        ResultActions result = mvc.perform(post("/athletes").contentType(MediaType.APPLICATION_JSON)
+        ResultActions result = mvc.perform(post(URL_PREFIX).contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(Instancio.create(AthleteRequest.class))))
             .andExpect(status().isCreated());
 
@@ -77,7 +79,7 @@ class AthleteControllerTest {
 
         AthleteRequest athleteRequest = new AthleteRequest("   ", "", null, null, null);
 
-        mvc.perform(post("/athletes").contentType(MediaType.APPLICATION_JSON)
+        mvc.perform(post(URL_PREFIX).contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(athleteRequest)))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$", hasSize(3)));
@@ -91,7 +93,7 @@ class AthleteControllerTest {
         AthleteResponse athleteResponse = Instancio.create(AthleteResponse.class);
         when(athleteWebMapper.domainToResponse(persistedAthlete)).thenReturn(athleteResponse);
 
-        ResultActions result = mvc.perform(get("/athletes/" + athleteId))
+        ResultActions result = mvc.perform(get(URL_PREFIX + "/" + athleteId))
             .andExpect(status().isOk());
 
         assertJsonMatchesAthleteResponse(result, athleteResponse);
@@ -104,7 +106,7 @@ class AthleteControllerTest {
         long athleteId = 4L;
         when(athleteService.findById(athleteId)).thenThrow(new AthleteNotFoundException(athleteId));
 
-        mvc.perform(get("/athletes/" + athleteId))
+        mvc.perform(get(URL_PREFIX + "/" + athleteId))
             .andExpect(status().isNotFound());
 
         verify(athleteService).findById(athleteId);
@@ -119,7 +121,7 @@ class AthleteControllerTest {
         AthleteResponse athleteResponse = Instancio.create(AthleteResponse.class);
         when(athleteWebMapper.domainToResponse(persistedAthlete)).thenReturn(athleteResponse);
 
-        ResultActions result = mvc.perform(put("/athletes/" + 4L).contentType(MediaType.APPLICATION_JSON)
+        ResultActions result = mvc.perform(put(URL_PREFIX + "/" + 4L).contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(Instancio.create(AthleteRequest.class))))
             .andExpect(status().isOk());
 
@@ -136,7 +138,7 @@ class AthleteControllerTest {
         when(athleteWebMapper.requestToDomain(any(AthleteRequest.class))).thenReturn(athlete);
         when(athleteService.update(athlete)).thenThrow(new AthleteNotFoundException(athleteId));
 
-        mvc.perform(put("/athletes/" + athleteId).contentType(MediaType.APPLICATION_JSON)
+        mvc.perform(put(URL_PREFIX + "/" + athleteId).contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(Instancio.create(AthleteRequest.class))))
             .andExpect(status().isNotFound());
 
@@ -147,7 +149,7 @@ class AthleteControllerTest {
     void updateById_shouldReturnBadRequest_whenArgumentsNotValid() throws Exception {
         AthleteRequest athleteRequest = new AthleteRequest("   ", "", null, null, null);
 
-        mvc.perform(put("/athletes/" + 4L).contentType(MediaType.APPLICATION_JSON)
+        mvc.perform(put(URL_PREFIX + "/" + 4L).contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(athleteRequest)))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$", hasSize(3)));
@@ -157,7 +159,7 @@ class AthleteControllerTest {
     void deleteById_shouldReturnOK_whenAthleteIsDeleted() throws Exception {
         long athleteId = 4L;
 
-        mvc.perform(delete("/athletes/" + athleteId))
+        mvc.perform(delete(URL_PREFIX + "/" + athleteId))
             .andExpect(status().isNoContent());
 
         verify(athleteService).deleteById(athleteId);
@@ -168,7 +170,7 @@ class AthleteControllerTest {
         long athleteId = 4L;
         doThrow(new AthleteNotFoundException(athleteId)).when(athleteService).deleteById(athleteId);
 
-        mvc.perform(delete("/athletes/" + athleteId))
+        mvc.perform(delete(URL_PREFIX + "/" + athleteId))
             .andExpect(status().isNotFound());
 
         verify(athleteService).deleteById(athleteId);
