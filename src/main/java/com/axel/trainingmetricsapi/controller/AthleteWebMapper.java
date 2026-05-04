@@ -15,6 +15,7 @@ public class AthleteWebMapper {
             athlete.getLastName(),
             athlete.getBirthDate(),
             athlete.getSport(),
+            athlete.getCoachId(),
             athlete.getWeightInKg());
     }
 
@@ -24,7 +25,8 @@ public class AthleteWebMapper {
             athleteRequest.lastName(),
             athleteRequest.birthDate(),
             athleteRequest.sport(),
+            athleteRequest.coachId(),
             athleteRequest.weightInKg());
     }
-    
+
 }

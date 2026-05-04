@@ -31,6 +31,10 @@ public class AthleteJpaEntity {
     @Column(name = "sport", nullable = false)
     private Sport sport;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "coach_id")
+    private CoachJpaEntity coach;
+
     @Column(name = "weight_in_kg")
     private Double weightInKg;
 

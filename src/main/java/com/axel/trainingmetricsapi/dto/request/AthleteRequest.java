@@ -12,5 +12,6 @@ public record AthleteRequest (
     @NotBlank @Size(max=100) String lastName,
     LocalDate birthDate,
     @NotNull Sport sport,
+    Long coachId,
     Double weightInKg) {
 }

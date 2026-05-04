@@ -10,5 +10,6 @@ public record AthleteResponse(
     String lastName,
     LocalDate birthDate,
     Sport sport,
+    Long coachId,
     Double weightInKg) {
 }
