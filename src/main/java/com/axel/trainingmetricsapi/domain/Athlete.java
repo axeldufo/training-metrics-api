@@ -14,5 +14,6 @@ public class Athlete {
     private final String lastName;
     private final LocalDate birthDate;
     private final Sport sport;
+    private final Long coachId;
     private final Double weightInKg;
 }

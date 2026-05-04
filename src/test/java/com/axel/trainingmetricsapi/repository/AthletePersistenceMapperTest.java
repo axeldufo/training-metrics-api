@@ -18,17 +18,19 @@ class AthletePersistenceMapperTest {
 
         AthleteJpaEntity athleteEntity = athletePersistenceMapper.domainToEntity(athlete);
 
-        assertAthleteFieldsMap(athlete, athleteEntity);
+        assertAthleteScalarFieldsMap(athlete, athleteEntity);
+        assertThat(athlete.getCoachId()).isEqualTo(athleteEntity.getCoach().getId());
         assertThat(athleteEntity.getId()).isNull();
     }
 
     @Test
     void domainToEntity_shouldHandleNullableFields() {
-        Athlete athlete = new Athlete("Jean", "Dupont", null, Sport.TRIATHLON, null);
+        Athlete athlete = new Athlete("Jean", "Dupont", null, Sport.TRIATHLON, null, null);
 
         AthleteJpaEntity athleteEntity = athletePersistenceMapper.domainToEntity(athlete);
 
         assertThat(athleteEntity.getBirthDate()).isNull();
+        assertThat(athleteEntity.getCoach()).isNull();
         assertThat(athleteEntity.getWeightInKg()).isNull();
     }
 
@@ -39,21 +41,23 @@ class AthletePersistenceMapperTest {
 
         Athlete athlete = athletePersistenceMapper.entityToDomain(athleteEntity);
 
-        assertAthleteFieldsMap(athlete, athleteEntity);
+        assertAthleteScalarFieldsMap(athlete, athleteEntity);
+        assertThat(athlete.getCoachId()).isEqualTo(athleteEntity.getCoach().getId());
         assertThat(athlete.getId()).isNotNull();
     }
 
     @Test
     void entityToDomain_shouldHandleNullableFields() {
-        AthleteJpaEntity athleteEntity = new AthleteJpaEntity(2L, "Jean", "Dupont", null, Sport.TRIATHLON, null);
+        AthleteJpaEntity athleteEntity = new AthleteJpaEntity(2L, "Jean", "Dupont", null, Sport.TRIATHLON, null, null);
 
         Athlete athlete = athletePersistenceMapper.entityToDomain(athleteEntity);
 
         assertThat(athlete.getBirthDate()).isNull();
+        assertThat(athleteEntity.getCoach()).isNull();
         assertThat(athlete.getWeightInKg()).isNull();
     }
 
-    private void assertAthleteFieldsMap(Athlete athlete, AthleteJpaEntity athleteEntity) {
+    private void assertAthleteScalarFieldsMap(Athlete athlete, AthleteJpaEntity athleteEntity) {
         assertThat(athlete.getFirstName()).isEqualTo(athleteEntity.getFirstName());
         assertThat(athlete.getLastName()).isEqualTo(athleteEntity.getLastName());
         assertThat(athlete.getBirthDate()).isEqualTo(athleteEntity.getBirthDate());

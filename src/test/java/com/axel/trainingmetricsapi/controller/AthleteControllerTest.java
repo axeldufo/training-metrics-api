@@ -77,7 +77,7 @@ class AthleteControllerTest {
     @Test
     void create_shouldReturnBadRequest_whenArgumentsNotValid() throws Exception {
 
-        AthleteRequest athleteRequest = new AthleteRequest("   ", "", null, null, null);
+        AthleteRequest athleteRequest = new AthleteRequest("   ", "", null, null, null, null);
 
         mvc.perform(post(URL_PREFIX).contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(athleteRequest)))
@@ -147,7 +147,7 @@ class AthleteControllerTest {
 
     @Test
     void updateById_shouldReturnBadRequest_whenArgumentsNotValid() throws Exception {
-        AthleteRequest athleteRequest = new AthleteRequest("   ", "", null, null, null);
+        AthleteRequest athleteRequest = new AthleteRequest("   ", "", null, null, null, null);
 
         mvc.perform(put(URL_PREFIX + "/" + 4L).contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(athleteRequest)))
@@ -182,6 +182,7 @@ class AthleteControllerTest {
             .andExpect(jsonPath("$.lastName").value(athleteResponse.lastName()))
             .andExpect(jsonPath("$.birthDate").value(athleteResponse.birthDate().toString()))
             .andExpect(jsonPath("$.sport").value(athleteResponse.sport().name()))
+            .andExpect(jsonPath("$.coachId").value(athleteResponse.coachId()))
             .andExpect(jsonPath("$.weightInKg").value(athleteResponse.weightInKg()));
     }
 }
