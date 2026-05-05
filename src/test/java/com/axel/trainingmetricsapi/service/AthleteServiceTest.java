@@ -2,7 +2,7 @@ package com.axel.trainingmetricsapi.service;
 
 import com.axel.trainingmetricsapi.domain.Athlete;
 import com.axel.trainingmetricsapi.domain.AthleteRepository;
-import com.axel.trainingmetricsapi.domain.AthleteNotFoundException;
+import com.axel.trainingmetricsapi.domain.exception.AthleteNotFoundException;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -89,12 +89,12 @@ class AthleteServiceTest {
         Athlete athlete = Instancio.create(Athlete.class);
         Athlete persistedAthlete = Instancio.create(Athlete.class);
         Long athleteId = athlete.getId();
-        when(athleteRepository.findById(athleteId)).thenReturn(Optional.of(athlete));
+        when(athleteRepository.existsById(athleteId)).thenReturn(true);
         when(athleteRepository.save(athlete)).thenReturn(persistedAthlete);
 
         Athlete returnedAthlete = athleteService.update(athlete);
 
-        verify(athleteRepository).findById(athleteId);
+        verify(athleteRepository).existsById(athleteId);
         verify(athleteRepository).save(athlete);
         assertThat(returnedAthlete).isEqualTo(persistedAthlete);
         assertThat(returnedAthlete.getId()).isEqualTo(persistedAthlete.getId()); // id is excluded from Athlete.isEqualTo()
@@ -104,12 +104,12 @@ class AthleteServiceTest {
     void update_shouldThrowException_whenAthleteNotFound() {
         Athlete athlete = Instancio.create(Athlete.class);
         Long athleteId = athlete.getId();
-        when(athleteRepository.findById(athleteId)).thenReturn(Optional.empty());
+        when(athleteRepository.existsById(athleteId)).thenReturn(false);
 
         assertThatThrownBy(() -> athleteService.update(athlete))
             .isInstanceOf(AthleteNotFoundException.class);
 
-        verify(athleteRepository).findById(athleteId);
+        verify(athleteRepository).existsById(athleteId);
         verify(athleteRepository, never()).save(athlete);
     }
 

@@ -2,7 +2,7 @@ package com.axel.trainingmetricsapi.service;
 
 import com.axel.trainingmetricsapi.domain.Athlete;
 import com.axel.trainingmetricsapi.domain.AthleteRepository;
-import com.axel.trainingmetricsapi.domain.AthleteNotFoundException;
+import com.axel.trainingmetricsapi.domain.exception.AthleteNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,15 +39,16 @@ public class AthleteServiceImpl implements AthleteService {
     @Transactional
     public Athlete update(Athlete athlete) {
         long athleteId = athlete.getId();
-        athleteRepository.findById(athleteId)
-            .orElseThrow(() -> new AthleteNotFoundException(athleteId));
+        if (!athleteRepository.existsById(athleteId)) {
+            throw new AthleteNotFoundException(athleteId);
+        }
         return athleteRepository.save(athlete);
     }
 
     @Override
     @Transactional
     public void deleteById(Long athleteId) {
-        if(!athleteRepository.existsById(athleteId)) {
+        if (!athleteRepository.existsById(athleteId)) {
             throw new AthleteNotFoundException(athleteId);
         }
         athleteRepository.deleteById(athleteId);

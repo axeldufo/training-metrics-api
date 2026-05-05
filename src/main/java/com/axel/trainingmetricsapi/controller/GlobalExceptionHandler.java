@@ -1,6 +1,6 @@
 package com.axel.trainingmetricsapi.controller;
 
-import com.axel.trainingmetricsapi.domain.AthleteNotFoundException;
+import com.axel.trainingmetricsapi.domain.exception.ResourceNotFoundException;
 import com.axel.trainingmetricsapi.dto.response.ApiError;
 import com.axel.trainingmetricsapi.dto.response.ErrorCode;
 import org.springframework.http.HttpStatus;
@@ -24,8 +24,8 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(apiErrors);
     }
 
-    @ExceptionHandler(AthleteNotFoundException.class)
-    public ResponseEntity<List<ApiError>> handleAthleteNotFound(AthleteNotFoundException exception) {
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<List<ApiError>> handleAthleteNotFound(ResourceNotFoundException exception) {
         ApiError apiError = new ApiError(ErrorCode.NOT_FOUND, null, exception.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(List.of(apiError));
     }

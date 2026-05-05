@@ -20,8 +20,9 @@ public class AthleteJpaAdapter implements AthleteRepository {
 
     @Override
     public Athlete save(Athlete athlete) {
-        AthleteJpaEntity savedAthlete = athleteJpaRepository.save(athletePersistenceMapper.domainToEntity(athlete));
-        return athletePersistenceMapper.entityToDomain(savedAthlete);
+        AthleteJpaEntity entityToPersist = athletePersistenceMapper.domainToEntity(athlete);
+        AthleteJpaEntity persistedEntity = athleteJpaRepository.save(entityToPersist);
+        return athletePersistenceMapper.entityToDomain(persistedEntity);
     }
 
     @Override
@@ -31,7 +32,9 @@ public class AthleteJpaAdapter implements AthleteRepository {
 
     @Override
     public List<Athlete> findAll() {
-        return athleteJpaRepository.findAll().stream().map(athletePersistenceMapper::entityToDomain).toList();
+        return athleteJpaRepository.findAll().stream()
+            .map(athletePersistenceMapper::entityToDomain)
+            .toList();
     }
 
     @Override
