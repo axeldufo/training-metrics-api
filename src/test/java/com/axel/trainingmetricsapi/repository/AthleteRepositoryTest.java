@@ -64,9 +64,8 @@ class AthleteRepositoryTest {
 
         verify(athleteJpaRepository).findById(persistedId);
         verify(athletePersistenceMapper).entityToDomain(persistedAthleteEntity);
-        assertThat(athleteFound).isPresent();
-        assertThat(athleteFound.get().getId()).isEqualTo(persistedId);
-        assertThat(athleteFound.get()).isEqualTo(expectedAthlete);
+        assertThat(athleteFound).contains(expectedAthlete);
+        assertThat(athleteFound.get().getId()).isEqualTo(persistedId); // id is excluded from Athlete.isEqualTo()
     }
 
     @Test

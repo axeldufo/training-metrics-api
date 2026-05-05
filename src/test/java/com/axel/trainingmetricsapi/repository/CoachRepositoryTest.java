@@ -65,9 +65,8 @@ class CoachRepositoryTest {
 
         verify(coachJpaRepository).findById(persistedId);
         verify(coachPersistenceMapper).entityToDomain(persistedCoachEntity);
-        assertThat(coachFound).isPresent();
+        assertThat(coachFound).contains(expectedCoach);
         assertThat(coachFound.get().getId()).isEqualTo(persistedId);  // id is excluded from Coach.isEqualTo()
-        assertThat(coachFound.get()).isEqualTo(expectedCoach);
     }
 
     @Test
