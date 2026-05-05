@@ -44,7 +44,9 @@ class AthleteRepositoryTest {
 
         verify(athletePersistenceMapper).domainToEntity(athlete);
         verify(athleteJpaRepository).save(athleteEntity);
-        assertThat(savedAthlete.getId()).isEqualTo(persistedId);
+        verify(athletePersistenceMapper).entityToDomain(savedAthleteEntity);
+        assertThat(savedAthlete.getId()).isEqualTo(persistedId); // id is excluded from Athlete.isEqualTo()
+        assertThat(savedAthlete).isEqualTo(expectedAthlete);
     }
 
     @Test
@@ -60,9 +62,11 @@ class AthleteRepositoryTest {
 
         Optional<Athlete> athleteFound = athleteJpaAdapter.findById(persistedId);
 
+        verify(athleteJpaRepository).findById(persistedId);
         verify(athletePersistenceMapper).entityToDomain(persistedAthleteEntity);
         assertThat(athleteFound).isPresent();
         assertThat(athleteFound.get().getId()).isEqualTo(persistedId);
+        assertThat(athleteFound.get()).isEqualTo(expectedAthlete);
     }
 
     @Test
@@ -82,6 +86,7 @@ class AthleteRepositoryTest {
 
         List<Athlete> athletesFound = athleteJpaAdapter.findAll();
 
+        verify(athleteJpaRepository).findAll();
         verify(athletePersistenceMapper, times(sizePersisted)).entityToDomain(any(AthleteJpaEntity.class));
         assertThat(athletesFound).hasSize(sizePersisted);
     }

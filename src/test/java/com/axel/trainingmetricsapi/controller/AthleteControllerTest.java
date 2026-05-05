@@ -1,7 +1,7 @@
 package com.axel.trainingmetricsapi.controller;
 
 import com.axel.trainingmetricsapi.domain.Athlete;
-import com.axel.trainingmetricsapi.domain.AthleteNotFoundException;
+import com.axel.trainingmetricsapi.domain.exception.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.dto.request.AthleteRequest;
 import com.axel.trainingmetricsapi.dto.response.AthleteResponse;
 import com.axel.trainingmetricsapi.service.AthleteService;
@@ -57,19 +57,20 @@ class AthleteControllerTest {
     @Test
     void create_shouldReturnCreatedAthlete_whenRequestIsValid() throws Exception {
 
+        AthleteRequest athleteRequest = Instancio.create(AthleteRequest.class);
         Athlete athlete = Instancio.create(Athlete.class);
-        when(athleteWebMapper.requestToDomain(any(AthleteRequest.class))).thenReturn(athlete);
+        when(athleteWebMapper.requestToDomain(athleteRequest)).thenReturn(athlete);
         Athlete persistedAthlete = Instancio.create(Athlete.class);
         when(athleteService.save(athlete)).thenReturn(persistedAthlete);
         AthleteResponse athleteResponse = Instancio.create(AthleteResponse.class);
         when(athleteWebMapper.domainToResponse(persistedAthlete)).thenReturn(athleteResponse);
 
         ResultActions result = mvc.perform(post(URL_PREFIX).contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(Instancio.create(AthleteRequest.class))))
+            .content(objectMapper.writeValueAsString(athleteRequest)))
             .andExpect(status().isCreated());
 
         assertJsonMatchesAthleteResponse(result, athleteResponse);
-        verify(athleteWebMapper).requestToDomain(any(AthleteRequest.class));
+        verify(athleteWebMapper).requestToDomain(athleteRequest);
         verify(athleteService).save(athlete);
         verify(athleteWebMapper).domainToResponse(persistedAthlete);
     }
