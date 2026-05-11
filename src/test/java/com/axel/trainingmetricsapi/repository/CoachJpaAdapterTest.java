@@ -16,7 +16,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class CoachRepositoryTest {
+class CoachJpaAdapterTest {
 
     @Mock
     private CoachJpaRepository coachJpaRepository;
@@ -31,7 +31,7 @@ class CoachRepositoryTest {
     void save_shouldMapAndSaveCoach() {
         Coach coach = Instancio.create(Coach.class);
         CoachJpaEntity coachEntity = Instancio.create(CoachJpaEntity.class);
-        Long persistedId = 42L;
+        long persistedId = 42L;
         CoachJpaEntity savedCoachEntity = Instancio.create(CoachJpaEntity.class);
         savedCoachEntity.setId(persistedId);
         Coach expectedCoach = Instancio.create(Coach.class);
@@ -52,7 +52,7 @@ class CoachRepositoryTest {
 
     @Test
     void findById_shouldReturnMappedCoach() {
-        Long persistedId = 42L;
+        long persistedId = 42L;
         CoachJpaEntity persistedCoachEntity = Instancio.create(CoachJpaEntity.class);
         persistedCoachEntity.setId(persistedId);
         Coach expectedCoach = Instancio.create(Coach.class);

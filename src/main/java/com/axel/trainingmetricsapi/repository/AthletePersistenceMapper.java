@@ -9,9 +9,9 @@ import java.util.Optional;
 public class AthletePersistenceMapper {
 
     public AthleteJpaEntity domainToEntity(Athlete athlete) {
-        CoachJpaEntity coach = Optional.ofNullable(athlete.getCoachId())
-            .map(id -> new CoachJpaEntity(id, null))
-            .orElse(null);
+        CoachJpaEntity coach = Optional.ofNullable(athlete.getCoachId()) // Phantom entity
+            .map(id -> new CoachJpaEntity(id, null))                     // Hibernate only needs the id to persist the FK
+            .orElse(null);                                               // Coach may be null if not assigned
         return new AthleteJpaEntity(
             athlete.getId(),
             athlete.getFirstName(),
@@ -25,7 +25,7 @@ public class AthletePersistenceMapper {
     public Athlete entityToDomain(AthleteJpaEntity athleteJpaEntity) {
         Long coachId = Optional.ofNullable(athleteJpaEntity.getCoach())
             .map(CoachJpaEntity::getId)
-            .orElse(null);
+            .orElse(null);  // Coach id may be null if not assigned
         Athlete athlete = new Athlete(
             athleteJpaEntity.getFirstName(),
             athleteJpaEntity.getLastName(),

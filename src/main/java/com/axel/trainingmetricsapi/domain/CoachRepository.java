@@ -5,8 +5,8 @@ import java.util.Optional;
 
 public interface CoachRepository {
     Coach save(Coach coach);
-    Optional<Coach> findById(Long id);
+    Optional<Coach> findById(long id);
     List<Coach> findAll();
-    void deleteById(Long id);
-    boolean existsById(Long coachId);
+    void deleteById(long id);
+    boolean existsById(long id);
 }

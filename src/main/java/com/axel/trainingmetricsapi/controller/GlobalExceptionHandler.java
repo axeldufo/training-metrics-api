@@ -1,5 +1,6 @@
 package com.axel.trainingmetricsapi.controller;
 
+import com.axel.trainingmetricsapi.domain.exception.DomainValidationException;
 import com.axel.trainingmetricsapi.domain.exception.ResourceNotFoundException;
 import com.axel.trainingmetricsapi.dto.response.ApiError;
 import com.axel.trainingmetricsapi.dto.response.ErrorCode;
@@ -16,10 +17,10 @@ import java.util.List;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<List<ApiError>> handleValidationErrors(MethodArgumentNotValidException exception) {
+    public ResponseEntity<List<ApiError>> handleHttpValidationErrors(MethodArgumentNotValidException exception) {
         List<FieldError> fieldErrors = exception.getBindingResult().getFieldErrors();
         List<ApiError> apiErrors = fieldErrors.stream()
-            .map(fieldError -> new ApiError(ErrorCode.VALIDATION_ERROR, fieldError.getField(), fieldError.getDefaultMessage()))
+            .map(fieldError -> new ApiError(ErrorCode.HTTP_VALIDATION_ERROR, fieldError.getField(), fieldError.getDefaultMessage()))
             .toList();
         return ResponseEntity.badRequest().body(apiErrors);
     }
@@ -30,4 +31,9 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(List.of(apiError));
     }
 
+    @ExceptionHandler(DomainValidationException.class)
+    public ResponseEntity<List<ApiError>> handleDomainValidationErrors(DomainValidationException exception) {
+        ApiError apiError = new ApiError(ErrorCode.DOMAIN_VALIDATION_ERROR, null, exception.getMessage());
+        return ResponseEntity.badRequest().body(List.of(apiError));
+    }
 }

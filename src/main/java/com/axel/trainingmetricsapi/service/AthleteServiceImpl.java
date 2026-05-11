@@ -30,7 +30,7 @@ public class AthleteServiceImpl implements AthleteService {
     }
 
     @Override
-    public Athlete findById(Long athleteId) {
+    public Athlete findById(long athleteId) {
         return athleteRepository.findById(athleteId)
             .orElseThrow(() -> new AthleteNotFoundException(athleteId));
     }
@@ -47,7 +47,7 @@ public class AthleteServiceImpl implements AthleteService {
 
     @Override
     @Transactional
-    public void deleteById(Long athleteId) {
+    public void deleteById(long athleteId) {
         if (!athleteRepository.existsById(athleteId)) {
             throw new AthleteNotFoundException(athleteId);
         }

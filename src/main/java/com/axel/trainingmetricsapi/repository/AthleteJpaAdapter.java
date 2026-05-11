@@ -26,8 +26,9 @@ public class AthleteJpaAdapter implements AthleteRepository {
     }
 
     @Override
-    public Optional<Athlete> findById(Long id) {
-        return athleteJpaRepository.findById(id).map(athletePersistenceMapper::entityToDomain);
+    public Optional<Athlete> findById(long id) {
+        return athleteJpaRepository.findById(id)
+            .map(athletePersistenceMapper::entityToDomain);
     }
 
     @Override
@@ -38,12 +39,12 @@ public class AthleteJpaAdapter implements AthleteRepository {
     }
 
     @Override
-    public void deleteById(Long id) {
+    public void deleteById(long id) {
         athleteJpaRepository.deleteById(id);
     }
 
     @Override
-    public boolean existsById(Long athleteId) {
-        return athleteJpaRepository.existsById(athleteId);
+    public boolean existsById(long id) {
+        return athleteJpaRepository.existsById(id);
     }
 }

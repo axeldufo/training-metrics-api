@@ -26,8 +26,9 @@ public class CoachJpaAdapter implements CoachRepository {
     }
 
     @Override
-    public Optional<Coach> findById(Long id) {
-        return coachJpaRepository.findById(id).map(coachPersistenceMapper::entityToDomain);
+    public Optional<Coach> findById(long id) {
+        return coachJpaRepository.findById(id)
+            .map(coachPersistenceMapper::entityToDomain);
     }
 
     @Override
@@ -38,12 +39,12 @@ public class CoachJpaAdapter implements CoachRepository {
     }
 
     @Override
-    public void deleteById(Long id) {
+    public void deleteById(long id) {
         coachJpaRepository.deleteById(id);
     }
 
     @Override
-    public boolean existsById(Long coachId) {
-        return coachJpaRepository.existsById(coachId);
+    public boolean existsById(long id) {
+        return coachJpaRepository.existsById(id);
     }
 }
