@@ -68,6 +68,8 @@ class TrainingSessionTest {
     @Nested
     class Invariants {
 
+        private final LocalDate date = LocalDate.now();
+
         @Test
         void constructor_shouldThrow_whenDateIsNull() {
             assertThatThrownBy(() -> new TrainingSession(null, Sport.ROAD_RUNNING, 4, 90, TargetZone.Z2, 4L))
@@ -76,13 +78,13 @@ class TrainingSessionTest {
 
         @Test
         void constructor_shouldThrow_whenSportIsNull() {
-            assertThatThrownBy(() -> new TrainingSession(LocalDate.now(), null, 4, 90, TargetZone.Z2, 4L))
+            assertThatThrownBy(() -> new TrainingSession(date, null, 4, 90, TargetZone.Z2, 4L))
                 .isInstanceOf(DomainValidationException.class);
         }
 
         @Test
         void constructor_shouldThrow_whenRpeIsNull() {
-            assertThatThrownBy(() -> new TrainingSession(LocalDate.now(), Sport.ROAD_RUNNING, null, 90,
+            assertThatThrownBy(() -> new TrainingSession(date, Sport.ROAD_RUNNING, null, 90,
                 TargetZone.Z2, 4L))
                 .isInstanceOf(DomainValidationException.class);
         }
@@ -90,7 +92,7 @@ class TrainingSessionTest {
         @ParameterizedTest
         @ValueSource(ints = {0, -1, 11, 100})
         void constructor_shouldThrow_whenRpeIsInvalid(int invalidRpe) {
-            assertThatThrownBy(() -> new TrainingSession(LocalDate.now(), Sport.ROAD_RUNNING, invalidRpe, 90,
+            assertThatThrownBy(() -> new TrainingSession(date, Sport.ROAD_RUNNING, invalidRpe, 90,
                 TargetZone.Z2, 4L))
                 .isInstanceOf(DomainValidationException.class);
         }
@@ -98,39 +100,39 @@ class TrainingSessionTest {
         @ParameterizedTest
         @ValueSource(ints = {1, 5, 10})
         void constructor_shouldNotThrow_whenRpeIsValid(int validRpe) {
-            assertThatNoException().isThrownBy(() -> new TrainingSession(LocalDate.now(), Sport.ROAD_RUNNING,
+            assertThatNoException().isThrownBy(() -> new TrainingSession(date, Sport.ROAD_RUNNING,
                 validRpe, 90, TargetZone.Z2, 4L));
         }
 
         @Test
         void constructor_shouldThrow_whenDurationIsNull() {
-            assertThatThrownBy(() -> new TrainingSession(LocalDate.now(), Sport.ROAD_RUNNING, 4, null,
+            assertThatThrownBy(() -> new TrainingSession(date, Sport.ROAD_RUNNING, 4, null,
                 TargetZone.Z2, 4L)).isInstanceOf(DomainValidationException.class);
         }
 
         @ParameterizedTest
         @ValueSource(ints = {0, -1})
         void constructor_shouldThrow_whenDurationIsInvalid(int invalidDuration) {
-            assertThatThrownBy(() -> new TrainingSession(LocalDate.now(), Sport.ROAD_RUNNING, 4,
+            assertThatThrownBy(() -> new TrainingSession(date, Sport.ROAD_RUNNING, 4,
                 invalidDuration, TargetZone.Z2, 4L)).isInstanceOf(DomainValidationException.class);
         }
 
         @ParameterizedTest
         @ValueSource(ints = {1, 60, 180})
         void constructor_shouldNotThrow_whenDurationIsValid(int invalidDuration) {
-            assertThatNoException().isThrownBy(() -> new TrainingSession(LocalDate.now(), Sport.ROAD_RUNNING, 4,
+            assertThatNoException().isThrownBy(() -> new TrainingSession(date, Sport.ROAD_RUNNING, 4,
                 invalidDuration, TargetZone.Z2, 4L));
         }
 
         @Test
         void constructor_shouldThrow_whenTargetZoneIsNull() {
-            assertThatThrownBy(() -> new TrainingSession(LocalDate.now(), Sport.ROAD_RUNNING, 4, 90, null, 4L))
+            assertThatThrownBy(() -> new TrainingSession(date, Sport.ROAD_RUNNING, 4, 90, null, 4L))
                 .isInstanceOf(DomainValidationException.class);
         }
 
         @Test
         void constructor_shouldThrow_whenAthleteIdIsNull() {
-            assertThatThrownBy(() -> new TrainingSession(LocalDate.now(), Sport.ROAD_RUNNING, 4, 90,
+            assertThatThrownBy(() -> new TrainingSession(date, Sport.ROAD_RUNNING, 4, 90,
                 TargetZone.Z2, null))
                 .isInstanceOf(DomainValidationException.class);
         }

@@ -13,33 +13,36 @@ class AthleteTest {
     @Nested
     class Invariants {
 
+        private final LocalDate birthDate = LocalDate.now();
+
         @Test
         void constructor_shouldThrow_whenFirstNameIsNull() {
-            assertThatThrownBy(() -> new Athlete(null, "Dupont", LocalDate.now(), Sport.CYCLING, 2L, 80.0))
+
+            assertThatThrownBy(() -> new Athlete(null, "Dupont", birthDate, Sport.CYCLING, 2L, 80.0))
                 .isInstanceOf(DomainValidationException.class);
         }
 
         @Test
         void constructor_shouldThrow_whenFirstNameIsBlank() {
-            assertThatThrownBy(() -> new Athlete("   ", "Dupont", LocalDate.now(), Sport.CYCLING, 2L, 80.0))
+            assertThatThrownBy(() -> new Athlete("   ", "Dupont", birthDate, Sport.CYCLING, 2L, 80.0))
                 .isInstanceOf(DomainValidationException.class);
         }
 
         @Test
         void constructor_shouldThrow_whenLastNameIsNull() {
-            assertThatThrownBy(() -> new Athlete("Jean", null, LocalDate.now(), Sport.CYCLING, 2L, 80.0))
+            assertThatThrownBy(() -> new Athlete("Jean", null, birthDate, Sport.CYCLING, 2L, 80.0))
                 .isInstanceOf(DomainValidationException.class);
         }
 
         @Test
         void constructor_shouldThrow_whenLastNameIsBlank() {
-            assertThatThrownBy(() -> new Athlete("Jean", "   ", LocalDate.now(), Sport.CYCLING, 2L, 80.0))
+            assertThatThrownBy(() -> new Athlete("Jean", "   ", birthDate, Sport.CYCLING, 2L, 80.0))
                 .isInstanceOf(DomainValidationException.class);
         }
 
         @Test
         void constructor_shouldThrow_whenSportIsNull() {
-            assertThatThrownBy(() -> new Athlete("Jean", "Dupont", LocalDate.now(), null, 2L, 80.0))
+            assertThatThrownBy(() -> new Athlete("Jean", "Dupont", birthDate, null, 2L, 80.0))
                 .isInstanceOf(DomainValidationException.class);
         }
 
