@@ -7,7 +7,7 @@ import java.util.List;
 public interface AthleteService {
     List<Athlete> findAll();
     Athlete save(Athlete athlete);
-    Athlete findById(Long athleteId);
+    Athlete findById(long athleteId);
     Athlete update(Athlete athlete);
-    void deleteById(Long athleteId);
+    void deleteById(long athleteId);
 }

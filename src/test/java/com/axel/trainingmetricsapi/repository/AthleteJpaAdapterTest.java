@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class AthleteRepositoryTest {
+class AthleteJpaAdapterTest {
 
     @Mock
     private AthleteJpaRepository athleteJpaRepository;
@@ -30,7 +30,7 @@ class AthleteRepositoryTest {
     void save_shouldMapAndSaveAthlete() {
         Athlete athlete = Instancio.create(Athlete.class);
         AthleteJpaEntity athleteEntity = Instancio.create(AthleteJpaEntity.class);
-        Long persistedId = 42L;
+        long persistedId = 42L;
         AthleteJpaEntity savedAthleteEntity = Instancio.create(AthleteJpaEntity.class);
         savedAthleteEntity.setId(persistedId);
         Athlete expectedAthlete = Instancio.create(Athlete.class);
@@ -51,7 +51,7 @@ class AthleteRepositoryTest {
 
     @Test
     void findById_shouldReturnMappedAthlete() {
-        Long persistedId = 42L;
+        long persistedId = 42L;
         AthleteJpaEntity persistedAthleteEntity = Instancio.create(AthleteJpaEntity.class);
         persistedAthleteEntity.setId(persistedId);
         Athlete expectedAthlete = Instancio.create(Athlete.class);

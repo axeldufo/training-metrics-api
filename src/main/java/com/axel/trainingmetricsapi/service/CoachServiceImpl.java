@@ -24,7 +24,7 @@ public class CoachServiceImpl implements CoachService {
     }
 
     @Override
-    public Coach findById(Long coachId) {
+    public Coach findById(long coachId) {
         return coachRepository.findById(coachId)
             .orElseThrow(() -> new CoachNotFoundException(coachId));
     }
@@ -47,7 +47,7 @@ public class CoachServiceImpl implements CoachService {
 
     @Override
     @Transactional
-    public void deleteById(Long coachId) {
+    public void deleteById(long coachId) {
         if (!coachRepository.existsById(coachId)) {
             throw new CoachNotFoundException(coachId);
         }

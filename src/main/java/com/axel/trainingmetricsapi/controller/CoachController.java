@@ -43,7 +43,7 @@ public class CoachController {
     @ApiResponse(responseCode = "404", description = "Coach not found", content = @Content(mediaType =
         "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
     @GetMapping("/{id}")
-    public ResponseEntity<CoachResponse> getById(@PathVariable Long id){
+    public ResponseEntity<CoachResponse> getById(@PathVariable long id){
         Coach coachFound = coachService.findById(id);
         CoachResponse coachResponse = coachWebMapper.domainToResponse(coachFound);
         return ResponseEntity.ok(coachResponse);
@@ -71,7 +71,7 @@ public class CoachController {
     @ApiResponse(responseCode = "404", description = "Coach not found", content = @Content(mediaType =
         "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
     @PutMapping("/{id}")
-    public ResponseEntity<CoachResponse> updateById(@PathVariable Long id,
+    public ResponseEntity<CoachResponse> updateById(@PathVariable long id,
                                                       @RequestBody @Valid CoachRequest coachRequest) {
         Coach coachToUpdate = coachWebMapper.requestToDomain(coachRequest);
         coachToUpdate.setId(id);
@@ -85,7 +85,7 @@ public class CoachController {
     @ApiResponse(responseCode = "404", description = "Coach not found", content = @Content(mediaType =
         "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
     @DeleteMapping("{id}")
-    public ResponseEntity<Void> deleteById(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteById(@PathVariable long id) {
         coachService.deleteById(id);
         return ResponseEntity.noContent().build();
     }

@@ -1,11 +1,11 @@
 package com.axel.trainingmetricsapi.domain;
 
+import com.axel.trainingmetricsapi.domain.exception.DomainValidationException;
 import lombok.*;
 
 import java.time.LocalDate;
 
 @Getter
-@RequiredArgsConstructor
 @EqualsAndHashCode(exclude = "id")
 @ToString
 public class Athlete {
@@ -16,4 +16,16 @@ public class Athlete {
     private final Sport sport;
     private final Long coachId;
     private final Double weightInKg;
+
+    public Athlete(String firstName, String lastName, LocalDate birthDate, Sport sport, Long coachId, Double weightInKg) {
+        if (firstName == null || firstName.isBlank()) throw new DomainValidationException("Athlete first name is required");
+        if (lastName == null || lastName.isBlank()) throw new DomainValidationException("Athlete last name is required");
+        if (sport == null) throw new DomainValidationException("Athlete sport is required");
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.birthDate = birthDate;
+        this.sport = sport;
+        this.coachId = coachId;
+        this.weightInKg = weightInKg;
+    }
 }

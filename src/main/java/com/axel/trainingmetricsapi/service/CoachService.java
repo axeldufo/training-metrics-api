@@ -5,8 +5,8 @@ import java.util.List;
 
 public interface CoachService {
     List<Coach> findAll();
-    Coach findById(Long coachId);
+    Coach findById(long coachId);
     Coach save(Coach coach);
     Coach update(Coach coach);
-    void deleteById(Long coachId);
+    void deleteById(long coachId);
 }
