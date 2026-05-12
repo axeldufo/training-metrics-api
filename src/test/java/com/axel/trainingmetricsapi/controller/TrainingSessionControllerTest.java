@@ -2,6 +2,7 @@ package com.axel.trainingmetricsapi.controller;
 
 import com.axel.trainingmetricsapi.domain.TrainingSession;
 import com.axel.trainingmetricsapi.domain.exception.AthleteNotFoundException;
+import com.axel.trainingmetricsapi.domain.exception.TrainingSessionNotFoundException;
 import com.axel.trainingmetricsapi.dto.request.TrainingSessionRequest;
 import com.axel.trainingmetricsapi.dto.response.TrainingSessionResponse;
 import com.axel.trainingmetricsapi.service.TrainingSessionService;
@@ -122,6 +123,34 @@ class TrainingSessionControllerTest {
         verify(trainingSessionWebMapper, never()).domainToResponse(any());
     }
 
+    @Test
+    void getById_shouldReturnTrainingSessionResponse_whenTrainingSessionExists() throws Exception {
+        long trainingSessionId = 8L;
+        TrainingSession persistedTrainingSession = Instancio.create(TrainingSession.class);
+        when(trainingSessionService.findById(trainingSessionId)).thenReturn(persistedTrainingSession);
+        TrainingSessionResponse trainingSessionResponse = Instancio.create(TrainingSessionResponse.class);
+        when(trainingSessionWebMapper.domainToResponse(persistedTrainingSession)).thenReturn(trainingSessionResponse);
+
+        ResultActions result = mvc.perform(get(URL_PREFIX + "/" + trainingSessionId))
+            .andExpect(status().isOk());
+
+        assertJsonMatchesTrainingSessionResponse(result, trainingSessionResponse);
+        verify(trainingSessionService).findById(trainingSessionId);
+        verify(trainingSessionWebMapper).domainToResponse(persistedTrainingSession);
+    }
+
+    @Test
+    void getById_shouldReturnSessionNotFound_whenTrainingSessionNotFoundException() throws Exception {
+        long trainingSessionId = 8L;
+        when(trainingSessionService.findById(trainingSessionId))
+            .thenThrow(new TrainingSessionNotFoundException(trainingSessionId));
+
+        mvc.perform(get(URL_PREFIX + "/" + trainingSessionId))
+            .andExpect(status().isNotFound());
+
+        verify(trainingSessionService).findById(trainingSessionId);
+    }
+
     private void assertJsonMatchesTrainingSessionResponse(ResultActions result, TrainingSessionResponse trainingSessionResponse) throws Exception {
         result.andExpect(jsonPath("$.id").value(trainingSessionResponse.id()))
             .andExpect(jsonPath("$.date").value(trainingSessionResponse.date().toString()))
@@ -130,7 +159,8 @@ class TrainingSessionControllerTest {
             .andExpect(jsonPath("$.durationInMin").value(trainingSessionResponse.durationInMin()))
             .andExpect(jsonPath("$.targetZone").value(trainingSessionResponse.targetZone().name()))
             .andExpect(jsonPath("$.athleteId").value(trainingSessionResponse.athleteId()))
-            .andExpect(jsonPath("$.aboveTargetAlert").value(trainingSessionResponse.aboveTargetAlert()));
+            .andExpect(jsonPath("$.aboveTargetAlert").value(trainingSessionResponse.aboveTargetAlert()))
+            .andExpect(jsonPath("$.belowTargetAlert").value(trainingSessionResponse.belowTargetAlert()));
     }
 
 }
