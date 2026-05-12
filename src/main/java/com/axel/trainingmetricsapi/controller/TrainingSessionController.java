@@ -94,4 +94,14 @@ public class TrainingSessionController {
         return ResponseEntity.ok(trainingSessionResponse);
     }
 
+    @Operation(summary = "Delete training session")
+    @ApiResponse(responseCode = "204", description = "Training session deleted")
+    @ApiResponse(responseCode = "404", description = "Training session not found", content = @Content(mediaType =
+        "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
+    @DeleteMapping("/{sessionId}")
+    public ResponseEntity<Void> deleteById(@PathVariable long sessionId) {
+        trainingSessionService.deleteById(sessionId);
+        return ResponseEntity.noContent().build();
+    }
+
 }

@@ -9,4 +9,5 @@ public interface TrainingSessionService {
     List<TrainingSession> findAllByAthleteId(long athleteId);
     TrainingSession findById(long id);
     TrainingSession update(TrainingSession trainingSession);
+    void deleteById(long id);
 }

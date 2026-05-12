@@ -138,4 +138,27 @@ class TrainingSessionServiceTest {
         verify(trainingSessionRepository, never()).save(trainingSession);
     }
 
+    @Test
+    void deleteById_shouldDeleteTrainingSession_whenExists() {
+        long sessionId = 8L;
+        when(trainingSessionRepository.existsById(sessionId)).thenReturn(true);
+
+        trainingSessionService.deleteById(sessionId);
+
+        verify(trainingSessionRepository).existsById(sessionId);
+        verify(trainingSessionRepository).deleteById(sessionId);
+    }
+
+    @Test
+    void deleteById_shouldThrowException_whenTrainingSessionDoesntExist() {
+        long sessionId = 8L;
+        when(trainingSessionRepository.existsById(sessionId)).thenReturn(false);
+
+        assertThatThrownBy(() -> trainingSessionService.deleteById(sessionId))
+            .isInstanceOf(TrainingSessionNotFoundException.class);
+
+        verify(trainingSessionRepository).existsById(sessionId);
+        verify(trainingSessionRepository, never()).deleteById(sessionId);
+    }
+
 }
