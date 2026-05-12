@@ -63,4 +63,16 @@ public class TrainingSessionController {
             .toList());
     }
 
+    @Operation(summary = "Retrieve training session")
+    @ApiResponse(responseCode = "200", description = "Training session found and returned", content =
+        @Content(mediaType = "application/json", schema = @Schema(implementation = TrainingSessionResponse.class)))
+    @ApiResponse(responseCode = "404", description = "Training session not found", content = @Content(mediaType =
+        "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
+    @GetMapping("/{sessionId}")
+    public ResponseEntity<TrainingSessionResponse> getById(@PathVariable long sessionId){
+        TrainingSession trainingSessionFound = trainingSessionService.findById(sessionId);
+        TrainingSessionResponse trainingSessionResponse = trainingSessionWebMapper.domainToResponse(trainingSessionFound);
+        return ResponseEntity.ok(trainingSessionResponse);
+    }
+
 }

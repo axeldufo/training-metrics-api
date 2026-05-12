@@ -4,6 +4,7 @@ import com.axel.trainingmetricsapi.domain.AthleteRepository;
 import com.axel.trainingmetricsapi.domain.TrainingSession;
 import com.axel.trainingmetricsapi.domain.TrainingSessionRepository;
 import com.axel.trainingmetricsapi.domain.exception.AthleteNotFoundException;
+import com.axel.trainingmetricsapi.domain.exception.TrainingSessionNotFoundException;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,6 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -81,6 +83,30 @@ class TrainingSessionServiceTest {
 
         verify(athleteRepository).existsById(athleteId);
         verify(trainingSessionRepository, never()).findAllByAthleteId(athleteId);
+    }
+
+    @Test
+    void findById_shouldReturnTrainingSession_whenTrainingSessionIsFound() {
+        long id = 4L;
+        TrainingSession trainingSessionToFind = Instancio.create(TrainingSession.class);
+        when(trainingSessionRepository.findById(id)).thenReturn(Optional.of(trainingSessionToFind));
+
+        TrainingSession returnedTrainingSession = trainingSessionService.findById(id);
+
+        verify(trainingSessionRepository).findById(id);
+        assertThat(returnedTrainingSession).isEqualTo(trainingSessionToFind);
+        assertThat(returnedTrainingSession.getId()).isEqualTo(trainingSessionToFind.getId()); // id is excluded from TrainingSession.isEqualTo()
+    }
+
+    @Test
+    void findById_shouldThrowException_whenTrainingSessionNotFound() {
+        long id = 4L;
+        when(trainingSessionRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> trainingSessionService.findById(id))
+            .isInstanceOf(TrainingSessionNotFoundException.class);
+
+        verify(trainingSessionRepository).findById(id);
     }
 
 }
