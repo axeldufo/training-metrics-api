@@ -204,6 +204,27 @@ class TrainingSessionControllerTest {
             .andExpect(jsonPath("$", hasSize(5)));
     }
 
+    @Test
+    void deleteById_shouldReturnOK_whenTrainingSessionIsDeleted() throws Exception {
+        long sessionId = 4L;
+
+        mvc.perform(delete(URL_PREFIX + "/" + sessionId))
+            .andExpect(status().isNoContent());
+
+        verify(trainingSessionService).deleteById(sessionId);
+    }
+
+    @Test
+    void deleteById_shouldReturnNotFound_whenTrainingSessionNotFoundException() throws Exception {
+        long sessionId = 4L;
+        doThrow(new TrainingSessionNotFoundException(sessionId)).when(trainingSessionService).deleteById(sessionId);
+
+        mvc.perform(delete(URL_PREFIX + "/" + sessionId))
+            .andExpect(status().isNotFound());
+
+        verify(trainingSessionService).deleteById(sessionId);
+    }
+
     private void assertJsonMatchesTrainingSessionResponse(ResultActions result, TrainingSessionResponse trainingSessionResponse) throws Exception {
         result.andExpect(jsonPath("$.id").value(trainingSessionResponse.id()))
             .andExpect(jsonPath("$.date").value(trainingSessionResponse.date().toString()))

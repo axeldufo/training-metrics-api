@@ -84,7 +84,7 @@ public class AthleteController {
     @ApiResponse(responseCode = "204", description = "Athlete deleted")
     @ApiResponse(responseCode = "404", description = "Athlete not found", content = @Content(mediaType =
         "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
-    @DeleteMapping("{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteById(@PathVariable long id) {
         athleteService.deleteById(id);
         return ResponseEntity.noContent().build();
