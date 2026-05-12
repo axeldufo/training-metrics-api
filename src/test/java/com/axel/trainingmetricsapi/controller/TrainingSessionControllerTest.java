@@ -1,6 +1,7 @@
 package com.axel.trainingmetricsapi.controller;
 
 import com.axel.trainingmetricsapi.domain.TrainingSession;
+import com.axel.trainingmetricsapi.domain.exception.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.dto.request.TrainingSessionRequest;
 import com.axel.trainingmetricsapi.dto.response.TrainingSessionResponse;
 import com.axel.trainingmetricsapi.service.TrainingSessionService;
@@ -14,10 +15,13 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import tools.jackson.databind.ObjectMapper;
 
+import java.util.List;
+
 import static org.hamcrest.Matchers.hasSize;
 import static org.instancio.Select.field;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -42,7 +46,6 @@ class TrainingSessionControllerTest {
 
     @Test
     void create_shouldReturnCreatedTrainingSession_whenRequestIsValid() throws Exception {
-
         TrainingSessionRequest trainingSessionRequest = Instancio.of(TrainingSessionRequest.class)
             .generate(field(TrainingSessionRequest::rpe), gen -> gen.ints().range(1, 10))
             .generate(field(TrainingSessionRequest::durationInMin), gen -> gen.ints().min(1))
@@ -66,13 +69,57 @@ class TrainingSessionControllerTest {
 
     @Test
     void create_shouldReturnBadRequest_whenArgumentsNotValid() throws Exception {
-
         TrainingSessionRequest trainingSessionRequest = new TrainingSessionRequest(null, null, 11, -1, null);
 
         mvc.perform(post(URL_PREFIX).contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(trainingSessionRequest)))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$", hasSize(5)));
+    }
+
+    @Test
+    void create_shouldReturnNotFound_whenAthleteNotFoundException() throws Exception {
+        TrainingSessionRequest trainingSessionRequest = Instancio.of(TrainingSessionRequest.class)
+            .generate(field(TrainingSessionRequest::rpe), gen -> gen.ints().range(1, 10))
+            .generate(field(TrainingSessionRequest::durationInMin), gen -> gen.ints().min(1))
+            .create();
+        TrainingSession trainingSession = Instancio.create(TrainingSession.class);
+        when(trainingSessionWebMapper.requestToDomain(trainingSessionRequest, ATHLETE_ID)).thenReturn(trainingSession);
+        when(trainingSessionService.save(trainingSession)).thenThrow(new AthleteNotFoundException(ATHLETE_ID));
+
+        mvc.perform(post(URL_PREFIX).contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(trainingSessionRequest)))
+            .andExpect(status().isNotFound());
+
+        verify(trainingSessionWebMapper).requestToDomain(trainingSessionRequest, ATHLETE_ID);
+        verify(trainingSessionService).save(trainingSession);
+        verify(trainingSessionWebMapper, never()).domainToResponse(any());
+    }
+
+    @Test
+    void getAll_shouldReturnListAsJson() throws Exception {
+        List<TrainingSession> trainingSessions = Instancio.ofList(TrainingSession.class).size(3).create();
+        when(trainingSessionService.findAllByAthleteId(ATHLETE_ID)).thenReturn(trainingSessions);
+        when(trainingSessionWebMapper.domainToResponse(any(TrainingSession.class)))
+            .thenReturn(Instancio.create(TrainingSessionResponse.class));
+
+        mvc.perform(get(URL_PREFIX))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(3)));
+
+        verify(trainingSessionService).findAllByAthleteId(ATHLETE_ID);
+        verify(trainingSessionWebMapper, times(3)).domainToResponse(any(TrainingSession.class));
+    }
+
+    @Test
+    void getAll_shouldReturnNotFound_whenAthleteNotFoundException() throws Exception {
+        when(trainingSessionService.findAllByAthleteId(ATHLETE_ID)).thenThrow(new AthleteNotFoundException(ATHLETE_ID));
+
+        mvc.perform(get(URL_PREFIX))
+            .andExpect(status().isNotFound());
+
+        verify(trainingSessionService).findAllByAthleteId(ATHLETE_ID);
+        verify(trainingSessionWebMapper, never()).domainToResponse(any());
     }
 
     private void assertJsonMatchesTrainingSessionResponse(ResultActions result, TrainingSessionResponse trainingSessionResponse) throws Exception {

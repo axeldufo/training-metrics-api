@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
+import java.util.List;
 
 @RequestMapping(path = ApiConstants.API_VERSION + "/athletes/{id}/sessions")
 @RestController
@@ -46,6 +47,20 @@ public class TrainingSessionController {
         URI location = URI.create("/athletes/" + persistedTrainingSession.getAthleteId()
             + "/sessions/" + persistedTrainingSession.getId());
         return ResponseEntity.created(location).body(trainingSessionResponse);
+    }
+
+    @GetMapping
+    @Operation(summary = "Retrieve all athlete training sessions")
+    @ApiResponse(responseCode = "200", description = "Athlete's training sessions retrieved", content =
+        @Content(mediaType = "application/json", array = @ArraySchema(schema =
+            @Schema(implementation = TrainingSessionResponse.class))))
+    @ApiResponse(responseCode = "404", description = "Athlete not found", content = @Content(mediaType =
+        "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
+    public ResponseEntity<List<TrainingSessionResponse>> getAll(@PathVariable("id")  long athleteId) {
+        return ResponseEntity.ok(
+            trainingSessionService.findAllByAthleteId(athleteId).stream()
+            .map(trainingSessionWebMapper::domainToResponse)
+            .toList());
     }
 
 }
