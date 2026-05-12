@@ -4,9 +4,13 @@ import com.axel.trainingmetricsapi.domain.AthleteRepository;
 import com.axel.trainingmetricsapi.domain.TrainingSession;
 import com.axel.trainingmetricsapi.domain.TrainingSessionRepository;
 import com.axel.trainingmetricsapi.domain.exception.AthleteNotFoundException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Service
+@Transactional(readOnly = true)
 public class TrainingSessionServiceImpl implements TrainingSessionService {
 
     private final TrainingSessionRepository trainingSessionRepository;
@@ -24,6 +28,12 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
     }
 
     @Override
+    public TrainingSession findById(long trainingSessionId) {
+        return null;
+    }
+
+    @Override
+    @Transactional
     public TrainingSession save(TrainingSession trainingSession) {
         long athleteId = trainingSession.getAthleteId();
         if (!athleteRepository.existsById(athleteId)) {
@@ -33,16 +43,13 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
     }
 
     @Override
-    public TrainingSession findById(long trainingSessionId) {
-        return null;
-    }
-
-    @Override
+    @Transactional
     public TrainingSession update(TrainingSession trainingSession) {
         return null;
     }
 
     @Override
+    @Transactional
     public void deleteById(long trainingSessionId) {
 
     }

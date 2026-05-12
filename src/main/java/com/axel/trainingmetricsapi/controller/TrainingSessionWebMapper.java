@@ -3,7 +3,9 @@ package com.axel.trainingmetricsapi.controller;
 import com.axel.trainingmetricsapi.domain.TrainingSession;
 import com.axel.trainingmetricsapi.dto.request.TrainingSessionRequest;
 import com.axel.trainingmetricsapi.dto.response.TrainingSessionResponse;
+import org.springframework.stereotype.Component;
 
+@Component
 public class TrainingSessionWebMapper {
 
     public TrainingSession requestToDomain(TrainingSessionRequest trainingSessionRequest, long athleteId) {

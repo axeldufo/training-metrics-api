@@ -35,6 +35,8 @@ public class TrainingSessionController {
         "application/json", schema = @Schema(implementation = TrainingSessionResponse.class)))
     @ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content(mediaType =
         "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
+    @ApiResponse(responseCode = "404", description = "Athlete not found", content = @Content(mediaType =
+        "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
     public ResponseEntity<TrainingSessionResponse> create(@PathVariable("id")  long athleteId,
         @RequestBody @Valid TrainingSessionRequest trainingSessionRequest) {
         TrainingSession trainingSession = trainingSessionWebMapper.requestToDomain(trainingSessionRequest, athleteId);
