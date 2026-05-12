@@ -8,4 +8,5 @@ public interface TrainingSessionService {
     TrainingSession save(TrainingSession trainingSession);
     List<TrainingSession> findAllByAthleteId(long athleteId);
     TrainingSession findById(long id);
+    TrainingSession update(TrainingSession trainingSession);
 }

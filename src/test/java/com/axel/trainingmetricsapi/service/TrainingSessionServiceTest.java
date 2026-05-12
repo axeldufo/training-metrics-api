@@ -109,4 +109,33 @@ class TrainingSessionServiceTest {
         verify(trainingSessionRepository).findById(id);
     }
 
+    @Test
+    void update_shouldReturnPersistedTrainingSession_whenTrainingSessionIsUpdated() {
+        TrainingSession trainingSession = Instancio.create(TrainingSession.class);
+        TrainingSession persistedTrainingSession = Instancio.create(TrainingSession.class);
+        long trainingSessionId = trainingSession.getId();
+        when(trainingSessionRepository.existsById(trainingSessionId)).thenReturn(true);
+        when(trainingSessionRepository.save(trainingSession)).thenReturn(persistedTrainingSession);
+
+        TrainingSession returnedTrainingSession = trainingSessionService.update(trainingSession);
+
+        verify(trainingSessionRepository).existsById(trainingSessionId);
+        verify(trainingSessionRepository).save(trainingSession);
+        assertThat(returnedTrainingSession).isEqualTo(persistedTrainingSession);
+        assertThat(returnedTrainingSession.getId()).isEqualTo(persistedTrainingSession.getId()); // id is excluded from TrainingSession.isEqualTo()
+    }
+
+    @Test
+    void update_shouldThrowException_whenTrainingSessionNotFound() {
+        TrainingSession trainingSession = Instancio.create(TrainingSession.class);
+        long trainingSessionId = trainingSession.getId();
+        when(trainingSessionRepository.existsById(trainingSessionId)).thenReturn(false);
+
+        assertThatThrownBy(() -> trainingSessionService.update(trainingSession))
+            .isInstanceOf(TrainingSessionNotFoundException.class);
+
+        verify(trainingSessionRepository).existsById(trainingSessionId);
+        verify(trainingSessionRepository, never()).save(trainingSession);
+    }
+
 }

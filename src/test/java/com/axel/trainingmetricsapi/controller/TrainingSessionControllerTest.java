@@ -22,8 +22,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.instancio.Select.field;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -149,6 +148,60 @@ class TrainingSessionControllerTest {
             .andExpect(status().isNotFound());
 
         verify(trainingSessionService).findById(trainingSessionId);
+    }
+
+    @Test
+    void updateById_shouldReturnUpdatedTrainingSession() throws Exception {
+        TrainingSessionRequest trainingSessionRequest = Instancio.of(TrainingSessionRequest.class)
+            .generate(field(TrainingSessionRequest::rpe), gen -> gen.ints().range(1, 10))
+            .generate(field(TrainingSessionRequest::durationInMin), gen -> gen.ints().min(1))
+            .create();
+        TrainingSession trainingSession = Instancio.create(TrainingSession.class);
+        when(trainingSessionWebMapper.requestToDomain(trainingSessionRequest, ATHLETE_ID))
+            .thenReturn(trainingSession);
+        TrainingSession persistedTrainingSession = Instancio.create(TrainingSession.class);
+        when(trainingSessionService.update(trainingSession)).thenReturn(persistedTrainingSession);
+        TrainingSessionResponse trainingSessionResponse = Instancio.create(TrainingSessionResponse.class);
+        when(trainingSessionWebMapper.domainToResponse(persistedTrainingSession)).thenReturn(trainingSessionResponse);
+
+        ResultActions result = mvc.perform(put(URL_PREFIX + "/" + 8L).contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(trainingSessionRequest)))
+            .andExpect(status().isOk());
+
+        assertJsonMatchesTrainingSessionResponse(result, trainingSessionResponse);
+        verify(trainingSessionWebMapper).requestToDomain(trainingSessionRequest, ATHLETE_ID);
+        verify(trainingSessionService).update(trainingSession);
+        verify(trainingSessionWebMapper).domainToResponse(persistedTrainingSession);
+    }
+
+    @Test
+    void updateById_shouldReturnNotFound_whenTrainingSessionNotFoundException() throws Exception {
+        long trainingSessionId = 8L;
+        TrainingSessionRequest trainingSessionRequest = Instancio.of(TrainingSessionRequest.class)
+            .generate(field(TrainingSessionRequest::rpe), gen -> gen.ints().range(1, 10))
+            .generate(field(TrainingSessionRequest::durationInMin), gen -> gen.ints().min(1))
+            .create();
+        TrainingSession trainingSession = Instancio.create(TrainingSession.class);
+        when(trainingSessionWebMapper.requestToDomain(trainingSessionRequest, ATHLETE_ID))
+            .thenReturn(trainingSession);
+        when(trainingSessionService.update(trainingSession))
+            .thenThrow(new TrainingSessionNotFoundException(trainingSessionId));
+
+        mvc.perform(put(URL_PREFIX + "/" + trainingSessionId).contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(trainingSessionRequest)))
+            .andExpect(status().isNotFound());
+
+        verify(trainingSessionService).update(any(TrainingSession.class));
+    }
+
+    @Test
+    void updateById_shouldReturnBadRequest_whenArgumentsNotValid() throws Exception {
+        TrainingSessionRequest trainingSessionRequest = new TrainingSessionRequest(null, null, 12, 0, null);
+
+        mvc.perform(put(URL_PREFIX + "/" + 8L).contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(trainingSessionRequest)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$", hasSize(5)));
     }
 
     private void assertJsonMatchesTrainingSessionResponse(ResultActions result, TrainingSessionResponse trainingSessionResponse) throws Exception {

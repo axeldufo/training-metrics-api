@@ -75,4 +75,23 @@ public class TrainingSessionController {
         return ResponseEntity.ok(trainingSessionResponse);
     }
 
+    @Operation(summary = "Update training session")
+    @ApiResponse(responseCode = "200", description = "Training session found and updated", content = @Content(mediaType =
+        "application/json", schema = @Schema(implementation = TrainingSessionResponse.class)))
+    @ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content(mediaType =
+        "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
+    @ApiResponse(responseCode = "404", description = "Training session not found", content = @Content(mediaType =
+        "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
+    @PutMapping("/{sessionId}")
+    public ResponseEntity<TrainingSessionResponse> updateById(@PathVariable("id")  long athleteId,
+                                                              @PathVariable long sessionId,
+                                                              @RequestBody @Valid TrainingSessionRequest trainingSessionRequest) {
+        TrainingSession trainingSessionToUpdate = trainingSessionWebMapper.requestToDomain(trainingSessionRequest, athleteId);
+        trainingSessionToUpdate.setId(sessionId);
+        TrainingSession persistedTrainingSession = trainingSessionService.update(trainingSessionToUpdate);
+        TrainingSessionResponse trainingSessionResponse =
+            trainingSessionWebMapper.domainToResponse(persistedTrainingSession);
+        return ResponseEntity.ok(trainingSessionResponse);
+    }
+
 }
