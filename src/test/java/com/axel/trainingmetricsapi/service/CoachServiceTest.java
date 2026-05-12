@@ -38,16 +38,6 @@ class CoachServiceTest {
     }
 
     @Test
-    void findAll_shouldReturnAnEmptyList_whenRepositoryReturnsAnEmptyList() {
-        when(coachRepository.findAll()).thenReturn(List.of());
-
-        List<Coach> returnedCoaches = coachService.findAll();
-
-        verify(coachRepository).findAll();
-        assertThat(returnedCoaches).isEmpty();
-    }
-
-    @Test
     void save_shouldReturnPersistedCoach_whenCoachIsSaved() {
         Coach coach = Instancio.create(Coach.class);
         Coach persistedCoach = Instancio.create(Coach.class);

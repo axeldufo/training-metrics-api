@@ -7,6 +7,8 @@ import com.axel.trainingmetricsapi.domain.exception.AthleteNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @Transactional(readOnly = true)
 public class TrainingSessionServiceImpl implements TrainingSessionService {
@@ -28,6 +30,14 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
             throw new AthleteNotFoundException(athleteId);
         }
         return trainingSessionRepository.save(trainingSession);
+    }
+
+    @Override
+    public List<TrainingSession> findAllByAthleteId(long athleteId) {
+        if (!athleteRepository.existsById(athleteId)) {
+            throw new AthleteNotFoundException(athleteId);
+        }
+        return trainingSessionRepository.findAllByAthleteId(athleteId);
     }
 
 }

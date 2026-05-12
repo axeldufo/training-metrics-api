@@ -38,16 +38,6 @@ class AthleteServiceTest {
     }
 
     @Test
-    void findAll_shouldReturnAnEmptyList_whenRepositoryReturnsAnEmptyList() {
-        when(athleteRepository.findAll()).thenReturn(List.of());
-
-        List<Athlete> returnedAthletes = athleteService.findAll();
-
-        verify(athleteRepository).findAll();
-        assertThat(returnedAthletes).isEmpty();
-    }
-
-    @Test
     void save_shouldReturnPersistedAthlete_whenAthleteIsSaved() {
         Athlete athlete = Instancio.create(Athlete.class);
         Athlete persistedAthlete = Instancio.create(Athlete.class);

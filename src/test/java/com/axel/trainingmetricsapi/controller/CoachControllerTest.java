@@ -51,6 +51,7 @@ class CoachControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(3)));
 
+        verify(coachService).findAll();
         verify(coachWebMapper, times(3)).domainToResponse(any(Coach.class));
     }
 

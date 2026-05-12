@@ -51,6 +51,7 @@ class AthleteControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(3)));
 
+        verify(athleteService).findAll();
         verify(athleteWebMapper, times(3)).domainToResponse(any(Athlete.class));
     }
 

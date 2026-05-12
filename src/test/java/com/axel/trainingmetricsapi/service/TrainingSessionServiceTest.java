@@ -11,6 +11,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
@@ -54,6 +56,31 @@ class TrainingSessionServiceTest {
 
         verify(athleteRepository).existsById(athleteId);
         verify(trainingSessionRepository, never()).save(trainingSession);
+    }
+
+    @Test
+    void findAllByAthleteId_shouldReturnAllAthleteSessions_whenRepositoryReturnsThem() {
+        long athleteId = 4L;
+        when(athleteRepository.existsById(athleteId)).thenReturn(true);
+        List<TrainingSession> persistedTrainingSessions = Instancio.ofList(TrainingSession.class).size(3).create();
+        when(trainingSessionRepository.findAllByAthleteId(athleteId)).thenReturn(persistedTrainingSessions);
+
+        List<TrainingSession> returnedTrainingSessions = trainingSessionService.findAllByAthleteId(athleteId);
+
+        verify(trainingSessionRepository).findAllByAthleteId(athleteId);
+        assertThat(returnedTrainingSessions).isEqualTo(persistedTrainingSessions);
+    }
+
+    @Test
+    void findAllByAthleteId_shouldThrowException_whenAthleteNotFound() {
+        long athleteId = 4L;
+        when(athleteRepository.existsById(athleteId)).thenReturn(false);
+
+        assertThatThrownBy(() -> trainingSessionService.findAllByAthleteId(athleteId))
+            .isInstanceOf(AthleteNotFoundException.class);
+
+        verify(athleteRepository).existsById(athleteId);
+        verify(trainingSessionRepository, never()).findAllByAthleteId(athleteId);
     }
 
 }
