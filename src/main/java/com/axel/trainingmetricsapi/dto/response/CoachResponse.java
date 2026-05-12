@@ -1,6 +1,6 @@
 package com.axel.trainingmetricsapi.dto.response;
 
 public record CoachResponse(
-    Long id,
+    long id,
     String name) {
 }

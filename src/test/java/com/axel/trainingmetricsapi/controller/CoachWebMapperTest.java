@@ -13,6 +13,15 @@ class CoachWebMapperTest {
     private final CoachWebMapper coachWebMapper = new CoachWebMapper();
 
     @Test
+    void requestToDomain_shouldMapAllFields() {
+        CoachRequest coachRequest = Instancio.create(CoachRequest.class);
+
+        Coach coach = coachWebMapper.requestToDomain(coachRequest);
+
+        assertThat(coach.getName()).isEqualTo(coachRequest.name());
+    }
+
+    @Test
     void domainToResponse_shouldMapAllFields() {
         Coach coach = Instancio.create(Coach.class);
 
@@ -20,15 +29,6 @@ class CoachWebMapperTest {
 
         assertThat(coach.getName()).isEqualTo(coachResponse.name());
         assertThat(coach.getId()).isEqualTo(coachResponse.id());
-    }
-
-    @Test
-    void requestToDomain_shouldMapAllFields() {
-        CoachRequest coachRequest = Instancio.create(CoachRequest.class);
-
-        Coach coach = coachWebMapper.requestToDomain(coachRequest);
-
-        assertThat(coach.getName()).isEqualTo(coachRequest.name());
     }
 
 }
