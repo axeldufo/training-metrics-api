@@ -47,4 +47,14 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
             .orElseThrow(() -> new TrainingSessionNotFoundException(id));
     }
 
+    @Override
+    @Transactional
+    public TrainingSession update(TrainingSession trainingSession) {
+        long id = trainingSession.getId();
+        if (!trainingSessionRepository.existsById(id)) {
+            throw new TrainingSessionNotFoundException(id);
+        }
+        return trainingSessionRepository.save(trainingSession);
+    }
+
 }
