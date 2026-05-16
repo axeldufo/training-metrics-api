@@ -57,4 +57,12 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
         return trainingSessionRepository.save(trainingSession);
     }
 
+    @Override
+    public void deleteById(long id) {
+        if (!trainingSessionRepository.existsById(id)) {
+            throw new TrainingSessionNotFoundException(id);
+        }
+        trainingSessionRepository.deleteById(id);
+    }
+
 }
