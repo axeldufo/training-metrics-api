@@ -1,0 +1,123 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Commands
+
+```bash
+# Start PostgreSQL (required before running the app)
+docker compose up -d
+
+# Run the application
+./mvnw spring-boot:run
+
+# Run all tests
+./mvnw test
+
+# Run a single test class
+./mvnw test -Dtest=ClassName
+
+# Run tests with coverage report
+./mvnw verify
+
+# Build
+./mvnw clean package
+```
+
+## Project Overview
+
+Spring Boot 4.0.6 / Java 21 REST API for tracking endurance training sessions (athletes, coaches, training sessions). PostgreSQL with Flyway migrations.
+
+Layered monolith intentionally designed to evolve toward hexagonal architecture in phase 2. Core principle: **domain classes have zero Spring/JPA dependencies**.
+
+## Architecture
+
+### Layer Overview
+
+```
+controller/     — @RestController, @RestControllerAdvice, WebMapper (DTO ↔ Domain)
+service/        — interfaces + implementations, @Transactional coordination
+repository/     — JPA adapters (implements domain interfaces), PersistenceMapper, Spring Data repos
+domain/         — pure POJOs (Athlete, TrainingSession, Coach), enums, exceptions
+dto/            — request/response objects
+```
+
+### Data Flow
+
+```
+HTTP → Controller → WebMapper (request→domain) → Service → JPA Adapter → PersistenceMapper (domain↔entity) → DB
+```
+
+### Key Patterns
+
+**Repository pattern with dependency inversion:** Domain interfaces (e.g., `AthleteRepository`) live in `domain/` and are implemented by JPA adapters (e.g., `AthleteJpaAdapter`) in `repository/`. Spring Data interfaces are internal implementation details of the adapters.
+
+**Two mapper types:**
+- `WebMapper` in `controller/`: DTO ↔ Domain (`requestToDomain()`, `domainToResponse()`)
+- `PersistenceMapper` in `repository/`: Domain ↔ JPA Entity (`entityToDomain()`, `domainToEntity()`)
+
+**Domain entities:**
+- Pure POJOs with manual constructors enforcing invariants. Immutable with final fields
+- Contain business logic methods (e.g., `getFosterLoad()`, `isAboveTargetZone()`)
+- No Spring or JPA annotations
+- Exceptions in `domain/exception/`
+
+**Exception hierarchy:** `DomainValidationException` for constructor validation -> 400; `AthleteNotFoundException`, `CoachNotFoundException` for not-found cases -> 404. A global `@RestControllerAdvice` maps these to standardized `ApiError` responses.
+
+**API versioning:** All endpoints prefixed with `ApiConstants.API_VERSION` (`/v1`).
+
+**Architecture enforcement:** `ArchitectureTests.java` uses ArchUnit — it is the source of truth for architectural constraints and design rules (e.g., no Spring in domain, correct dependency directions). Update it explicitly if the architecture evolves.
+
+## Development Rules
+
+**TDD is mandatory.** Always Red → Green → Refactor. Write the test first.
+Outside-in: start from controller test, then service, then repository.
+
+**No complete classes unless explicitly blocked.** Guide with questions, validate before moving on.
+
+**No new dependencies** without explicit request. Never modify pom.xml autonomously.
+
+**Mappers are manual** — no MapStruct in phase 1.
+
+**Always ask before deciding.** Whenever there are multiple implementation options or a design decision to make, stop and ask. Never pick silently.
+
+**Always explain the why** of each significant choice in one sentence when proposing code.
+
+**Permissions:** Read any file or directory without asking. Always ask before writing files or running non-read commands.
+
+## Code Conventions
+
+**DTOs:**
+- Request: wrapper types (`Integer`, `Long`) — required for `@NotNull`
+- Response: primitives for always-present fields, wrappers for nullable fields
+- Domain: primitives for non-nullable fields
+
+**Transactional:** `@Transactional(readOnly = true)` at class level, `@Transactional` on write methods.
+
+**Lombok on domain:** `@Getter @RequiredArgsConstructor @EqualsAndHashCode(exclude="id") @ToString`. No `@Builder` unless a concrete case arises.
+
+**Lombok on JPA entities:** `@Getter @Setter @NoArgsConstructor @AllArgsConstructor` only. No `@ToString` (N+1 risk), no `@EqualsAndHashCode`.
+
+## Test Conventions
+
+**Stack:**
+- JUnit 5 + Mockito + AssertJ
+- `@WebMvcTest` for controller layer tests
+- Repository layer: Mockito only in phase 1, Testcontainers in phase 2 with real PostgreSQL; no @DataJpaTest -> H2 is not PostgreSQL
+- Instancio for test data generation
+
+**Integration tests (IT):** explicit manual construction — readable,
+  no FK risk, failures mean real issues. 
+
+**Unit tests (Mockito):** Instancio for data generation
+
+**Instancio:** Always constrain bounded fields:
+- `rpe`: `gen.ints().range(1, 10)`
+- `durationInMin`: `gen.ints().min(1)`
+
+**Structure:**
+- One test = one scenario
+- `@Nested` to separate `BusinessLogic` and `Invariants` in domain tests
+- `@ParameterizedTest + @ValueSource` for multiple invariant cases
+- given/when/then spacing without inline comments
+
