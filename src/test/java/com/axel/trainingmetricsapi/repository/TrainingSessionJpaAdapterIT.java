@@ -92,8 +92,7 @@ class TrainingSessionJpaAdapterIT {
 
         List<TrainingSession> sessions = trainingSessionRepository.findAllByAthleteId(athleteId);
 
-        assertThat(sessions).hasSize(2);
-        assertThat(sessions).allMatch(s -> s.getAthleteId() == athleteId);
+        assertThat(sessions).hasSize(2).allMatch(s -> s.getAthleteId() == athleteId);
     }
 
     @Test

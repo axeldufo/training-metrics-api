@@ -81,8 +81,9 @@ class CoachJpaAdapterIT {
     void deleteById_shouldThrowException_whenAthleteReferencesCoach() {
         Coach saved = coachRepository.save(aCoach());
         athleteRepository.save(new Athlete("Bob", "Jones", LocalDate.of(1990, 1, 1), Sport.CYCLING, saved.getId(), 70.0));
+        long coachId = saved.getId();
 
-        assertThatThrownBy(() -> coachRepository.deleteById(saved.getId()))
+        assertThatThrownBy(() -> coachRepository.deleteById(coachId))
             .isInstanceOf(DataIntegrityViolationException.class);
     }
 
