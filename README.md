@@ -12,6 +12,8 @@ Deliberately architected to evolve from a **layered monolith** (Phase 1) toward 
 — demonstrating how a well-structured monolith can grow incrementally and, if justified, be extracted into 
 microservices without big-bang rewrites.
 
+See [CLAUDE.md](./CLAUDE.md) for detailed design decisions and development conventions.
+
 ## Tech Stack
 
 - **Java 21** — records, modern language features
