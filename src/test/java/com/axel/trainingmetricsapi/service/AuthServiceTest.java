@@ -108,7 +108,4 @@ class AuthServiceTest {
         verify(passwordEncoder).matches(rawPassword, hashedPassword);
     }
 
-    private CoachCredentials aCoachCredentials() {
-        return new CoachCredentials("Alice Martin", "coach@test.com", "password123");
-    }
 }

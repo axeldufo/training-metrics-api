@@ -29,7 +29,7 @@ class AuthJpaAdapterIT {
 
         CoachAuthData saved = authRepository.register(credentials, hashedPassword);
 
-        assertThat(saved.id()).isNotNull().isPositive();
+        assertThat(saved.id()).isPositive();
         assertThat(saved.hashedPassword()).isEqualTo(hashedPassword);
     }
 
