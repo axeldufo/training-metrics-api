@@ -2,6 +2,7 @@ package com.axel.trainingmetricsapi.repository;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -10,8 +11,9 @@ import lombok.Setter;
 @Table(name = "coach")
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@Builder
+@NoArgsConstructor  // for JPA
+@AllArgsConstructor // for Builder
 public class CoachJpaEntity {
 
     @Id
@@ -20,5 +22,11 @@ public class CoachJpaEntity {
 
     @Column(name = "name", nullable = false, length = 100)
     private String name;
+
+    @Column(name = "email", nullable = false, unique = true)
+    private String email;
+
+    @Column(name = "hashed_password", nullable = false)
+    private String hashedPassword;
 
 }

@@ -38,19 +38,6 @@ class CoachServiceTest {
     }
 
     @Test
-    void save_shouldReturnPersistedCoach_whenCoachIsSaved() {
-        Coach coach = Instancio.create(Coach.class);
-        Coach persistedCoach = Instancio.create(Coach.class);
-        when(coachRepository.save(coach)).thenReturn(persistedCoach);
-
-        Coach returnedCoach = coachService.save(coach);
-
-        verify(coachRepository).save(coach);
-        assertThat(returnedCoach).isEqualTo(persistedCoach);
-        assertThat(returnedCoach.getId()).isEqualTo(persistedCoach.getId()); // id is excluded from Coach.isEqualTo()
-    }
-
-    @Test
     void findById_shouldReturnCoach_whenCoachIsFound() {
         long id = 4L;
         Coach coachToFind = Instancio.create(Coach.class);
@@ -75,32 +62,34 @@ class CoachServiceTest {
     }
 
     @Test
-    void update_shouldReturnPersistedCoach_whenCoachIsUpdated() {
-        Coach coach = Instancio.create(Coach.class);
+    void updateName_shouldReturnPersistedCoach_whenCoachIsUpdated() {
+        long id = 4L;
+        String nameToUpdate = "New name";
+        when(coachRepository.existsById(id)).thenReturn(true);
         Coach persistedCoach = Instancio.create(Coach.class);
-        Long coachId = coach.getId();
-        when(coachRepository.existsById(coachId)).thenReturn(true);
-        when(coachRepository.save(coach)).thenReturn(persistedCoach);
+        when(coachRepository.findById(id)).thenReturn(Optional.of(persistedCoach));
 
-        Coach returnedCoach = coachService.update(coach);
+        Coach returnedCoach = coachService.updateName(id, nameToUpdate);
 
-        verify(coachRepository).existsById(coachId);
-        verify(coachRepository).save(coach);
+        verify(coachRepository).existsById(id);
+        verify(coachRepository).updateName(id, nameToUpdate);
+        verify(coachRepository).findById(id);
         assertThat(returnedCoach).isEqualTo(persistedCoach);
         assertThat(returnedCoach.getId()).isEqualTo(persistedCoach.getId()); // id is excluded from Coach.isEqualTo()
     }
 
     @Test
-    void update_shouldThrowException_whenCoachNotFound() {
-        Coach coach = Instancio.create(Coach.class);
-        Long coachId = coach.getId();
-        when(coachRepository.existsById(coachId)).thenReturn(false);
+    void updateName_shouldThrowException_whenCoachNotFound() {
+        long id = 4L;
+        String nameToUpdate = "New name";
+        when(coachRepository.existsById(id)).thenReturn(false);
 
-        assertThatThrownBy(() -> coachService.update(coach))
+        assertThatThrownBy(() -> coachService.updateName(id, nameToUpdate))
             .isInstanceOf(CoachNotFoundException.class);
 
-        verify(coachRepository).existsById(coachId);
-        verify(coachRepository, never()).save(coach);
+        verify(coachRepository).existsById(id);
+        verify(coachRepository, never()).updateName(id, nameToUpdate);
+        verify(coachRepository, never()).findById(id);
     }
 
     @Test

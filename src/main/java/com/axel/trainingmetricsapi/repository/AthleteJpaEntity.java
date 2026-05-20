@@ -10,7 +10,7 @@ import java.time.LocalDate;
 @Table(name = "athlete")
 @Getter
 @Setter
-@NoArgsConstructor
+@NoArgsConstructor  // for JPA
 @AllArgsConstructor
 public class AthleteJpaEntity {
 

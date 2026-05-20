@@ -1,7 +1,7 @@
 package com.axel.trainingmetricsapi.controller;
 
 import com.axel.trainingmetricsapi.domain.Coach;
-import com.axel.trainingmetricsapi.dto.request.CoachRequest;
+import com.axel.trainingmetricsapi.dto.request.CoachUpdateRequest;
 import com.axel.trainingmetricsapi.dto.response.ApiError;
 import com.axel.trainingmetricsapi.dto.response.CoachResponse;
 import com.axel.trainingmetricsapi.service.CoachService;
@@ -14,7 +14,6 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.URI;
 import java.util.List;
 
 @RequestMapping(ApiConstants.API_VERSION + "/coaches")
@@ -49,21 +48,7 @@ public class CoachController {
         return ResponseEntity.ok(coachResponse);
     }
 
-    @PostMapping
-    @Operation(summary = "Create new coach")
-    @ApiResponse(responseCode = "201", description = "Coach created", content = @Content(mediaType =
-        "application/json", schema = @Schema(implementation = CoachResponse.class)))
-    @ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content(mediaType =
-        "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
-    public ResponseEntity<CoachResponse> create(@RequestBody @Valid CoachRequest coachRequest) {
-        Coach coach = coachWebMapper.requestToDomain(coachRequest);
-        Coach persistedCoach = coachService.save(coach);
-        CoachResponse coachResponse = coachWebMapper.domainToResponse(persistedCoach);
-        URI location = URI.create("/coaches/" + persistedCoach.getId());
-        return ResponseEntity.created(location).body(coachResponse);
-    }
-
-    @Operation(summary = "Update coach")
+    @Operation(summary = "Update coach name")
     @ApiResponse(responseCode = "200", description = "Coach found and updated", content = @Content(mediaType =
         "application/json", schema = @Schema(implementation = CoachResponse.class)))
     @ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content(mediaType =
@@ -72,10 +57,8 @@ public class CoachController {
         "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
     @PutMapping("/{id}")
     public ResponseEntity<CoachResponse> updateById(@PathVariable long id,
-                                                      @RequestBody @Valid CoachRequest coachRequest) {
-        Coach coachToUpdate = coachWebMapper.requestToDomain(coachRequest);
-        coachToUpdate.setId(id);
-        Coach persistedCoach = coachService.update(coachToUpdate);
+                                                      @RequestBody @Valid CoachUpdateRequest coachUpdateRequest) {
+        Coach persistedCoach = coachService.updateName(id, coachUpdateRequest.name());
         CoachResponse coachResponse = coachWebMapper.domainToResponse(persistedCoach);
         return ResponseEntity.ok(coachResponse);
     }

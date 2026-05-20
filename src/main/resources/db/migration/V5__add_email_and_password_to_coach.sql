@@ -1,0 +1,3 @@
+ALTER TABLE coach
+    ADD COLUMN email           VARCHAR(255) NOT NULL UNIQUE,
+    ADD COLUMN hashed_password VARCHAR(255) NOT NULL;

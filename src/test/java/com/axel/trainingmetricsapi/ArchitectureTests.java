@@ -1,5 +1,6 @@
 package com.axel.trainingmetricsapi;
 
+import com.axel.trainingmetricsapi.controller.security.JwtUtils;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
@@ -13,9 +14,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import static com.tngtech.archunit.core.domain.properties.CanBeAnnotated.Predicates.annotatedWith;
+import static com.tngtech.archunit.lang.conditions.ArchConditions.beAnnotatedWith;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.*;
 import static com.tngtech.archunit.library.Architectures.layeredArchitecture;
-import static com.tngtech.archunit.library.GeneralCodingRules.BE_ANNOTATED_WITH_AN_INJECTION_ANNOTATION;
 import static com.tngtech.archunit.library.GeneralCodingRules.THROW_GENERIC_EXCEPTIONS;
 import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices;
 
@@ -49,7 +50,7 @@ class ArchitectureTests {
                 .because("Each layer should only depend on its allowed neighbors — " +
                     "enforces separation of concerns and prevents architecture erosion");
 
-            rule.check(allClasses); // test classes as well : tests should isolate and respect productions rules
+            rule.check(productionClasses); // production only : tests import some classes like JwtUtils to manage exceptions
         }
 
         @Test
@@ -69,7 +70,7 @@ class ArchitectureTests {
             ArchRule rule = noClasses()
                 .that().resideInAPackage("..domain..")
                 .should().dependOnClassesThat()
-                .resideInAnyPackage("..repository..", "..mapper..", "..dto..", "..controller..")
+                .resideInAnyPackage("..repository..", "..service..", "..dto..", "..controller..")
                 .because("Domain should be independent of others layers");
 
             rule.check(allClasses); // test classes as well : tests should respect productions rules
@@ -134,7 +135,12 @@ class ArchitectureTests {
         @Test
         void no_field_injection() {
             ArchRule rule = noFields()
-                .should(BE_ANNOTATED_WITH_AN_INJECTION_ANNOTATION)
+                .should(beAnnotatedWith("org.springframework.beans.factory.annotation.Autowired"))
+                .orShould(beAnnotatedWith("com.google.inject.Inject"))
+                .orShould(beAnnotatedWith("javax.inject.Inject"))
+                .orShould(beAnnotatedWith("javax.annotation.Resource"))
+                .orShould(beAnnotatedWith("jakarta.inject.Inject"))
+                .orShould(beAnnotatedWith("jakarta.annotation.Resource"))
                 .because("Use constructor injection instead of field injection");
 
             rule.check(productionClasses); // production only : Autowired annotations used to isolate web layer tests
@@ -151,7 +157,9 @@ class ArchitectureTests {
 
         @Test
         void should_use_java_time() {
-            ArchRule rule = noClasses().should().dependOnClassesThat()
+            ArchRule rule = noClasses()
+                .that().doNotBelongToAnyOf(JwtUtils.class) // JJWT API requires java.util.Date
+                .should().dependOnClassesThat()
                 .belongToAnyOf(java.util.Date.class, java.util.Calendar.class)
                 .because("Use java.time (LocalDate, LocalDateTime) instead of legacy date classes");
 

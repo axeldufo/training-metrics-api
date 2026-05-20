@@ -1,16 +1,13 @@
 package com.axel.trainingmetricsapi.repository;
 
 import com.axel.trainingmetricsapi.PostgresTestContainersConfiguration;
-import com.axel.trainingmetricsapi.domain.Athlete;
-import com.axel.trainingmetricsapi.domain.AthleteRepository;
-import com.axel.trainingmetricsapi.domain.Coach;
-import com.axel.trainingmetricsapi.domain.CoachRepository;
-import com.axel.trainingmetricsapi.domain.Sport;
+import com.axel.trainingmetricsapi.domain.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -26,24 +23,19 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class CoachJpaAdapterIT {
 
     @Autowired
+    private CoachJpaRepository coachJpaRepository;
+
+    @Autowired
     private CoachRepository coachRepository;
 
     @Autowired
     private AthleteRepository athleteRepository;
 
-    @Test
-    void save_shouldPersistCoachWithGeneratedId() {
-        Coach coach = aCoach();
-
-        Coach saved = coachRepository.save(coach);
-
-        assertThat(saved.getId()).isNotNull().isPositive();
-        assertThat(saved.getName()).isEqualTo("Alice Martin");
-    }
+    private final CoachPersistenceMapper coachPersistenceMapper = new CoachPersistenceMapper();
 
     @Test
     void findById_shouldReturnCoachFromDatabase() {
-        Coach saved = coachRepository.save(aCoach());
+        Coach saved = persistACoach();
 
         Optional<Coach> found = coachRepository.findById(saved.getId());
 
@@ -60,8 +52,8 @@ class CoachJpaAdapterIT {
 
     @Test
     void findAll_shouldReturnAllPersistedCoaches() {
-        coachRepository.save(aCoach());
-        coachRepository.save(new Coach("Bob Durand"));
+        persistACoach("Alice Martin", "coach1@test.com");
+        persistACoach("Bob Durand", "coach2@test.com");
 
         List<Coach> coaches = coachRepository.findAll();
 
@@ -70,26 +62,34 @@ class CoachJpaAdapterIT {
 
     @Test
     void deleteById_shouldRemoveCoachFromDatabase() {
-        Coach saved = coachRepository.save(aCoach());
+        Coach saved = persistACoach();
 
         coachRepository.deleteById(saved.getId());
 
         assertThat(coachRepository.findById(saved.getId())).isEmpty();
     }
 
+    // FK constraints are only checked at commit time in PostgreSQL.
+    // NOT_SUPPORTED suspends the class-level transaction so operations commit immediately.
     @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     void deleteById_shouldThrowException_whenAthleteReferencesCoach() {
-        Coach saved = coachRepository.save(aCoach());
-        athleteRepository.save(new Athlete("Bob", "Jones", LocalDate.of(1990, 1, 1), Sport.CYCLING, saved.getId(), 70.0));
+        Coach saved = persistACoach();
         long coachId = saved.getId();
+        Athlete athleteSaved = athleteRepository.save(
+            new Athlete("Bob", "Jones", LocalDate.of(1990, 1, 1), Sport.CYCLING, coachId, 70.0));
 
         assertThatThrownBy(() -> coachRepository.deleteById(coachId))
             .isInstanceOf(DataIntegrityViolationException.class);
+
+        // Manual cleanup — no rollback outside transaction
+        athleteRepository.deleteById(athleteSaved.getId());
+        coachRepository.deleteById(coachId);
     }
 
     @Test
     void existsById_shouldReturnTrue_afterSave() {
-        Coach saved = coachRepository.save(aCoach());
+        Coach saved = persistACoach();
 
         assertThat(coachRepository.existsById(saved.getId())).isTrue();
     }
@@ -99,7 +99,28 @@ class CoachJpaAdapterIT {
         assertThat(coachRepository.existsById(9999L)).isFalse();
     }
 
-    private Coach aCoach() {
-        return new Coach("Alice Martin");
+    @Test
+    void updateName_shouldReturnCoachWithUpdatedField() {
+        Coach saved = persistACoach();
+        String newName = "AM Coaching";
+
+        coachRepository.updateName(saved.getId(), newName);
+
+        Optional<Coach> updated = coachRepository.findById(saved.getId());
+        assertThat(updated).isPresent();
+        assertThat(updated.get().getName()).isEqualTo(newName);
+    }
+
+    private Coach persistACoach(String name, String email) {
+        CoachJpaEntity entity = CoachJpaEntity.builder()
+            .name(name)
+            .email(email)
+            .hashedPassword("hashedPassword")
+            .build();
+        return coachPersistenceMapper.entityToDomain(coachJpaRepository.save(entity));
+    }
+
+    private Coach persistACoach() {
+        return persistACoach("Alice Martin", "coach@test.com");
     }
 }

@@ -20,11 +20,10 @@ import java.util.List;
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AthleteController.class)
-class AthleteControllerTest {
+class AthleteControllerTest extends BaseControllerTest {
 
     static final String URL_PREFIX = ApiConstants.API_VERSION + "/athletes";
 
@@ -68,7 +67,8 @@ class AthleteControllerTest {
 
         ResultActions result = mvc.perform(post(URL_PREFIX).contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(athleteRequest)))
-            .andExpect(status().isCreated());
+            .andExpect(status().isCreated())
+            .andExpect(header().string("Location", URL_PREFIX + "/" + athleteResponse.id()));
 
         assertJsonMatchesAthleteResponse(result, athleteResponse);
         verify(athleteWebMapper).requestToDomain(athleteRequest);
@@ -109,7 +109,8 @@ class AthleteControllerTest {
         when(athleteService.findById(athleteId)).thenThrow(new AthleteNotFoundException(athleteId));
 
         mvc.perform(get(URL_PREFIX + "/" + athleteId))
-            .andExpect(status().isNotFound());
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$[0].code").value("NOT_FOUND"));
 
         verify(athleteService).findById(athleteId);
     }
@@ -142,7 +143,8 @@ class AthleteControllerTest {
 
         mvc.perform(put(URL_PREFIX + "/" + athleteId).contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(Instancio.create(AthleteRequest.class))))
-            .andExpect(status().isNotFound());
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$[0].code").value("NOT_FOUND"));
 
         verify(athleteService).update(any(Athlete.class));
     }
@@ -173,7 +175,8 @@ class AthleteControllerTest {
         doThrow(new AthleteNotFoundException(athleteId)).when(athleteService).deleteById(athleteId);
 
         mvc.perform(delete(URL_PREFIX + "/" + athleteId))
-            .andExpect(status().isNotFound());
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$[0].code").value("NOT_FOUND"));
 
         verify(athleteService).deleteById(athleteId);
     }

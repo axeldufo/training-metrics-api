@@ -14,13 +14,25 @@ class CoachTest {
 
         @Test
         void constructor_shouldThrow_whenNameIsNull() {
-            assertThatThrownBy(() -> new Coach(null))
+            assertThatThrownBy(() -> new Coach(null, "coach@test.com"))
                 .isInstanceOf(DomainValidationException.class);
         }
 
         @Test
         void constructor_shouldThrow_whenNameIsBlank() {
-            assertThatThrownBy(() -> new Coach("   "))
+            assertThatThrownBy(() -> new Coach("   ", "coach@test.com"))
+                .isInstanceOf(DomainValidationException.class);
+        }
+
+        @Test
+        void constructor_shouldThrow_whenEmailIsNull() {
+            assertThatThrownBy(() -> new Coach("Alice Martin", null))
+                .isInstanceOf(DomainValidationException.class);
+        }
+
+        @Test
+        void constructor_shouldThrow_whenEmailIsBlank() {
+            assertThatThrownBy(() -> new Coach("Alice Martin", "   "))
                 .isInstanceOf(DomainValidationException.class);
         }
 

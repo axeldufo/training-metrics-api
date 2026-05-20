@@ -24,6 +24,12 @@ spring:
 server:
   port: 8080
 
+security:
+  jwt:
+    # DEV ONLY — use JWT_SECRET environment variable in production
+    secret: AX4KBDMfvrWxZwNGReaNnt+/zyB9QvO5idwBHFTQ8Yg=
+    expiration: 86400000
+
 springdoc:
   api-docs:
     path: /v3/api-docs

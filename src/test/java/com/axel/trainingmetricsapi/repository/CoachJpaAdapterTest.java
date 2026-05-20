@@ -28,29 +28,6 @@ class CoachJpaAdapterTest {
     private CoachJpaAdapter coachJpaAdapter;
 
     @Test
-    void save_shouldMapAndSaveCoach() {
-        Coach coach = Instancio.create(Coach.class);
-        CoachJpaEntity coachEntity = Instancio.create(CoachJpaEntity.class);
-        long persistedId = 42L;
-        CoachJpaEntity savedCoachEntity = Instancio.create(CoachJpaEntity.class);
-        savedCoachEntity.setId(persistedId);
-        Coach expectedCoach = Instancio.create(Coach.class);
-        expectedCoach.setId(persistedId);
-
-        when(coachPersistenceMapper.domainToEntity(coach)).thenReturn(coachEntity);
-        when(coachJpaRepository.save(coachEntity)).thenReturn(savedCoachEntity);
-        when(coachPersistenceMapper.entityToDomain(savedCoachEntity)).thenReturn(expectedCoach);
-
-        Coach savedCoach = coachJpaAdapter.save(coach);
-
-        verify(coachPersistenceMapper).domainToEntity(coach);
-        verify(coachJpaRepository).save(coachEntity);
-        verify(coachPersistenceMapper).entityToDomain(savedCoachEntity);
-        assertThat(savedCoach.getId()).isEqualTo(persistedId); // id is excluded from Coach.isEqualTo()
-        assertThat(savedCoach).isEqualTo(expectedCoach);
-    }
-
-    @Test
     void findById_shouldReturnMappedCoach() {
         long persistedId = 42L;
         CoachJpaEntity persistedCoachEntity = Instancio.create(CoachJpaEntity.class);
@@ -119,4 +96,15 @@ class CoachJpaAdapterTest {
 
         verify(coachJpaRepository).existsById(coachId);
     }
+
+    @Test
+    void updateName_should() {
+        long id = 4L;
+        String name = "Alice Dupont";
+
+        coachJpaAdapter.updateName(id, name);
+
+        verify(coachJpaRepository).updateName(id, name);
+    }
+
 }
