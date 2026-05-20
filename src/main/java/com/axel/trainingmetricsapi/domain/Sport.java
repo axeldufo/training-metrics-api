@@ -4,5 +4,6 @@ public enum Sport {
     TRAIL_RUNNING,
     ROAD_RUNNING,
     CYCLING,
-    TRIATHLON
+    TRIATHLON,
+    DUATHLON
 }

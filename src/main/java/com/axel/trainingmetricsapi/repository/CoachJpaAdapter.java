@@ -19,13 +19,6 @@ public class CoachJpaAdapter implements CoachRepository {
     }
 
     @Override
-    public Coach save(Coach coach) {
-        CoachJpaEntity entityToPersist = coachPersistenceMapper.domainToEntity(coach);
-        CoachJpaEntity persistedEntity = coachJpaRepository.save(entityToPersist);
-        return coachPersistenceMapper.entityToDomain(persistedEntity);
-    }
-
-    @Override
     public Optional<Coach> findById(long id) {
         return coachJpaRepository.findById(id)
             .map(coachPersistenceMapper::entityToDomain);
@@ -46,5 +39,10 @@ public class CoachJpaAdapter implements CoachRepository {
     @Override
     public boolean existsById(long id) {
         return coachJpaRepository.existsById(id);
+    }
+
+    @Override
+    public void updateName(long id, String name) {
+        coachJpaRepository.updateName(id, name);
     }
 }

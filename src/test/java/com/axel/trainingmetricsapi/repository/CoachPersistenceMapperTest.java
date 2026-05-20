@@ -11,17 +11,6 @@ class CoachPersistenceMapperTest {
     private final CoachPersistenceMapper coachPersistenceMapper = new CoachPersistenceMapper();
 
     @Test
-    void domainToEntity_shouldMapAllFields() {
-        Coach coach = Instancio.create(Coach.class);
-        coach.setId(null); // id null before persistence
-
-        CoachJpaEntity coachEntity = coachPersistenceMapper.domainToEntity(coach);
-
-        assertCoachScalarFieldsMap(coach, coachEntity);
-        assertThat(coachEntity.getId()).isNull();
-    }
-
-    @Test
     void entityToDomain_shouldMapAllFields() {
         CoachJpaEntity coachEntity = Instancio.create(CoachJpaEntity.class);
         coachEntity.setId(42L);
@@ -34,6 +23,7 @@ class CoachPersistenceMapperTest {
 
     private void assertCoachScalarFieldsMap(Coach coach, CoachJpaEntity coachEntity) {
         assertThat(coach.getName()).isEqualTo(coachEntity.getName());
+        assertThat(coach.getEmail()).isEqualTo(coachEntity.getEmail());
         assertThat(coach.getId()).isEqualTo(coachEntity.getId());
     }
 

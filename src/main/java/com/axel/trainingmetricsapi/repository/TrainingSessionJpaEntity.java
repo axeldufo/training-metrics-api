@@ -14,7 +14,7 @@ import java.time.LocalDate;
 @Table(name = "training_session")
 @Getter
 @Setter
-@NoArgsConstructor
+@NoArgsConstructor  // for JPA
 @AllArgsConstructor
 public class TrainingSessionJpaEntity {
 

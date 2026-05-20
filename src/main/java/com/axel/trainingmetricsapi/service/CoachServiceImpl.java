@@ -31,26 +31,21 @@ public class CoachServiceImpl implements CoachService {
 
     @Override
     @Transactional
-    public Coach save(Coach coach) {
-        return coachRepository.save(coach);
-    }
-
-    @Override
-    @Transactional
-    public Coach update(Coach coach) {
-        Long coachId = coach.getId();
-        if (!coachRepository.existsById(coachId)) {
-            throw new CoachNotFoundException(coachId);
-        }
-        return coachRepository.save(coach);
-    }
-
-    @Override
-    @Transactional
     public void deleteById(long coachId) {
         if (!coachRepository.existsById(coachId)) {
             throw new CoachNotFoundException(coachId);
         }
         coachRepository.deleteById(coachId);
+    }
+
+    @Override
+    @Transactional
+    public Coach updateName(long coachId, String name) {
+        if (!coachRepository.existsById(coachId)) {
+            throw new CoachNotFoundException(coachId);
+        }
+        coachRepository.updateName(coachId, name);
+        return coachRepository.findById(coachId)
+            .orElseThrow(() -> new IllegalStateException("Coach not found after update, id: " + coachId));
     }
 }

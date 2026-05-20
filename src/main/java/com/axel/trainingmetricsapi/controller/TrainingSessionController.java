@@ -44,8 +44,8 @@ public class TrainingSessionController {
         TrainingSession persistedTrainingSession = trainingSessionService.save(trainingSession);
         TrainingSessionResponse trainingSessionResponse =
             trainingSessionWebMapper.domainToResponse(persistedTrainingSession);
-        URI location = URI.create("/athletes/" + persistedTrainingSession.getAthleteId()
-            + "/sessions/" + persistedTrainingSession.getId());
+        URI location = URI.create(ApiConstants.API_VERSION + "/athletes/" + trainingSessionResponse.athleteId()
+            + "/sessions/" + trainingSessionResponse.id());
         return ResponseEntity.created(location).body(trainingSessionResponse);
     }
 

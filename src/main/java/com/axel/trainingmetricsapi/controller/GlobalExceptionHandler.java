@@ -1,6 +1,8 @@
 package com.axel.trainingmetricsapi.controller;
 
 import com.axel.trainingmetricsapi.domain.exception.DomainValidationException;
+import com.axel.trainingmetricsapi.domain.exception.EmailAlreadyExistsException;
+import com.axel.trainingmetricsapi.domain.exception.InvalidCredentialsException;
 import com.axel.trainingmetricsapi.domain.exception.ResourceNotFoundException;
 import com.axel.trainingmetricsapi.dto.response.ApiError;
 import com.axel.trainingmetricsapi.dto.response.ErrorCode;
@@ -36,4 +38,17 @@ public class GlobalExceptionHandler {
         ApiError apiError = new ApiError(ErrorCode.DOMAIN_VALIDATION_ERROR, null, exception.getMessage());
         return ResponseEntity.badRequest().body(List.of(apiError));
     }
+
+    @ExceptionHandler(EmailAlreadyExistsException.class)
+    public ResponseEntity<List<ApiError>> handleEmailAlreadyExists(EmailAlreadyExistsException exception) {
+        ApiError apiError = new ApiError(ErrorCode.EMAIL_ALREADY_EXISTS, null, exception.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(List.of(apiError));
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<List<ApiError>> handleInvalidCredentialsException(InvalidCredentialsException exception) {
+        ApiError apiError = new ApiError(ErrorCode.INVALID_CREDENTIALS, null, exception.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(List.of(apiError));
+    }
+
 }

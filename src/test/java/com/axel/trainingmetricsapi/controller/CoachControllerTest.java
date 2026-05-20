@@ -2,7 +2,7 @@ package com.axel.trainingmetricsapi.controller;
 
 import com.axel.trainingmetricsapi.domain.Coach;
 import com.axel.trainingmetricsapi.domain.exception.CoachNotFoundException;
-import com.axel.trainingmetricsapi.dto.request.CoachRequest;
+import com.axel.trainingmetricsapi.dto.request.CoachUpdateRequest;
 import com.axel.trainingmetricsapi.dto.response.CoachResponse;
 import com.axel.trainingmetricsapi.service.CoachService;
 import org.instancio.Instancio;
@@ -25,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(CoachController.class)
-class CoachControllerTest {
+class CoachControllerTest  extends BaseControllerTest{
 
     static final String URL_PREFIX = ApiConstants.API_VERSION + "/coaches";
 
@@ -77,83 +77,50 @@ class CoachControllerTest {
         when(coachService.findById(coachId)).thenThrow(new CoachNotFoundException(coachId));
 
         mvc.perform(get(URL_PREFIX + "/" + coachId))
-            .andExpect(status().isNotFound());
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$[0].code").value("NOT_FOUND"));
 
         verify(coachService).findById(coachId);
     }
 
     @Test
-    void create_shouldReturnCreatedCoach_whenRequestIsValid() throws Exception {
-
-        CoachRequest coachRequest = Instancio.create(CoachRequest.class);
-        Coach coach = Instancio.create(Coach.class);
-        when(coachWebMapper.requestToDomain(coachRequest)).thenReturn(coach);
-        Coach persistedCoach = Instancio.create(Coach.class);
-        when(coachService.save(coach)).thenReturn(persistedCoach);
-        CoachResponse coachResponse = Instancio.create(CoachResponse.class);
-        when(coachWebMapper.domainToResponse(persistedCoach)).thenReturn(coachResponse);
-
-        ResultActions result = mvc.perform(post(URL_PREFIX).contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(coachRequest)))
-            .andExpect(status().isCreated());
-
-        assertJsonMatchesCoachResponse(result, coachResponse);
-        verify(coachWebMapper).requestToDomain(coachRequest);
-        verify(coachService).save(coach);
-        verify(coachWebMapper).domainToResponse(persistedCoach);
-    }
-
-    @Test
-    void create_shouldReturnBadRequest_whenArgumentsNotValid() throws Exception {
-
-        CoachRequest coachRequest = new CoachRequest("   ");
-
-        mvc.perform(post(URL_PREFIX).contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(coachRequest)))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$", hasSize(1)));
-    }
-
-    @Test
     void updateById_shouldReturnUpdatedCoach() throws Exception {
-        CoachRequest coachRequest = Instancio.create(CoachRequest.class);
-        Coach coach = Instancio.create(Coach.class);
-        when(coachWebMapper.requestToDomain(coachRequest)).thenReturn(coach);
+        long coachId = 4L;
+        CoachUpdateRequest coachUpdateRequest = Instancio.create(CoachUpdateRequest.class);
+        String name = coachUpdateRequest.name();
         Coach persistedCoach = Instancio.create(Coach.class);
-        when(coachService.update(coach)).thenReturn(persistedCoach);
+        when(coachService.updateName(coachId, name)).thenReturn(persistedCoach);
         CoachResponse coachResponse = Instancio.create(CoachResponse.class);
         when(coachWebMapper.domainToResponse(persistedCoach)).thenReturn(coachResponse);
 
-        ResultActions result = mvc.perform(put(URL_PREFIX + "/" + 4L).contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(coachRequest)))
+        ResultActions result = mvc.perform(put(URL_PREFIX + "/" + coachId).contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(coachUpdateRequest)))
             .andExpect(status().isOk());
 
         assertJsonMatchesCoachResponse(result, coachResponse);
-        verify(coachWebMapper).requestToDomain(coachRequest);
-        verify(coachService).update(coach);
+        verify(coachService).updateName(coachId, name);
         verify(coachWebMapper).domainToResponse(persistedCoach);
     }
 
     @Test
     void updateById_shouldReturnNotFound_whenCoachNotFoundException() throws Exception {
         long coachId = 4L;
-        Coach coach = Instancio.create(Coach.class);
-        when(coachWebMapper.requestToDomain(any(CoachRequest.class))).thenReturn(coach);
-        when(coachService.update(coach)).thenThrow(new CoachNotFoundException(coachId));
+        when(coachService.updateName(eq(coachId), any())).thenThrow(new CoachNotFoundException(coachId));
 
         mvc.perform(put(URL_PREFIX + "/" + coachId).contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(Instancio.create(CoachRequest.class))))
-            .andExpect(status().isNotFound());
+                .content(objectMapper.writeValueAsString(Instancio.create(CoachUpdateRequest.class))))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$[0].code").value("NOT_FOUND"));
 
-        verify(coachService).update(any(Coach.class));
+        verify(coachService).updateName(eq(coachId), any());
     }
 
     @Test
     void updateById_shouldReturnBadRequest_whenArgumentsNotValid() throws Exception {
-        CoachRequest coachRequest = new CoachRequest("");
+        CoachUpdateRequest coachUpdateRequest = new CoachUpdateRequest("");
 
         mvc.perform(put(URL_PREFIX + "/" + 4L).contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(coachRequest)))
+                .content(objectMapper.writeValueAsString(coachUpdateRequest)))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$", hasSize(1)));
     }
@@ -174,7 +141,8 @@ class CoachControllerTest {
         doThrow(new CoachNotFoundException(coachId)).when(coachService).deleteById(coachId);
 
         mvc.perform(delete(URL_PREFIX + "/" + coachId))
-            .andExpect(status().isNotFound());
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$[0].code").value("NOT_FOUND"));
 
         verify(coachService).deleteById(coachId);
     }

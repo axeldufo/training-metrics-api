@@ -103,17 +103,27 @@ Outside-in: start from controller test, then service, then repository.
 **Stack:**
 - JUnit 5 + Mockito + AssertJ
 - `@WebMvcTest` for controller layer tests
-- Repository layer: Mockito only in phase 1, Testcontainers in phase 2 with real PostgreSQL; no @DataJpaTest -> H2 is not PostgreSQL
-- Instancio for test data generation
+- Repository layer: Mockito & Testcontainers with real PostgreSQL; no @DataJpaTest -> H2 is not PostgreSQL
 
-**Integration tests (IT):** explicit manual construction — readable,
-  no FK risk, failures mean real issues. 
-
-**Unit tests (Mockito):** Instancio for data generation
-
-**Instancio:** Always constrain bounded fields:
+**Instancio:** Use throughout all test layers (unit tests with Mockito). Always constrain bounded or validated fields:
 - `rpe`: `gen.ints().range(1, 10)`
 - `durationInMin`: `gen.ints().min(1)`
+- `RegisterRequest.email` / `LoginRequest.email`: `gen.net().email()`
+- `RegisterRequest.password` / `LoginRequest.password`: `gen.string().minLength(8)`
+
+For request DTOs with multiple validation constraints, extract a private helper:
+```java
+private RegisterRequest aValidRegisterRequest() {
+    return Instancio.of(RegisterRequest.class)
+        .generate(field(RegisterRequest::email), gen -> gen.net().email())
+        .generate(field(RegisterRequest::password), gen -> gen.string().minLength(8))
+        .create();
+}
+```
+This keeps test setup concise and reusable across multiple test methods in the same class.
+
+**Integration tests (IT):** explicit manual construction — readable, no FK risk, failures mean real issues.
+Use a private helper (e.g. `anAthlete()`) when the same object is constructed 3+ times in the same IT class.
 
 **Structure:**
 - One test = one scenario

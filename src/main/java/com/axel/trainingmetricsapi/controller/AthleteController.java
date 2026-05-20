@@ -47,7 +47,7 @@ public class AthleteController {
         Athlete athlete = athleteWebMapper.requestToDomain(athleteRequest);
         Athlete persistedAthlete = athleteService.save(athlete);
         AthleteResponse athleteResponse = athleteWebMapper.domainToResponse(persistedAthlete);
-        URI location = URI.create("/athletes/" + persistedAthlete.getId());
+        URI location = URI.create(ApiConstants.API_VERSION + "/athletes/" + athleteResponse.id());
         return ResponseEntity.created(location).body(athleteResponse);
     }
 
