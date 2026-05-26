@@ -17,7 +17,6 @@ class AthleteTest {
 
         @Test
         void constructor_shouldThrow_whenFirstNameIsNull() {
-
             assertThatThrownBy(() -> new Athlete(null, "Dupont", birthDate, Sport.CYCLING, 2L, 80.0))
                 .isInstanceOf(DomainValidationException.class);
         }
@@ -43,6 +42,12 @@ class AthleteTest {
         @Test
         void constructor_shouldThrow_whenSportIsNull() {
             assertThatThrownBy(() -> new Athlete("Jean", "Dupont", birthDate, null, 2L, 80.0))
+                .isInstanceOf(DomainValidationException.class);
+        }
+
+        @Test
+        void constructor_shouldThrow_whenCoachIsNull() {
+            assertThatThrownBy(() -> new Athlete("Jean", "Dupont", birthDate, Sport.CYCLING, null, 80.0))
                 .isInstanceOf(DomainValidationException.class);
         }
 

@@ -25,12 +25,11 @@ class AthletePersistenceMapperTest {
 
     @Test
     void domainToEntity_shouldHandleNullableFields() {
-        Athlete athlete = new Athlete("Jean", "Dupont", null, Sport.TRIATHLON, null, null);
+        Athlete athlete = new Athlete("Jean", "Dupont", null, Sport.TRIATHLON, 4L, null);
 
         AthleteJpaEntity athleteEntity = athletePersistenceMapper.domainToEntity(athlete);
 
         assertThat(athleteEntity.getBirthDate()).isNull();
-        assertThat(athleteEntity.getCoach()).isNull();
         assertThat(athleteEntity.getWeightInKg()).isNull();
     }
 
@@ -48,12 +47,12 @@ class AthletePersistenceMapperTest {
 
     @Test
     void entityToDomain_shouldHandleNullableFields() {
-        AthleteJpaEntity athleteEntity = new AthleteJpaEntity(2L, "Jean", "Dupont", null, Sport.TRIATHLON, null, null);
+        AthleteJpaEntity athleteEntity = new AthleteJpaEntity(2L, "Jean", "Dupont", null, Sport.TRIATHLON,
+            Instancio.create(CoachJpaEntity.class), null);
 
         Athlete athlete = athletePersistenceMapper.entityToDomain(athleteEntity);
 
         assertThat(athlete.getBirthDate()).isNull();
-        assertThat(athleteEntity.getCoach()).isNull();
         assertThat(athlete.getWeightInKg()).isNull();
     }
 

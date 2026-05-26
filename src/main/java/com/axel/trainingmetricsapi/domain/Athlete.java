@@ -21,6 +21,7 @@ public class Athlete {
         if (firstName == null || firstName.isBlank()) throw new DomainValidationException("Athlete first name is required");
         if (lastName == null || lastName.isBlank()) throw new DomainValidationException("Athlete last name is required");
         if (sport == null) throw new DomainValidationException("Athlete sport is required");
+        if (coachId == null) throw new DomainValidationException("Athlete coach is required");
         this.firstName = firstName;
         this.lastName = lastName;
         this.birthDate = birthDate;

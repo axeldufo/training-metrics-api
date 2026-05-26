@@ -19,13 +19,13 @@ public class AthleteWebMapper {
             athlete.getWeightInKg());
     }
 
-    public Athlete requestToDomain(AthleteRequest athleteRequest) {
+    public Athlete requestToDomain(AthleteRequest athleteRequest, long coachId) {
         return new Athlete(
             athleteRequest.firstName(),
             athleteRequest.lastName(),
             athleteRequest.birthDate(),
             athleteRequest.sport(),
-            athleteRequest.coachId(),
+            coachId,
             athleteRequest.weightInKg());
     }
 

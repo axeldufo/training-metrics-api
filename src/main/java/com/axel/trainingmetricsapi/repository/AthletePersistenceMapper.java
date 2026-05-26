@@ -3,15 +3,13 @@ package com.axel.trainingmetricsapi.repository;
 import com.axel.trainingmetricsapi.domain.Athlete;
 import org.springframework.stereotype.Component;
 
-import java.util.Optional;
-
 @Component
 public class AthletePersistenceMapper {
 
     public AthleteJpaEntity domainToEntity(Athlete athlete) {
-        CoachJpaEntity coach = Optional.ofNullable(athlete.getCoachId()) // Phantom entity
-            .map(id -> CoachJpaEntity.builder().id(id).build())          // Hibernate only needs the id to persist the FK
-            .orElse(null);                                               // Coach may be null if not assigned
+        CoachJpaEntity coach = CoachJpaEntity.builder()
+            .id(athlete.getCoachId())
+            .build(); // Phantom entity — Hibernate only needs the id to persist the FK
         return new AthleteJpaEntity(
             athlete.getId(),
             athlete.getFirstName(),
@@ -23,9 +21,7 @@ public class AthletePersistenceMapper {
     }
 
     public Athlete entityToDomain(AthleteJpaEntity athleteJpaEntity) {
-        Long coachId = Optional.ofNullable(athleteJpaEntity.getCoach())
-            .map(CoachJpaEntity::getId)
-            .orElse(null);  // Coach id may be null if not assigned
+        Long coachId = athleteJpaEntity.getCoach().getId();
         Athlete athlete = new Athlete(
             athleteJpaEntity.getFirstName(),
             athleteJpaEntity.getLastName(),

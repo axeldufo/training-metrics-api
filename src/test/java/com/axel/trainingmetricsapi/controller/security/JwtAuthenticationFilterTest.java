@@ -107,7 +107,7 @@ class JwtAuthenticationFilterTest {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         assertThat(authentication).isNotNull();
-        assertThat(authentication.getPrincipal()).isEqualTo(coachId);
+        assertThat(authentication.getPrincipal()).isEqualTo(new AuthenticatedCoach(coachId));
         assertThat(authentication.getCredentials()).isNull();
         assertThat(authentication.getAuthorities()).isEmpty();
         assertThat(filterChain.getRequest()).isNotNull();

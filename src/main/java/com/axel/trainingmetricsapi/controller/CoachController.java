@@ -1,5 +1,7 @@
 package com.axel.trainingmetricsapi.controller;
 
+import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoach;
+import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoachResolver;
 import com.axel.trainingmetricsapi.domain.Coach;
 import com.axel.trainingmetricsapi.dto.request.CoachUpdateRequest;
 import com.axel.trainingmetricsapi.dto.response.ApiError;
@@ -14,62 +16,59 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
-@RequestMapping(ApiConstants.API_VERSION + "/coaches")
+@RequestMapping(ApiConstants.API_VERSION + "/coaches/me")
 @RestController
 public class CoachController {
 
     private final CoachWebMapper coachWebMapper;
     private final CoachService coachService;
+    private final AuthenticatedCoachResolver authenticatedCoachResolver;
 
-    public CoachController(CoachWebMapper coachWebMapper, CoachService coachService) {
+    public CoachController(CoachWebMapper coachWebMapper, CoachService coachService, AuthenticatedCoachResolver authenticatedCoachResolver) {
         this.coachWebMapper = coachWebMapper;
         this.coachService = coachService;
+        this.authenticatedCoachResolver = authenticatedCoachResolver;
     }
 
-    @GetMapping
-    @Operation(summary = "Retrieve all coaches")
-    @ApiResponse(responseCode = "200", description = "Coaches retrieved", content = @Content(mediaType =
-        "application/json", array = @ArraySchema(schema = @Schema(implementation = CoachResponse.class))))
-    public ResponseEntity<List<CoachResponse>> getAll() {
-        return ResponseEntity.ok(coachService.findAll().stream().map(coachWebMapper::domainToResponse).toList());
-    }
-
-    @Operation(summary = "Retrieve coach")
+    @GetMapping()
+    @Operation(summary = "Retrieve coach information")
     @ApiResponse(responseCode = "200", description = "Coach found and returned", content = @Content(mediaType =
         "application/json", schema = @Schema(implementation = CoachResponse.class)))
+    @ApiResponse(responseCode = "401", description = "Missing or invalid JWT token")
     @ApiResponse(responseCode = "404", description = "Coach not found", content = @Content(mediaType =
         "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
-    @GetMapping("/{id}")
-    public ResponseEntity<CoachResponse> getById(@PathVariable long id){
-        Coach coachFound = coachService.findById(id);
+    public ResponseEntity<CoachResponse> getMe(){
+        AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
+        Coach coachFound = coachService.findById(coach.id());
         CoachResponse coachResponse = coachWebMapper.domainToResponse(coachFound);
         return ResponseEntity.ok(coachResponse);
     }
 
+    @PutMapping()
     @Operation(summary = "Update coach name")
     @ApiResponse(responseCode = "200", description = "Coach found and updated", content = @Content(mediaType =
         "application/json", schema = @Schema(implementation = CoachResponse.class)))
     @ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content(mediaType =
         "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
+    @ApiResponse(responseCode = "401", description = "Missing or invalid JWT token")
     @ApiResponse(responseCode = "404", description = "Coach not found", content = @Content(mediaType =
         "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
-    @PutMapping("/{id}")
-    public ResponseEntity<CoachResponse> updateById(@PathVariable long id,
-                                                      @RequestBody @Valid CoachUpdateRequest coachUpdateRequest) {
-        Coach persistedCoach = coachService.updateName(id, coachUpdateRequest.name());
+    public ResponseEntity<CoachResponse> update(@RequestBody @Valid CoachUpdateRequest coachUpdateRequest) {
+        AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
+        Coach persistedCoach = coachService.updateName(coach.id(), coachUpdateRequest.name());
         CoachResponse coachResponse = coachWebMapper.domainToResponse(persistedCoach);
         return ResponseEntity.ok(coachResponse);
     }
 
+    @DeleteMapping()
     @Operation(summary = "Delete coach")
     @ApiResponse(responseCode = "204", description = "Coach deleted")
+    @ApiResponse(responseCode = "401", description = "Missing or invalid JWT token")
     @ApiResponse(responseCode = "404", description = "Coach not found", content = @Content(mediaType =
         "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteById(@PathVariable long id) {
-        coachService.deleteById(id);
+    public ResponseEntity<Void> delete() {
+        AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
+        coachService.deleteById(coach.id());
         return ResponseEntity.noContent().build();
     }
 
