@@ -16,20 +16,21 @@ class AthleteWebMapperTest {
     @Test
     void requestToDomain_shouldMapAllFields() {
         AthleteRequest athleteRequest = Instancio.create(AthleteRequest.class);
+        long coachId = 4L;
 
-        Athlete athlete = athleteWebMapper.requestToDomain(athleteRequest);
+        Athlete athlete = athleteWebMapper.requestToDomain(athleteRequest, coachId);
 
         assertAthleteDomainMapsAthleteRequest(athlete, athleteRequest);
+        assertThat(athlete.getCoachId()).isEqualTo(coachId);
     }
 
     @Test
     void requestToDomain_shouldMapNullableFields() {
-        AthleteRequest athleteRequest = new AthleteRequest("Jean", "Dupont", null, Sport.TRIATHLON, null, null);
+        AthleteRequest athleteRequest = new AthleteRequest("Jean", "Dupont", null, Sport.TRIATHLON, null);
 
-        Athlete athlete = athleteWebMapper.requestToDomain(athleteRequest);
+        Athlete athlete = athleteWebMapper.requestToDomain(athleteRequest, 4L);
 
         assertThat(athlete.getBirthDate()).isNull();
-        assertThat(athlete.getCoachId()).isNull();
         assertThat(athlete.getWeightInKg()).isNull();
     }
 
@@ -44,13 +45,12 @@ class AthleteWebMapperTest {
 
     @Test
     void domainToResponse_shouldMapNullableFields() {
-        Athlete athlete = new Athlete("Jean", "Dupont", null, Sport.TRIATHLON, null, null);
+        Athlete athlete = new Athlete("Jean", "Dupont", null, Sport.TRIATHLON, 2L, null);
         athlete.setId(4L); // persisted object returned to client
 
         AthleteResponse athleteResponse = athleteWebMapper.domainToResponse(athlete);
 
         assertThat(athleteResponse.birthDate()).isNull();
-        assertThat(athleteResponse.coachId()).isNull();
         assertThat(athleteResponse.weightInKg()).isNull();
     }
 
@@ -59,7 +59,6 @@ class AthleteWebMapperTest {
         assertThat(athlete.getLastName()).isEqualTo(athleteRequest.lastName());
         assertThat(athlete.getBirthDate()).isEqualTo(athleteRequest.birthDate());
         assertThat(athlete.getSport()).isEqualTo(athleteRequest.sport());
-        assertThat(athlete.getCoachId()).isEqualTo(athleteRequest.coachId());
         assertThat(athlete.getWeightInKg()).isEqualTo(athleteRequest.weightInKg());
     }
 

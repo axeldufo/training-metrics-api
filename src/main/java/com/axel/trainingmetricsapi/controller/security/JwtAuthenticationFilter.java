@@ -35,8 +35,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String jwt = authHeader.substring(BEARER_PREFIX.length());
         Long coachId = jwtUtils.extractCoachId(jwt);
         if (coachId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(coachId, null,
-                    Collections.emptyList());
+            UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                new AuthenticatedCoach(coachId),
+                null,
+                Collections.emptyList());
             authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authToken);
         }

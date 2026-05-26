@@ -7,7 +7,7 @@ import java.util.List;
 public interface TrainingSessionService {
     TrainingSession save(TrainingSession trainingSession);
     List<TrainingSession> findAllByAthleteId(long athleteId);
-    TrainingSession findById(long id);
+    TrainingSession findById(long id, long athleteId);
     TrainingSession update(TrainingSession trainingSession);
-    void deleteById(long id);
+    void deleteById(long id, long athleteId);
 }

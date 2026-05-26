@@ -26,6 +26,9 @@ class AthleteJpaAdapterIT {
     @Autowired
     private AthleteRepository athleteRepository;
 
+    @Autowired
+    private CoachJpaRepository coachJpaRepository;
+
     @Test
     void save_shouldPersistAthleteWithGeneratedId() {
         Athlete athlete = anAthlete();
@@ -66,13 +69,24 @@ class AthleteJpaAdapterIT {
     }
 
     @Test
-    void findAll_shouldReturnAllPersistedAthletes() {
-        athleteRepository.save(anAthlete());
-        athleteRepository.save(new Athlete("Bob", "Jones", LocalDate.of(1985, 6, 15), Sport.ROAD_RUNNING, null, 75.0));
+    void findAllByCoachId_shouldReturnOnlyAthletesOfRequestingCoach() {
+        CoachJpaEntity requestingCoach = coachJpaRepository.save(aCoach("Coach Requesting", "coach@test.com"));
+        long requestingCoachId = requestingCoach.getId();
+        athleteRepository.save(new Athlete("Bob", "Jones", LocalDate.of(1985, 6, 15), Sport.ROAD_RUNNING,
+            requestingCoachId, 75.0));
+        athleteRepository.save(new Athlete("Dylan", "Vernon", LocalDate.of(1999, 8, 27), Sport.DUATHLON,
+            requestingCoachId, 69.0));
 
-        List<Athlete> athletes = athleteRepository.findAll();
+        CoachJpaEntity anOtherCoach = coachJpaRepository.save(aCoach("Other Coach", "other@test.com"));
+        athleteRepository.save(new Athlete("John", "Thomas", LocalDate.of(2001, 10, 9), Sport.CYCLING,
+            anOtherCoach.getId(), 72.0));
+
+        List<Athlete> athletes = athleteRepository.findAllByCoachId(requestingCoachId);
 
         assertThat(athletes).hasSize(2);
+        assertThat(athletes)
+            .extracting(Athlete::getFirstName)
+            .containsExactlyInAnyOrder("Bob", "Dylan");
     }
 
     @Test
@@ -97,6 +111,16 @@ class AthleteJpaAdapterIT {
     }
 
     private Athlete anAthlete() {
-        return new Athlete("Alice", "Smith", LocalDate.of(1990, 1, 1), Sport.CYCLING, null, 60.0);
+        CoachJpaEntity requestingCoach = coachJpaRepository.save(
+            aCoach("Coach Requesting", "coach@test.com"));
+        return new Athlete("Alice", "Smith", LocalDate.of(1990, 1, 1), Sport.CYCLING, requestingCoach.getId(), 60.0);
+    }
+
+    private CoachJpaEntity aCoach(String name, String email) {
+        return CoachJpaEntity.builder()
+            .name(name)
+            .email(email)
+            .hashedPassword("hashed")
+            .build();
     }
 }

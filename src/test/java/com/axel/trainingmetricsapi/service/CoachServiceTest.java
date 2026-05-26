@@ -10,7 +10,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,17 +24,6 @@ class CoachServiceTest {
 
     @InjectMocks
     private CoachServiceImpl coachService;
-
-    @Test
-    void findAll_shouldReturnAllCoaches_whenRepositoryReturnsThem() {
-        List<Coach> persistedCoaches = Instancio.ofList(Coach.class).size(3).create();
-        when(coachRepository.findAll()).thenReturn(persistedCoaches);
-
-        List<Coach> returnedCoaches = coachService.findAll();
-
-        verify(coachRepository).findAll();
-        assertThat(returnedCoaches).isEqualTo(persistedCoaches);
-    }
 
     @Test
     void findById_shouldReturnCoach_whenCoachIsFound() {

@@ -6,8 +6,6 @@ import com.axel.trainingmetricsapi.domain.exception.CoachNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 @Service
 @Transactional(readOnly = true)
 public class CoachServiceImpl implements CoachService {
@@ -16,11 +14,6 @@ public class CoachServiceImpl implements CoachService {
 
     public CoachServiceImpl(CoachRepository coachRepository) {
         this.coachRepository = coachRepository;
-    }
-
-    @Override
-    public List<Coach> findAll() {
-        return coachRepository.findAll();
     }
 
     @Override

@@ -42,24 +42,35 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
     }
 
     @Override
-    public TrainingSession findById(long id) {
-        return trainingSessionRepository.findById(id)
+    public TrainingSession findById(long id, long athleteId) {
+        TrainingSession trainingSessionFound = trainingSessionRepository.findById(id)
             .orElseThrow(() -> new TrainingSessionNotFoundException(id));
+        if (trainingSessionFound.getAthleteId() != athleteId) {
+            // Return 404 instead of 403 to avoid revealing that the session belongs to another athlete
+            throw new TrainingSessionNotFoundException(id);
+        }
+        return trainingSessionFound;
     }
 
     @Override
     @Transactional
     public TrainingSession update(TrainingSession trainingSession) {
         long id = trainingSession.getId();
-        if (!trainingSessionRepository.existsById(id)) {
+        TrainingSession existingTrainingSession = trainingSessionRepository.findById(id)
+            .orElseThrow(() -> new TrainingSessionNotFoundException(id));
+        if (existingTrainingSession.getAthleteId() != trainingSession.getAthleteId()) {
+            // Return 404 instead of 403 to avoid revealing that the session belongs to another athlete
             throw new TrainingSessionNotFoundException(id);
         }
         return trainingSessionRepository.save(trainingSession);
     }
 
     @Override
-    public void deleteById(long id) {
-        if (!trainingSessionRepository.existsById(id)) {
+    public void deleteById(long id, long athleteId) {
+        TrainingSession existingTrainingSession = trainingSessionRepository.findById(id)
+            .orElseThrow(() -> new TrainingSessionNotFoundException(id));
+        if (existingTrainingSession.getAthleteId() != athleteId) {
+            // Return 404 instead of 403 to avoid revealing that the session belongs to another athlete
             throw new TrainingSessionNotFoundException(id);
         }
         trainingSessionRepository.deleteById(id);

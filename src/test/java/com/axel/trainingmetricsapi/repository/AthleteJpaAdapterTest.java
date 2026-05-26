@@ -76,16 +76,17 @@ class AthleteJpaAdapterTest {
     }
 
     @Test
-    void findAll_shouldMapAllAthletes() {
+    void findAllByCoachId_shouldMapAllAthletes() {
+        long coachId = 4L;
         int sizePersisted = 5;
         List<AthleteJpaEntity> persistedAthletes =
             Instancio.ofList(AthleteJpaEntity.class).size(sizePersisted).create();
-        when(athleteJpaRepository.findAll()).thenReturn(persistedAthletes);
+        when(athleteJpaRepository.findAllByCoachId(coachId)).thenReturn(persistedAthletes);
         when(athletePersistenceMapper.entityToDomain(any(AthleteJpaEntity.class))).thenReturn(Instancio.create(Athlete.class));
 
-        List<Athlete> athletesFound = athleteJpaAdapter.findAll();
+        List<Athlete> athletesFound = athleteJpaAdapter.findAllByCoachId(coachId);
 
-        verify(athleteJpaRepository).findAll();
+        verify(athleteJpaRepository).findAllByCoachId(coachId);
         verify(athletePersistenceMapper, times(sizePersisted)).entityToDomain(any(AthleteJpaEntity.class));
         assertThat(athletesFound).hasSize(sizePersisted);
     }

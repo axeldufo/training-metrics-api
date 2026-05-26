@@ -19,8 +19,8 @@ public class AthleteServiceImpl implements AthleteService {
     }
 
     @Override
-    public List<Athlete> findAll() {
-        return athleteRepository.findAll();
+    public List<Athlete> findAllByCoachId(long coachId) {
+        return athleteRepository.findAllByCoachId(coachId);
     }
 
     @Override
@@ -30,16 +30,24 @@ public class AthleteServiceImpl implements AthleteService {
     }
 
     @Override
-    public Athlete findById(long athleteId) {
-        return athleteRepository.findById(athleteId)
+    public Athlete findById(long athleteId, long coachId) {
+        Athlete athleteFound = athleteRepository.findById(athleteId)
             .orElseThrow(() -> new AthleteNotFoundException(athleteId));
+        if (!athleteFound.getCoachId().equals(coachId)) {
+            // Return 404 instead of 403 to avoid revealing that the athlete belongs to another coach
+            throw new AthleteNotFoundException(athleteId);
+        }
+        return athleteFound;
     }
 
     @Override
     @Transactional
     public Athlete update(Athlete athlete) {
         long athleteId = athlete.getId();
-        if (!athleteRepository.existsById(athleteId)) {
+        Athlete existingAthlete = athleteRepository.findById(athleteId)
+            .orElseThrow(() -> new AthleteNotFoundException(athleteId));
+        if (!existingAthlete.getCoachId().equals(athlete.getCoachId())) {
+            // Return 404 instead of 403 to avoid revealing that the athlete belongs to another coach
             throw new AthleteNotFoundException(athleteId);
         }
         return athleteRepository.save(athlete);
@@ -47,8 +55,11 @@ public class AthleteServiceImpl implements AthleteService {
 
     @Override
     @Transactional
-    public void deleteById(long athleteId) {
-        if (!athleteRepository.existsById(athleteId)) {
+    public void deleteById(long athleteId, long coachId) {
+        Athlete existingAthlete = athleteRepository.findById(athleteId)
+            .orElseThrow(() -> new AthleteNotFoundException(athleteId));
+        if (!existingAthlete.getCoachId().equals(coachId)) {
+            // Return 404 instead of 403 to avoid revealing that the athlete belongs to another coach
             throw new AthleteNotFoundException(athleteId);
         }
         athleteRepository.deleteById(athleteId);

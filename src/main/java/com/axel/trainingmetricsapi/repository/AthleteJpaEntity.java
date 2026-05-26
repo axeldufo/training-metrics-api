@@ -32,7 +32,7 @@ public class AthleteJpaEntity {
     private Sport sport;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "coach_id")
+    @JoinColumn(name = "coach_id", nullable = false)
     private CoachJpaEntity coach;
 
     @Column(name = "weight_in_kg")

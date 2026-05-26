@@ -32,8 +32,8 @@ public class AthleteJpaAdapter implements AthleteRepository {
     }
 
     @Override
-    public List<Athlete> findAll() {
-        return athleteJpaRepository.findAll().stream()
+    public List<Athlete> findAllByCoachId(long coachId) {
+        return athleteJpaRepository.findAllByCoachId(coachId).stream()
             .map(athletePersistenceMapper::entityToDomain)
             .toList();
     }
