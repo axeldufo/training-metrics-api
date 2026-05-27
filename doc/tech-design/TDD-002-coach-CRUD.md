@@ -35,7 +35,6 @@ Final fields except `id`. Manual constructor with domain invariants on `name` an
 ```java
 public interface CoachRepository {
     Optional<Coach> findById(long id);
-    List<Coach> findAll();
     void deleteById(long id);
     boolean existsById(long id);
     void updateName(long id, String name);
@@ -51,10 +50,9 @@ public interface CoachRepository {
 ### Endpoints
 | Method | URL | Request | Response | Success | Errors |
 |---|---|---|---|---|---|
-| GET | /v1/coaches | — | `List<CoachResponse>` | 200 | — |
-| GET | /v1/coaches/{id} | — | `CoachResponse` | 200 | 404 |
-| PUT | /v1/coaches/{id} | `CoachUpdateRequest` | `CoachResponse` | 200 | 400, 404 |
-| DELETE | /v1/coaches/{id} | — | — | 204 | 404, 409 |
+| GET | /v1/coaches/me | — | CoachResponse | 200 | 401, 404 |
+| PUT | /v1/coaches/me | CoachUpdateRequest | CoachResponse | 200 | 400, 401, 404 |
+| DELETE | /v1/coaches/me | — | — | 204 | 401, 404 |
 
 ### DTOs
 **`CoachUpdateRequest`** (record)
@@ -83,11 +81,13 @@ No new dependencies.
 - `CoachJpaEntity` uses `@Builder` + `@NoArgsConstructor` + `@AllArgsConstructor`
 - Phantom entity pattern: `CoachJpaEntity.builder().id(coachId).build()` — Hibernate only needs the id to persist the FK
 - Domain invariants applied to `Coach`: null/blank check on `name` in constructor — defensive, for future non-HTTP entry points (Kafka, gRPC)
-- `coachId` nullable in `Athlete` domain — an athlete may exist without a coach
 - `updateName` uses `@Modifying(clearAutomatically = true) @Query` JPQL — partial update, avoids overwriting email/hashed_password
 - Coach creation handled exclusively via `POST /v1/auth/register` (see TDD-005)
 - `email` in `Coach` domain — needed for future async notifications (Kafka alerts)
 - `hashed_password` only in `CoachJpaEntity` — never in domain, never in response
+- `GET /coaches/me`, `PUT /coaches/me`, `DELETE /coaches/me` — id comes from JWT token, not path variable; ownership is implicitly guaranteed by the token
+- `findAll()` removed — a coach only manages their own profile
+- `CoachService.findAll()` removed accordingly
 
 ## Out of scope
 - Coach authentication and JWT (TDD-005)

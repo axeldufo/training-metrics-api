@@ -3,9 +3,11 @@ package com.axel.trainingmetricsapi.controller;
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoach;
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoachResolver;
 import com.axel.trainingmetricsapi.domain.Athlete;
+import com.axel.trainingmetricsapi.domain.PageResult;
 import com.axel.trainingmetricsapi.dto.request.AthleteRequest;
 import com.axel.trainingmetricsapi.dto.response.ApiError;
 import com.axel.trainingmetricsapi.dto.response.AthleteResponse;
+import com.axel.trainingmetricsapi.dto.response.PagedResponse;
 import com.axel.trainingmetricsapi.service.AthleteService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -17,7 +19,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
-import java.util.List;
+
+import static com.axel.trainingmetricsapi.controller.ApiConstants.DEFAULT_PAGE;
+import static com.axel.trainingmetricsapi.controller.ApiConstants.DEFAULT_SIZE;
 
 @RequestMapping(ApiConstants.API_VERSION + "/athletes")
 @RestController
@@ -35,15 +39,20 @@ public class AthleteController {
 
     @GetMapping
     @Operation(summary = "Retrieve all athletes of the authenticated coach")
-    @ApiResponse(responseCode = "200", description = "Athletes retrieved for the authenticated coach",
-        content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation =
-            AthleteResponse.class))))
+    @ApiResponse(responseCode = "200", description = "Paginated list of athletes (content, totalElements, page, size)." +
+        "Content contains AthleteResponse objects.", content = @Content(mediaType = "application/json",
+        schema = @Schema(implementation = PagedResponse.class)))
     @ApiResponse(responseCode = "401", description = "Missing or invalid JWT token")
-    public ResponseEntity<List<AthleteResponse>> getAll() {
+    public ResponseEntity<PagedResponse<AthleteResponse>> getAll(@RequestParam(defaultValue = DEFAULT_PAGE) int page,
+                                                                 @RequestParam(defaultValue = DEFAULT_SIZE) int size) {
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
-        return ResponseEntity.ok(athleteService.findAllByCoachId(coach.id()).stream()
-            .map(athleteWebMapper::domainToResponse)
-            .toList());
+        PageResult<Athlete> pageResult = athleteService.findAllByCoachId(coach.id(), page, size);
+
+        return ResponseEntity.ok(new PagedResponse<>(
+            pageResult.content().stream().map(athleteWebMapper::domainToResponse).toList(),
+            pageResult.totalElements(),
+            pageResult.pageNumber(),
+            pageResult.pageSize()));
     }
 
     @PostMapping

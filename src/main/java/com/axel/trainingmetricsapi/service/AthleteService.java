@@ -1,11 +1,10 @@
 package com.axel.trainingmetricsapi.service;
 
 import com.axel.trainingmetricsapi.domain.Athlete;
-
-import java.util.List;
+import com.axel.trainingmetricsapi.domain.PageResult;
 
 public interface AthleteService {
-    List<Athlete> findAllByCoachId(long coachId);
+    PageResult<Athlete> findAllByCoachId(long coachId, int pageNumber, int pageSize);
     Athlete save(Athlete athlete);
     Athlete findById(long athleteId, long coachId);
     Athlete update(Athlete athlete);

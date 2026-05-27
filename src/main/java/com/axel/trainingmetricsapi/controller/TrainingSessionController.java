@@ -2,9 +2,11 @@ package com.axel.trainingmetricsapi.controller;
 
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoach;
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoachResolver;
+import com.axel.trainingmetricsapi.domain.PageResult;
 import com.axel.trainingmetricsapi.domain.TrainingSession;
 import com.axel.trainingmetricsapi.dto.request.TrainingSessionRequest;
 import com.axel.trainingmetricsapi.dto.response.ApiError;
+import com.axel.trainingmetricsapi.dto.response.PagedResponse;
 import com.axel.trainingmetricsapi.dto.response.TrainingSessionResponse;
 import com.axel.trainingmetricsapi.service.AthleteService;
 import com.axel.trainingmetricsapi.service.TrainingSessionService;
@@ -18,7 +20,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
-import java.util.List;
+
+import static com.axel.trainingmetricsapi.controller.ApiConstants.DEFAULT_PAGE;
+import static com.axel.trainingmetricsapi.controller.ApiConstants.DEFAULT_SIZE;
 
 @RequestMapping(path = ApiConstants.API_VERSION + "/athletes/{id}/sessions")
 @RestController
@@ -63,20 +67,25 @@ public class TrainingSessionController {
 
     @GetMapping
     @Operation(summary = "Retrieve all athlete training sessions")
-    @ApiResponse(responseCode = "200", description = "Athlete's training sessions retrieved", content =
-        @Content(mediaType = "application/json", array = @ArraySchema(schema =
-            @Schema(implementation = TrainingSessionResponse.class))))
+    @ApiResponse(responseCode = "200", description = "Paginated list of training sessions (content, totalElements, page, size)." +
+        "Content contains TrainingSessionResponse objects.", content = @Content(mediaType = "application/json",
+        schema = @Schema(implementation = PagedResponse.class)))
     @ApiResponse(responseCode = "401", description = "Missing or invalid JWT token")
     @ApiResponse(responseCode = "404", description = "Athlete not found", content = @Content(mediaType =
         "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
-    public ResponseEntity<List<TrainingSessionResponse>> getAll(@PathVariable("id")  long athleteId) {
+    public ResponseEntity<PagedResponse<TrainingSessionResponse>> getAll(@PathVariable("id")  long athleteId,
+                                                                         @RequestParam(defaultValue = DEFAULT_PAGE) int page,
+                                                                         @RequestParam(defaultValue = DEFAULT_SIZE) int size) {
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
         athleteService.findById(athleteId, coach.id()); // validates Coach→Athlete ownership
 
-        return ResponseEntity.ok(
-            trainingSessionService.findAllByAthleteId(athleteId).stream()
-            .map(trainingSessionWebMapper::domainToResponse)
-            .toList());
+        PageResult<TrainingSession> pageResult = trainingSessionService.findAllByAthleteId(athleteId, page, size);
+
+        return ResponseEntity.ok(new PagedResponse<>(
+            pageResult.content().stream().map(trainingSessionWebMapper::domainToResponse).toList(),
+            pageResult.totalElements(),
+            pageResult.pageNumber(),
+            pageResult.pageSize()));
     }
 
     @GetMapping("/{sessionId}")

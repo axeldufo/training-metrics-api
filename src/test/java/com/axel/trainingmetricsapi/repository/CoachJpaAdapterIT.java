@@ -11,7 +11,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,16 +47,6 @@ class CoachJpaAdapterIT {
         Optional<Coach> found = coachRepository.findById(9999L);
 
         assertThat(found).isEmpty();
-    }
-
-    @Test
-    void findAll_shouldReturnAllPersistedCoaches() {
-        persistACoach("Alice Martin", "coach1@test.com");
-        persistACoach("Bob Durand", "coach2@test.com");
-
-        List<Coach> coaches = coachRepository.findAll();
-
-        assertThat(coaches).hasSize(2);
     }
 
     @Test

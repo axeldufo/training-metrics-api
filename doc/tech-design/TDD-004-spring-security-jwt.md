@@ -134,8 +134,8 @@ consistent with `GlobalExceptionHandler` placement in `controller/`.
 - Calls `extractCoachId(token)` — single parse, validation is implicit
   (JJWT throws on invalid/expired token, caught internally → returns null)
 - If `coachId` non-null and no existing authentication:
-  sets `UsernamePasswordAuthenticationToken(coachId, null, emptyList())`
-  in `SecurityContextHolder` — `coachId` stored as principal for ticket #67
+  sets `UsernamePasswordAuthenticationToken(new AuthenticatedCoach(coachId), null, emptyList())`
+  in `SecurityContextHolder` — `AuthenticatedCoach` stored as principal
 - If header absent, malformed, or token invalid: continues filter chain
   without authentication — `SecurityFilterChain` handles the 401
 
@@ -144,8 +144,7 @@ consistent with `GlobalExceptionHandler` placement in `controller/`.
   browser cannot auto-send custom headers, CSRF attack vector eliminated
 - Session management: `STATELESS` — no server-side session, each request
   is fully autonomous
-- Public: `/auth/**` (version-agnostic, works for v1 and future versions)
-- Authenticated: all other endpoints (`anyRequest().authenticated()`)
+- Public: `"*/auth/**"` — Spring Boot 4 PathPatternParser
 - `JwtAuthenticationFilter` added before `UsernamePasswordAuthenticationFilter`
 
 ### AuthWebMapper
@@ -167,8 +166,17 @@ consistent with `GlobalExceptionHandler` placement in `controller/`.
 - `CoachJpaEntity` — `@Builder` added, `email` and `hashed_password` fields added
 - `BCryptPasswordEncoder` declared as `@Bean` in `SecurityConfig`
 - `AuthWebMapper` depends on `JwtUtils` — constructor injection
-- All `@WebMvcTest` tests extend `BaseControllerTest` — provides `@WithMockUser`
-  and `@MockitoBean JwtUtils` required by `JwtAuthenticationFilter` in test context
+- All `@WebMvcTest` tests extend `SecurityMockControllerSupport` — provides `@MockitoBean JwtUtils`
+  (previously named BaseControllerTest, renamed for clarity)
+- `@WithMockUser` removed from `SecurityMockControllerSupport` — Spring Security not active
+  in `@WebMvcTest` context without explicit SecurityConfig; no 401 raised without it
+- `AuthenticatedCoachResolver` added in `controller/security/` — resolves `AuthenticatedCoach`
+  from `SecurityContextHolder`; exists to work around conflict between
+  `ProxyingHandlerMethodArgumentResolver` (Spring Data) and `AuthenticationPrincipalArgumentResolver`
+  when a custom record is used as principal in `@WebMvcTest` context
+  (see https://github.com/spring-projects/spring-data-commons/issues/2937)
+- `AthleteControllerTest`, `CoachControllerTest`, `TrainingSessionControllerTest` inject
+  `@MockitoBean AuthenticatedCoachResolver` — mocked per test with `when(resolver.resolve()).thenReturn(...)`
 - `AuthControllerTest` does not extend `BaseControllerTest` — auth endpoints
   are public, `@MockitoBean JwtUtils` added directly without `@WithMockUser`
 - ArchUnit rules updated:
@@ -200,9 +208,16 @@ consistent with `GlobalExceptionHandler` placement in `controller/`.
   rejection is handled by `SecurityFilterChain`
 - `JwtUtils` tested with `ReflectionTestUtils` — avoids full Spring context
   startup for `@Value` injection in unit tests
+- `AuthenticatedCoach record(long id)` — custom principal stored in SecurityContextHolder;
+    replaces bare `Long coachId` as principal for type safety
+- `AuthenticatedCoachResolver` — `@Component` in `controller/security/`; decouples controllers
+  from `SecurityContextHolder` for testability; workaround for Spring Data/Security conflict
+  in `@WebMvcTest` — `@AuthenticationPrincipal` not viable with custom record principal
+- `@PreAuthorize` not used — no differentiated roles in phase 2; all coaches have the same rights;
+  ownership enforced via data-level checks, not role-based access control
 
 ## Out of scope
-- `@PreAuthorize` and coachId filtering on endpoints (ticket #67 — next)
+- `@PreAuthorize` — not applicable in phase 2 (no roles); may be introduced in phase 3 with OAuth2
 - Profile update (email/password change) — future ProfileController
 - OAuth2/OIDC (phase 3)
 - E2E tests with JWT (after SecurityFilterChain is complete)

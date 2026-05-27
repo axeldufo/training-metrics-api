@@ -1,6 +1,7 @@
 package com.axel.trainingmetricsapi.service;
 
 import com.axel.trainingmetricsapi.domain.AthleteRepository;
+import com.axel.trainingmetricsapi.domain.PageResult;
 import com.axel.trainingmetricsapi.domain.TrainingSession;
 import com.axel.trainingmetricsapi.domain.TrainingSessionRepository;
 import com.axel.trainingmetricsapi.domain.exception.AthleteNotFoundException;
@@ -64,26 +65,37 @@ class TrainingSessionServiceTest {
     @Test
     void findAllByAthleteId_shouldReturnAllAthleteSessions_whenRepositoryReturnsThem() {
         long athleteId = 4L;
+        int pageNumber = 0;
+        int pageSize = 20;
+        int nbPersistedSessions = 3;
         when(athleteRepository.existsById(athleteId)).thenReturn(true);
-        List<TrainingSession> persistedTrainingSessions = Instancio.ofList(TrainingSession.class).size(3).create();
-        when(trainingSessionRepository.findAllByAthleteId(athleteId)).thenReturn(persistedTrainingSessions);
+        List<TrainingSession> persistedTrainingSessions = Instancio.ofList(TrainingSession.class)
+            .size(nbPersistedSessions).create();
+        when(trainingSessionRepository.findAllByAthleteId(athleteId, pageNumber, pageSize)).thenReturn(
+            new PageResult<>(persistedTrainingSessions, nbPersistedSessions, pageNumber, pageSize));
 
-        List<TrainingSession> returnedTrainingSessions = trainingSessionService.findAllByAthleteId(athleteId);
+        PageResult<TrainingSession> returnedTrainingSessions =
+            trainingSessionService.findAllByAthleteId(athleteId, pageNumber, pageSize);
 
-        verify(trainingSessionRepository).findAllByAthleteId(athleteId);
-        assertThat(returnedTrainingSessions).isEqualTo(persistedTrainingSessions);
+        verify(trainingSessionRepository).findAllByAthleteId(athleteId, pageNumber, pageSize);
+        assertThat(returnedTrainingSessions.content()).isEqualTo(persistedTrainingSessions);
+        assertThat(returnedTrainingSessions.totalElements()).isEqualTo(nbPersistedSessions);
+        assertThat(returnedTrainingSessions.pageNumber()).isEqualTo(pageNumber);
+        assertThat(returnedTrainingSessions.pageSize()).isEqualTo(pageSize);
     }
 
     @Test
     void findAllByAthleteId_shouldThrowException_whenAthleteNotFound() {
         long athleteId = 4L;
+        int pageNumber = 0;
+        int pageSize = 20;
         when(athleteRepository.existsById(athleteId)).thenReturn(false);
 
-        assertThatThrownBy(() -> trainingSessionService.findAllByAthleteId(athleteId))
+        assertThatThrownBy(() -> trainingSessionService.findAllByAthleteId(athleteId, pageNumber, pageSize))
             .isInstanceOf(AthleteNotFoundException.class);
 
         verify(athleteRepository).existsById(athleteId);
-        verify(trainingSessionRepository, never()).findAllByAthleteId(athleteId);
+        verify(trainingSessionRepository, never()).findAllByAthleteId(athleteId, pageNumber, pageSize);
     }
 
     @Test

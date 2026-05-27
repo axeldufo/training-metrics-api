@@ -91,11 +91,17 @@ public interface TrainingSessionRepository {
 No new dependencies.
 
 ## Impact on existing code
-- `TrainingSessionService` injects `AthleteRepository` to verify athlete existence before save/findAll
+- `TrainingSessionService` injects `AthleteRepository` to verify athlete existence (existsById) before save/findAll — transactional consistency within the service layer
+- `TrainingSessionService.findById(long sessionId, long athleteId)` — verifies Session→Athlete ownership; returns 404 instead of 403 to prevent id enumeration
+- `TrainingSessionService.update(TrainingSession)` — findById before save, verifies Session→Athlete ownership
+- `TrainingSessionService.deleteById(long sessionId, long athleteId)` — findById before delete, verifies Session→Athlete ownership
+- `TrainingSessionController` calls `athleteService.findById(athleteId, coachId)` before each operation — validates Coach→Athlete ownership (compromise: orchestration in controller layer, to be refactored in hexagonal phase via Use Cases)
+- `AuthenticatedCoachResolver` injected in `TrainingSessionController`
+- `AthleteService` injected in `TrainingSessionController`
 
 ## Known issues / open tickets
 - `AthleteService.save()` and `update()` do not verify `coachId` existence — 
-  `DataIntegrityViolationException` (500) instead of 404 if coachId unknown (ticket open)
+- `DataIntegrityViolationException` (500) instead of 404 if coachId unknown (ticket open)
 
 ## Decisions
 - `athleteId` passed via `@PathVariable`, not in request body
@@ -109,6 +115,8 @@ No new dependencies.
 - Primitive types in domain (`int rpe`, `int durationInMin`, `long athleteId`) — non-nullable fields
 - Wrapper types in request DTOs (`Integer rpe`) — required for `@NotNull` compatibility
 - Primitive types in response for always-present fields, wrappers for nullable fields
+- Session→Athlete ownership verified in `TrainingSessionService` — 404 instead of 403 to avoid revealing that the session belongs to another athlete
+- Coach→Athlete ownership verified via `athleteService.findById(athleteId, coachId)` in controller — compromise assumed, refactoring planned in hexagonal phase via Use Cases
 
 ## Out of scope
 - Testcontainers integration tests (TDD-004)

@@ -2,11 +2,10 @@ package com.axel.trainingmetricsapi.service;
 
 import com.axel.trainingmetricsapi.domain.Athlete;
 import com.axel.trainingmetricsapi.domain.AthleteRepository;
+import com.axel.trainingmetricsapi.domain.PageResult;
 import com.axel.trainingmetricsapi.domain.exception.AthleteNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @Transactional(readOnly = true)
@@ -19,8 +18,8 @@ public class AthleteServiceImpl implements AthleteService {
     }
 
     @Override
-    public List<Athlete> findAllByCoachId(long coachId) {
-        return athleteRepository.findAllByCoachId(coachId);
+    public PageResult<Athlete> findAllByCoachId(long coachId, int pageNumber, int pageSize) {
+        return athleteRepository.findAllByCoachId(coachId, pageNumber, pageSize);
     }
 
     @Override

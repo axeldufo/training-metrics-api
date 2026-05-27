@@ -4,7 +4,6 @@ import com.axel.trainingmetricsapi.domain.Coach;
 import com.axel.trainingmetricsapi.domain.CoachRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -22,13 +21,6 @@ public class CoachJpaAdapter implements CoachRepository {
     public Optional<Coach> findById(long id) {
         return coachJpaRepository.findById(id)
             .map(coachPersistenceMapper::entityToDomain);
-    }
-
-    @Override
-    public List<Coach> findAll() {
-        return coachJpaRepository.findAll().stream()
-            .map(coachPersistenceMapper::entityToDomain)
-            .toList();
     }
 
     @Override
