@@ -76,7 +76,8 @@ class WeeklyWellnessJpaAdapterIT {
     void save_shouldThrowException_whenDuplicateAthleteAndWeekStartDate() {
         wellnessRepository.save(aWellness(athleteId, WEEK_1));
 
-        assertThatThrownBy(() -> wellnessRepository.save(aWellness(athleteId, WEEK_1)))
+        WeeklyWellness wellness = aWellness(athleteId, WEEK_1);
+        assertThatThrownBy(() -> wellnessRepository.save(wellness))
             .isInstanceOf(DataIntegrityViolationException.class);
     }
 

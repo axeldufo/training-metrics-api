@@ -76,7 +76,7 @@ public class WeeklyWellnessController {
     @ApiResponse(responseCode = "401", description = "Missing or invalid JWT token")
     @ApiResponse(responseCode = "404", description = "Athlete not found", content = @Content(mediaType =
         "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
-    public ResponseEntity<?> getByPeriod(@PathVariable("id") long athleteId,
+    public ResponseEntity<List<?>> getByPeriod(@PathVariable("id") long athleteId,
                                          @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
                                          @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
