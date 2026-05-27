@@ -2,7 +2,6 @@ package com.axel.trainingmetricsapi.controller;
 
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoach;
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoachResolver;
-import com.axel.trainingmetricsapi.domain.PageResult;
 import com.axel.trainingmetricsapi.domain.TrainingSession;
 import com.axel.trainingmetricsapi.domain.exception.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.domain.exception.TrainingSessionNotFoundException;
@@ -20,14 +19,12 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import tools.jackson.databind.ObjectMapper;
 
+import java.time.LocalDate;
 import java.util.List;
 
-import static com.axel.trainingmetricsapi.controller.ApiConstants.DEFAULT_PAGE;
-import static com.axel.trainingmetricsapi.controller.ApiConstants.DEFAULT_SIZE;
 import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
 import static org.instancio.Select.field;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -36,6 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class TrainingSessionControllerTest  extends SecurityMockControllerSupport {
 
     private static final long ATHLETE_ID = 4L;
+    private static final long COACH_ID = 2L;
     private static final String URL_PREFIX = ApiConstants.API_VERSION + "/athletes/" + ATHLETE_ID + "/sessions";
 
     @MockitoBean
@@ -58,8 +56,7 @@ class TrainingSessionControllerTest  extends SecurityMockControllerSupport {
 
     @Test
     void create_shouldReturnCreatedTrainingSession_whenRequestIsValid() throws Exception {
-        long coachId = 2L;
-        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(coachId));
+        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
         TrainingSessionRequest trainingSessionRequest = aValidSessionRequest();
         TrainingSession trainingSession = Instancio.create(TrainingSession.class);
         when(trainingSessionWebMapper.requestToDomain(trainingSessionRequest, ATHLETE_ID)).thenReturn(trainingSession);
@@ -76,7 +73,7 @@ class TrainingSessionControllerTest  extends SecurityMockControllerSupport {
             .andExpect(header().string("Location", URL_PREFIX + "/" + trainingSessionResponse.id()));
 
         assertJsonMatchesTrainingSessionResponse(result, trainingSessionResponse);
-        verify(athleteService).findById(ATHLETE_ID, coachId);
+        verify(athleteService).findById(ATHLETE_ID, COACH_ID);
         verify(trainingSessionWebMapper).requestToDomain(trainingSessionRequest, ATHLETE_ID);
         verify(trainingSessionService).save(trainingSession);
         verify(trainingSessionWebMapper).domainToResponse(persistedTrainingSession);
@@ -94,94 +91,84 @@ class TrainingSessionControllerTest  extends SecurityMockControllerSupport {
 
     @Test
     void create_shouldReturnNotFound_whenAthleteNotFoundException() throws Exception {
-        long coachId = 2L;
-        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(coachId));
-        when(athleteService.findById(ATHLETE_ID, coachId)).thenThrow(new AthleteNotFoundException(ATHLETE_ID));
+        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
+        when(athleteService.findById(ATHLETE_ID, COACH_ID)).thenThrow(new AthleteNotFoundException(ATHLETE_ID));
 
         mvc.perform(post(URL_PREFIX).contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(aValidSessionRequest())))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$[0].code").value("NOT_FOUND"));
 
-        verify(athleteService).findById(ATHLETE_ID, coachId);
+        verify(athleteService).findById(ATHLETE_ID, COACH_ID);
         verify(trainingSessionWebMapper, never()).requestToDomain(any(), anyLong());
         verify(trainingSessionService, never()).save(any());
         verify(trainingSessionWebMapper, never()).domainToResponse(any());
     }
 
     @Test
-    void getAll_withDefaultPagination_shouldReturnListAsJson() throws Exception {
-        long coachId = 2L;
-        int pageNumber = Integer.parseInt(DEFAULT_PAGE);
-        int pageSize = Integer.parseInt(DEFAULT_SIZE);
-        int nbSessionsFound = 3;
-        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(coachId));
-        List<TrainingSession> trainingSessions = Instancio.ofList(TrainingSession.class).size(nbSessionsFound).create();
-        when(trainingSessionService.findAllByAthleteId(ATHLETE_ID, pageNumber, pageSize)).thenReturn(
-            new PageResult<>(trainingSessions, nbSessionsFound, pageNumber, pageSize));
-        when(trainingSessionWebMapper.domainToResponse(any(TrainingSession.class)))
-            .thenReturn(Instancio.create(TrainingSessionResponse.class));
-
-        mvc.perform(get(URL_PREFIX))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.content", hasSize(nbSessionsFound)))
-            .andExpect(jsonPath("$.totalElements", is(nbSessionsFound)))
-            .andExpect(jsonPath("$.page", is(pageNumber)))
-            .andExpect(jsonPath("$.size", is(pageSize)));
-
-        verify(athleteService).findById(ATHLETE_ID, coachId);
-        verify(trainingSessionService).findAllByAthleteId(ATHLETE_ID, pageNumber, pageSize);
-        verify(trainingSessionWebMapper, times(nbSessionsFound)).domainToResponse(any(TrainingSession.class));
-    }
-
-    @Test
-    void getAll_withCustomPagination_shouldReturnListAsJson() throws Exception {
-        long coachId = 2L;
-        int pageNumber = 1;
-        int pageSize = 5;
-        int nbSessionsFound = 3;
-        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(coachId));
-        List<TrainingSession> trainingSessions = Instancio.ofList(TrainingSession.class).size(nbSessionsFound).create();
-        when(trainingSessionService.findAllByAthleteId(ATHLETE_ID, pageNumber, pageSize)).thenReturn(
-            new PageResult<>(trainingSessions, nbSessionsFound, pageNumber, pageSize));
+    void getByPeriod_shouldReturn200WithList_whenRequestIsValid() throws Exception {
+        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
+        LocalDate from = LocalDate.of(2024, 1, 1);
+        LocalDate to = LocalDate.of(2024, 1, 31);
+        int count = 3;
+        List<TrainingSession> trainingSessions = Instancio.ofList(TrainingSession.class).size(count).create();
+        when(trainingSessionService.findByAthleteIdAndPeriod(ATHLETE_ID, from, to)).thenReturn(trainingSessions);
         when(trainingSessionWebMapper.domainToResponse(any(TrainingSession.class)))
             .thenReturn(Instancio.create(TrainingSessionResponse.class));
 
         mvc.perform(get(URL_PREFIX)
-            .param("page", String.valueOf(pageNumber))
-            .param("size", String.valueOf(pageSize)))
+                .param("from", from.toString())
+                .param("to", to.toString()))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.content", hasSize(nbSessionsFound)))
-            .andExpect(jsonPath("$.totalElements", is(nbSessionsFound)))
-            .andExpect(jsonPath("$.page", is(pageNumber)))
-            .andExpect(jsonPath("$.size", is(pageSize)));
+            .andExpect(jsonPath("$", hasSize(count)));
 
-        verify(athleteService).findById(ATHLETE_ID, coachId);
-        verify(trainingSessionService).findAllByAthleteId(ATHLETE_ID, pageNumber, pageSize);
-        verify(trainingSessionWebMapper, times(nbSessionsFound)).domainToResponse(any(TrainingSession.class));
+        verify(athleteService).findById(ATHLETE_ID, COACH_ID);
+        verify(trainingSessionService).findByAthleteIdAndPeriod(ATHLETE_ID, from, to);
+        verify(trainingSessionWebMapper, times(count)).domainToResponse(any(TrainingSession.class));
     }
 
     @Test
-    void getAll_shouldReturnNotFound_whenAthleteNotFoundException() throws Exception {
-        long coachId = 2L;
-        int pageNumber = Integer.parseInt(DEFAULT_PAGE);
-        int pageSize = Integer.parseInt(DEFAULT_SIZE);
-        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(coachId));
-        when(athleteService.findById(ATHLETE_ID, coachId)).thenThrow(new AthleteNotFoundException(ATHLETE_ID));
+    void getByPeriod_shouldReturn400_whenFromIsAfterTo() throws Exception {
+        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
+        LocalDate from = LocalDate.of(2024, 1, 20);
+        LocalDate to = LocalDate.of(2024, 1, 13);
 
+        mvc.perform(get(URL_PREFIX)
+                .param("from", from.toString())
+                .param("to", to.toString()))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$[0].code").value("HTTP_VALIDATION_ERROR"))
+            .andExpect(jsonPath("$[0].field").value("to"));
+
+        verify(trainingSessionService, never()).findByAthleteIdAndPeriod(anyLong(), any(), any());
+    }
+
+    @Test
+    void getByPeriod_shouldReturn400_whenFromIsMissing() throws Exception {
         mvc.perform(get(URL_PREFIX))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$[0].code").value("HTTP_VALIDATION_ERROR"));
+
+        verify(trainingSessionService, never()).findByAthleteIdAndPeriod(anyLong(), any(), any());
+    }
+
+    @Test
+    void getByPeriod_shouldReturn404_whenAthleteNotFound() throws Exception {
+        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
+        when(athleteService.findById(ATHLETE_ID, COACH_ID)).thenThrow(new AthleteNotFoundException(ATHLETE_ID));
+
+        mvc.perform(get(URL_PREFIX)
+                .param("from", "2024-01-01"))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$[0].code").value("NOT_FOUND"));
 
-        verify(athleteService).findById(ATHLETE_ID, coachId);
-        verify(trainingSessionService, never()).findAllByAthleteId(ATHLETE_ID, pageNumber, pageSize);
-        verify(trainingSessionWebMapper, never()).domainToResponse(any());
+        verify(athleteService).findById(ATHLETE_ID, COACH_ID);
+        verify(trainingSessionService, never()).findByAthleteIdAndPeriod(anyLong(), any(), any());
     }
 
     @Test
     void getById_shouldReturnTrainingSessionResponse_whenTrainingSessionExists() throws Exception {
-        long coachId = 2L;
-        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(coachId));
+        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
         long trainingSessionId = 8L;
         TrainingSession persistedTrainingSession = Instancio.create(TrainingSession.class);
         when(trainingSessionService.findById(trainingSessionId, ATHLETE_ID)).thenReturn(persistedTrainingSession);
@@ -192,30 +179,28 @@ class TrainingSessionControllerTest  extends SecurityMockControllerSupport {
             .andExpect(status().isOk());
 
         assertJsonMatchesTrainingSessionResponse(result, trainingSessionResponse);
-        verify(athleteService).findById(ATHLETE_ID, coachId);
+        verify(athleteService).findById(ATHLETE_ID, COACH_ID);
         verify(trainingSessionService).findById(trainingSessionId, ATHLETE_ID);
         verify(trainingSessionWebMapper).domainToResponse(persistedTrainingSession);
     }
 
     @Test
     void getById_shouldReturnNotFound_whenAthleteNotFoundException() throws Exception {
-        long coachId = 2L;
-        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(coachId));
-        when(athleteService.findById(ATHLETE_ID, coachId)).thenThrow(new AthleteNotFoundException(ATHLETE_ID));
+        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
+        when(athleteService.findById(ATHLETE_ID, COACH_ID)).thenThrow(new AthleteNotFoundException(ATHLETE_ID));
         long trainingSessionId = 8L;
 
         mvc.perform(get(URL_PREFIX + "/" + trainingSessionId))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$[0].code").value("NOT_FOUND"));
 
-        verify(athleteService).findById(ATHLETE_ID, coachId);
+        verify(athleteService).findById(ATHLETE_ID, COACH_ID);
         verify(trainingSessionService, never()).findById(trainingSessionId, ATHLETE_ID);
     }
 
     @Test
     void getById_shouldReturnNotFound_whenTrainingSessionNotFoundException() throws Exception {
-        long coachId = 2L;
-        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(coachId));
+        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
         long trainingSessionId = 8L;
         when(trainingSessionService.findById(trainingSessionId, ATHLETE_ID))
             .thenThrow(new TrainingSessionNotFoundException(trainingSessionId));
@@ -224,14 +209,13 @@ class TrainingSessionControllerTest  extends SecurityMockControllerSupport {
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$[0].code").value("NOT_FOUND"));
 
-        verify(athleteService).findById(ATHLETE_ID, coachId);
+        verify(athleteService).findById(ATHLETE_ID, COACH_ID);
         verify(trainingSessionService).findById(trainingSessionId, ATHLETE_ID);
     }
 
     @Test
     void updateById_shouldReturnUpdatedTrainingSession() throws Exception {
-        long coachId = 2L;
-        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(coachId));
+        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
         TrainingSessionRequest trainingSessionRequest = aValidSessionRequest();
         TrainingSession trainingSession = Instancio.create(TrainingSession.class);
         when(trainingSessionWebMapper.requestToDomain(trainingSessionRequest, ATHLETE_ID))
@@ -246,7 +230,7 @@ class TrainingSessionControllerTest  extends SecurityMockControllerSupport {
             .andExpect(status().isOk());
 
         assertJsonMatchesTrainingSessionResponse(result, trainingSessionResponse);
-        verify(athleteService).findById(ATHLETE_ID, coachId);
+        verify(athleteService).findById(ATHLETE_ID, COACH_ID);
         verify(trainingSessionWebMapper).requestToDomain(trainingSessionRequest, ATHLETE_ID);
         verify(trainingSessionService).update(trainingSession);
         verify(trainingSessionWebMapper).domainToResponse(persistedTrainingSession);
@@ -254,23 +238,21 @@ class TrainingSessionControllerTest  extends SecurityMockControllerSupport {
 
     @Test
     void updateById_shouldReturnNotFound_whenAthleteNotFoundException() throws Exception {
-        long coachId = 2L;
-        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(coachId));
-        when(athleteService.findById(ATHLETE_ID, coachId)).thenThrow(new AthleteNotFoundException(ATHLETE_ID));
+        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
+        when(athleteService.findById(ATHLETE_ID, COACH_ID)).thenThrow(new AthleteNotFoundException(ATHLETE_ID));
 
         mvc.perform(put(URL_PREFIX + "/" + 8L).contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(aValidSessionRequest())))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$[0].code").value("NOT_FOUND"));
 
-        verify(athleteService).findById(ATHLETE_ID, coachId);
+        verify(athleteService).findById(ATHLETE_ID, COACH_ID);
         verify(trainingSessionService, never()).update(any(TrainingSession.class));
     }
 
     @Test
     void updateById_shouldReturnNotFound_whenTrainingSessionNotFoundException() throws Exception {
-        long coachId = 2L;
-        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(coachId));
+        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
         long trainingSessionId = 8L;
         TrainingSessionRequest trainingSessionRequest = aValidSessionRequest();
         TrainingSession trainingSession = Instancio.create(TrainingSession.class);
@@ -284,7 +266,7 @@ class TrainingSessionControllerTest  extends SecurityMockControllerSupport {
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$[0].code").value("NOT_FOUND"));
 
-        verify(athleteService).findById(ATHLETE_ID, coachId);
+        verify(athleteService).findById(ATHLETE_ID, COACH_ID);
         verify(trainingSessionService).update(any(TrainingSession.class));
     }
 
@@ -300,36 +282,33 @@ class TrainingSessionControllerTest  extends SecurityMockControllerSupport {
 
     @Test
     void deleteById_shouldReturnOK_whenTrainingSessionIsDeleted() throws Exception {
-        long coachId = 2L;
-        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(coachId));
+        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
         long sessionId = 4L;
 
         mvc.perform(delete(URL_PREFIX + "/" + sessionId))
             .andExpect(status().isNoContent());
 
-        verify(athleteService).findById(ATHLETE_ID, coachId);
+        verify(athleteService).findById(ATHLETE_ID, COACH_ID);
         verify(trainingSessionService).deleteById(sessionId, ATHLETE_ID);
     }
 
     @Test
     void deleteById_shouldReturnNotFound_whenAthleteNotFoundException() throws Exception {
-        long coachId = 2L;
-        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(coachId));
-        when(athleteService.findById(ATHLETE_ID, coachId)).thenThrow(new AthleteNotFoundException(ATHLETE_ID));
+        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
+        when(athleteService.findById(ATHLETE_ID, COACH_ID)).thenThrow(new AthleteNotFoundException(ATHLETE_ID));
         long sessionId = 4L;
 
         mvc.perform(delete(URL_PREFIX + "/" + sessionId))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$[0].code").value("NOT_FOUND"));
 
-        verify(athleteService).findById(ATHLETE_ID, coachId);
+        verify(athleteService).findById(ATHLETE_ID, COACH_ID);
         verify(trainingSessionService, never()).deleteById(sessionId, ATHLETE_ID);
     }
 
     @Test
     void deleteById_shouldReturnNotFound_whenTrainingSessionNotFoundException() throws Exception {
-        long coachId = 2L;
-        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(coachId));
+        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
         long sessionId = 4L;
         doThrow(new TrainingSessionNotFoundException(sessionId)).when(trainingSessionService).deleteById(sessionId, ATHLETE_ID);
 
@@ -337,7 +316,7 @@ class TrainingSessionControllerTest  extends SecurityMockControllerSupport {
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$[0].code").value("NOT_FOUND"));
 
-        verify(athleteService).findById(ATHLETE_ID, coachId);
+        verify(athleteService).findById(ATHLETE_ID, COACH_ID);
         verify(trainingSessionService).deleteById(sessionId, ATHLETE_ID);
     }
 

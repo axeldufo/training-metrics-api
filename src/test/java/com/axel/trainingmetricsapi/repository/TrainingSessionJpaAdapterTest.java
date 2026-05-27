@@ -1,6 +1,5 @@
 package com.axel.trainingmetricsapi.repository;
 
-import com.axel.trainingmetricsapi.domain.PageResult;
 import com.axel.trainingmetricsapi.domain.TrainingSession;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
@@ -8,9 +7,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -82,41 +80,35 @@ class TrainingSessionJpaAdapterTest {
     }
 
     @Test
-    void findAllByAthleteId_shouldMapAllTrainingSessions() {
-        int sizePersisted = 8;
+    void findByAthleteIdAndPeriod_shouldMapAll() {
         long athleteId = 4L;
-        int pageNumber = 0;
-        int pageSize = 20;
-        List<TrainingSessionJpaEntity> persistedTrainingSessions =
-            Instancio.ofList(TrainingSessionJpaEntity.class).size(sizePersisted).create();
-        when(trainingSessionJpaRepository.findAllByAthleteId(athleteId, PageRequest.of(pageNumber, pageSize)))
-            .thenReturn(new PageImpl<>(persistedTrainingSessions));
+        LocalDate from = LocalDate.of(2024, 1, 1);
+        LocalDate to = LocalDate.of(2024, 1, 31);
+        int size = 3;
+        List<TrainingSessionJpaEntity> entities = Instancio.ofList(TrainingSessionJpaEntity.class).size(size).create();
+        when(trainingSessionJpaRepository.findAllByAthleteIdAndDateBetween(athleteId, from, to)).thenReturn(entities);
         when(trainingSessionPersistenceMapper.entityToDomain(any(TrainingSessionJpaEntity.class)))
             .thenReturn(Instancio.create(TrainingSession.class));
 
-        PageResult<TrainingSession> trainingSessionsFound = trainingSessionJpaAdapter
-            .findAllByAthleteId(athleteId, pageNumber, pageSize);
+        List<TrainingSession> result = trainingSessionJpaAdapter.findByAthleteIdAndPeriod(athleteId, from, to);
 
-        verify(trainingSessionJpaRepository).findAllByAthleteId(athleteId, PageRequest.of(pageNumber, pageSize));
-        verify(trainingSessionPersistenceMapper, times(sizePersisted)).entityToDomain(any(TrainingSessionJpaEntity.class));
-        assertThat(trainingSessionsFound.content()).hasSize(sizePersisted);
+        verify(trainingSessionJpaRepository).findAllByAthleteIdAndDateBetween(athleteId, from, to);
+        verify(trainingSessionPersistenceMapper, times(size)).entityToDomain(any(TrainingSessionJpaEntity.class));
+        assertThat(result).hasSize(size);
     }
 
     @Test
-    void findAllByAthleteId_shouldReturnEmptyList_ifNoTrainingSessions() {
+    void findByAthleteIdAndPeriod_shouldReturnEmpty_whenNone() {
         long athleteId = 4L;
-        int pageNumber = 0;
-        int pageSize = 20;
-        List<TrainingSessionJpaEntity> persistedTrainingSessions = List.of();
-        when(trainingSessionJpaRepository.findAllByAthleteId(athleteId, PageRequest.of(pageNumber, pageSize)))
-            .thenReturn(new PageImpl<>(persistedTrainingSessions));
+        LocalDate from = LocalDate.of(2024, 1, 1);
+        LocalDate to = LocalDate.of(2024, 1, 31);
+        when(trainingSessionJpaRepository.findAllByAthleteIdAndDateBetween(athleteId, from, to)).thenReturn(List.of());
 
-        PageResult<TrainingSession> trainingSessionsFound = trainingSessionJpaAdapter
-            .findAllByAthleteId(athleteId, pageNumber, pageSize);
+        List<TrainingSession> result = trainingSessionJpaAdapter.findByAthleteIdAndPeriod(athleteId, from, to);
 
-        verify(trainingSessionJpaRepository).findAllByAthleteId(athleteId, PageRequest.of(pageNumber, pageSize));
+        verify(trainingSessionJpaRepository).findAllByAthleteIdAndDateBetween(athleteId, from, to);
         verify(trainingSessionPersistenceMapper, never()).entityToDomain(any(TrainingSessionJpaEntity.class));
-        assertThat(trainingSessionsFound.content()).isEmpty();
+        assertThat(result).isEmpty();
     }
 
     @Test

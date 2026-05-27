@@ -1,7 +1,6 @@
 package com.axel.trainingmetricsapi.service;
 
 import com.axel.trainingmetricsapi.domain.AthleteRepository;
-import com.axel.trainingmetricsapi.domain.PageResult;
 import com.axel.trainingmetricsapi.domain.TrainingSession;
 import com.axel.trainingmetricsapi.domain.TrainingSessionRepository;
 import com.axel.trainingmetricsapi.domain.exception.AthleteNotFoundException;
@@ -13,6 +12,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,6 +23,9 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class TrainingSessionServiceTest {
+
+    private static final LocalDate FROM = LocalDate.of(2024, 1, 1);
+    private static final LocalDate TO = LocalDate.of(2024, 1, 31);
 
     @Mock
     private TrainingSessionRepository trainingSessionRepository;
@@ -63,39 +66,30 @@ class TrainingSessionServiceTest {
     }
 
     @Test
-    void findAllByAthleteId_shouldReturnAllAthleteSessions_whenRepositoryReturnsThem() {
+    void findByAthleteIdAndPeriod_shouldReturnList_whenAthleteExists() {
         long athleteId = 4L;
-        int pageNumber = 0;
-        int pageSize = 20;
-        int nbPersistedSessions = 3;
+        int count = 3;
+        List<TrainingSession> expected = Instancio.ofList(TrainingSession.class).size(count).create();
         when(athleteRepository.existsById(athleteId)).thenReturn(true);
-        List<TrainingSession> persistedTrainingSessions = Instancio.ofList(TrainingSession.class)
-            .size(nbPersistedSessions).create();
-        when(trainingSessionRepository.findAllByAthleteId(athleteId, pageNumber, pageSize)).thenReturn(
-            new PageResult<>(persistedTrainingSessions, nbPersistedSessions, pageNumber, pageSize));
+        when(trainingSessionRepository.findByAthleteIdAndPeriod(athleteId, FROM, TO)).thenReturn(expected);
 
-        PageResult<TrainingSession> returnedTrainingSessions =
-            trainingSessionService.findAllByAthleteId(athleteId, pageNumber, pageSize);
+        List<TrainingSession> result = trainingSessionService.findByAthleteIdAndPeriod(athleteId, FROM, TO);
 
-        verify(trainingSessionRepository).findAllByAthleteId(athleteId, pageNumber, pageSize);
-        assertThat(returnedTrainingSessions.content()).isEqualTo(persistedTrainingSessions);
-        assertThat(returnedTrainingSessions.totalElements()).isEqualTo(nbPersistedSessions);
-        assertThat(returnedTrainingSessions.pageNumber()).isEqualTo(pageNumber);
-        assertThat(returnedTrainingSessions.pageSize()).isEqualTo(pageSize);
+        verify(athleteRepository).existsById(athleteId);
+        verify(trainingSessionRepository).findByAthleteIdAndPeriod(athleteId, FROM, TO);
+        assertThat(result).isEqualTo(expected);
     }
 
     @Test
-    void findAllByAthleteId_shouldThrowException_whenAthleteNotFound() {
+    void findByAthleteIdAndPeriod_shouldThrowException_whenAthleteNotFound() {
         long athleteId = 4L;
-        int pageNumber = 0;
-        int pageSize = 20;
         when(athleteRepository.existsById(athleteId)).thenReturn(false);
 
-        assertThatThrownBy(() -> trainingSessionService.findAllByAthleteId(athleteId, pageNumber, pageSize))
+        assertThatThrownBy(() -> trainingSessionService.findByAthleteIdAndPeriod(athleteId, FROM, TO))
             .isInstanceOf(AthleteNotFoundException.class);
 
         verify(athleteRepository).existsById(athleteId);
-        verify(trainingSessionRepository, never()).findAllByAthleteId(athleteId, pageNumber, pageSize);
+        verify(trainingSessionRepository, never()).findByAthleteIdAndPeriod(athleteId, FROM, TO);
     }
 
     @Test

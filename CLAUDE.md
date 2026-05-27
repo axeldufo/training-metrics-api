@@ -71,7 +71,7 @@ HTTP → Controller → WebMapper (request→domain) → Service → JPA Adapter
 **Authenticated coach resolution:** Controllers inject `AuthenticatedCoachResolver` (not `@AuthenticationPrincipal`) 
 to resolve the current coach id from the security context.
 
-**Pagination:** `PageResult<T>` (domain/) carries paginated results without framework dependency. `PagedResponse<T>` (dto/response/) is the HTTP envelope.
+**Pagination:** `PageResult<T>` (domain/) and `PagedResponse<T>` (dto/response/) used for athlete list only. Session and WeeklyWellness lists use period filter instead.
 
 **Period filter endpoints:** `from` (required) + `to` (optional, defaults to `LocalDate.now()`). Validate `from <= to` at controller level → 400. Port always receives two `LocalDate` parameters.
 

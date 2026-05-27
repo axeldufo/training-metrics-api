@@ -41,7 +41,7 @@ Calculated on the fly: `rpe × durationInMin` (arbitrary units). Not stored in D
 public interface TrainingSessionRepository {
     TrainingSession save(TrainingSession session);
     Optional<TrainingSession> findById(long id);
-    PageResult<TrainingSession> findAllByAthleteId(long athleteId, int pageNumber, int pageSize);
+    List<TrainingSession> findByAthleteIdAndPeriod(long athleteId, LocalDate from, LocalDate to);    
     void deleteById(long id);
     boolean existsById(long id);
 }
@@ -56,7 +56,7 @@ public interface TrainingSessionRepository {
 ### Endpoints
 | Method | URL | Request | Response | Success | Errors |
 |---|---|---|---|---|---|
-| GET | /v1/athletes/{id}/sessions | — | `PagedResponse<TrainingSessionResponse>` | 200 | 401, 404 |
+| GET | /v1/athletes/{id}/sessions | `from` (required), `to` (optional) | `List<TrainingSessionResponse>` | 200 | 400, 401, 404 |
 | POST | /v1/athletes/{id}/sessions | `TrainingSessionRequest` | `TrainingSessionResponse` | 201 | 400, 404 |
 | GET | /v1/athletes/{id}/sessions/{sessionId} | — | `TrainingSessionResponse` | 200 | 404 |
 | PUT | /v1/athletes/{id}/sessions/{sessionId} | `TrainingSessionRequest` | `TrainingSessionResponse` | 200 | 400, 404 |
@@ -110,7 +110,13 @@ No new dependencies.
 - `target_zone` stored as `VARCHAR(2)` — `CHAR(2)` rejected due to Hibernate/PostgreSQL `bpchar` friction
 - Foster load calculated on the fly — not stored in DB
 - `aboveTargetAlert` and `belowTargetAlert` in response — phase 1 signal, Kafka notifications in phase 2
-- `findAllByAthleteId` via Spring Data derived query — Hibernate navigates `@ManyToOne` relation automatically
+- `GET /v1/athletes/{id}/sessions` uses period filter (`from` required, `to` optional defaults
+  to today) instead of pagination — consistent with WeeklyWellness, use case is time-series
+  analysis and WeeklyReport aggregation
+- `from <= to` validated at web layer only — consistent with WeeklyWellness
+- `TrainingSessionJpaRepository` derived method: `findAllByAthleteIdAndDateBetween(long athleteId, LocalDate from, 
+LocalDate to)` — note: field is `date`, not `weekStartDate`
+- `MissingServletRequestParameterException` handled in `GlobalExceptionHandler` — already in place
 - `TrainingSessionJpaEntity` uses `@ManyToOne(fetch = FetchType.LAZY)` on `athlete`
 - Phantom entity in `TrainingSessionPersistenceMapper.domainToEntity()`: `new AthleteJpaEntity()` with id only
 - Primitive types in domain (`int rpe`, `int durationInMin`, `long athleteId`) — non-nullable fields
