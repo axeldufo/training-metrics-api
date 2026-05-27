@@ -99,7 +99,7 @@ class TrainingSessionJpaAdapterIT {
         PageResult<TrainingSession> sessions = trainingSessionRepository.findAllByAthleteId(athleteId, 0, 20);
 
         assertThat(sessions.content()).isEmpty();
-        assertThat(sessions.totalElements()).isEqualTo(0);
+        assertThat(sessions.totalElements()).isZero();
     }
 
     @Test
@@ -115,7 +115,7 @@ class TrainingSessionJpaAdapterIT {
 
         assertThat(firstPage.totalElements()).isEqualTo(nbSessionsCreated);
         assertThat(firstPage.content()).hasSize(pageSize);
-        assertThat(firstPage.pageNumber()).isEqualTo(0);
+        assertThat(firstPage.pageNumber()).isZero();
 
         assertThat(secondPage.totalElements()).isEqualTo(nbSessionsCreated);
         assertThat(secondPage.content()).hasSize(nbSessionsCreated-pageSize);

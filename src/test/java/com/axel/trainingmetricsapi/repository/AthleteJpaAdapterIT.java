@@ -85,7 +85,7 @@ class AthleteJpaAdapterIT {
         assertThat(athletePage.content())
             .extracting(Athlete::getFirstName)
             .containsExactlyInAnyOrder("Bob", "Dylan");
-        assertThat(athletePage.pageNumber()).isEqualTo(0);
+        assertThat(athletePage.pageNumber()).isZero();
     }
 
     @Test
@@ -103,7 +103,7 @@ class AthleteJpaAdapterIT {
 
         assertThat(firstPage.totalElements()).isEqualTo(nbAthletesCreated);
         assertThat(firstPage.content()).hasSize(pageSize);
-        assertThat(firstPage.pageNumber()).isEqualTo(0);
+        assertThat(firstPage.pageNumber()).isZero();
 
         assertThat(secondPage.totalElements()).isEqualTo(nbAthletesCreated);
         assertThat(secondPage.content()).hasSize(nbAthletesCreated-pageSize);

@@ -28,10 +28,11 @@ See [CLAUDE.md](./CLAUDE.md) for detailed design decisions and development conve
 
 ## Testing Stack
 
-- **JUnit 6 + Mockito** — unit and web layer testing
+- **JUnit 5 + Mockito** — unit and web layer testing
 - **AssertJ** — fluent assertions
 - **Instancio** — random test data generation
 - **ArchUnit** — architecture testing and design decision documentation
+- **Testcontainers** — integration tests with real PostgreSQL container
 
 ## Prerequisites
 
@@ -80,10 +81,10 @@ These tests serve as living documentation — if a rule changes, the test must b
 
 ```
 src/main/java/com/axel/trainingmetricsapi/
-├── controller/     # REST endpoints, mapper, and exception handlers
+├── controller/     # REST endpoints, mappers, exception handlers and security
 ├── service/        # Business logic
-├── repository/     # Data access (JPA adapters and Spring Data interfaces) and mapper
-├── domain/         # Domain entities, enum, and business exceptions
+├── repository/     # Data access (JPA adapters and Spring Data interfaces) and mappers
+├── domain/         # Domain entities, enums, business exceptions and PageResult<T>
 ├── dto/            # Request / Response objects
 │   ├── request/
 │   └── response/
@@ -92,16 +93,23 @@ src/main/java/com/axel/trainingmetricsapi/
 
 ## Roadmap
 
-**Phase 1 — Foundation (current)**
+**Phase 1 — Foundation (complete)**
 - [x] Project setup (Docker, CI, SonarCloud, OpenAPI)
-- [x] Athlete CRUD API
+- [x] Athlete CRUD API with pagination
+- [x] Coach CRUD API
+- [x] TrainingSession CRUD API with pagination
 - [x] Architecture testing (ArchUnit)
-- [ ] Training session API
+- [x] Integration tests (Testcontainers + PostgreSQL)
 
-**Phase 2 — Business logic**
-- [ ] Training load calculation
-- [ ] Overtraining detection
-- [ ] Domain extraction (hexagonal principles)
-- [ ] Integration tests with Testcontainers
-- [ ] Deployment (Railway / Render)
+**Phase 2 — Business logic (in progress)**
+- [x] Spring Security / JWT authentication
+- [x] Multi-coach ownership filtering
+- [ ] WeeklyWellness domain and CRUD
+- [ ] WeeklyReport with Foster load, ACWR and overload alerts
+- [ ] Domain extraction toward hexagonal architecture
+- [ ] CQRS pattern on WeeklyReport
+- [ ] Redis cache on WeeklyReport
+- [ ] Kafka for asynchronous overload alerts
+- [ ] Observability (SLF4J MDC, Actuator, Micrometer)
+
 
