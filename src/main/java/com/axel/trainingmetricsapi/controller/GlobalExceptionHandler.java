@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -18,15 +19,6 @@ import java.util.List;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<List<ApiError>> handleHttpValidationErrors(MethodArgumentNotValidException exception) {
-        List<FieldError> fieldErrors = exception.getBindingResult().getFieldErrors();
-        List<ApiError> apiErrors = fieldErrors.stream()
-            .map(fieldError -> new ApiError(ErrorCode.HTTP_VALIDATION_ERROR, fieldError.getField(), fieldError.getDefaultMessage()))
-            .toList();
-        return ResponseEntity.badRequest().body(apiErrors);
-    }
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<List<ApiError>> handleAthleteNotFound(ResourceNotFoundException exception) {
@@ -56,6 +48,23 @@ public class GlobalExceptionHandler {
     public ResponseEntity<List<ApiError>> handleWeeklyWellnessAlreadyExists(WeeklyWellnessAlreadyExistsException exception) {
         ApiError apiError = new ApiError(ErrorCode.WELLNESS_ALREADY_EXISTS, null, exception.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(List.of(apiError));
+    }
+
+    // Web infrastructure exception — handled here for consistent ApiError format across all 400 responses
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<List<ApiError>> handleHttpValidationErrors(MethodArgumentNotValidException exception) {
+        List<FieldError> fieldErrors = exception.getBindingResult().getFieldErrors();
+        List<ApiError> apiErrors = fieldErrors.stream()
+            .map(fieldError -> new ApiError(ErrorCode.HTTP_VALIDATION_ERROR, fieldError.getField(), fieldError.getDefaultMessage()))
+            .toList();
+        return ResponseEntity.badRequest().body(apiErrors);
+    }
+
+    // Web infrastructure exception — handled here for consistent ApiError format across all 400 responses
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<List<ApiError>> handleMissingParams(MissingServletRequestParameterException e) {
+        ApiError error = new ApiError(ErrorCode.HTTP_VALIDATION_ERROR, e.getParameterName(), e.getMessage());
+        return ResponseEntity.badRequest().body(List.of(error));
     }
 
 }

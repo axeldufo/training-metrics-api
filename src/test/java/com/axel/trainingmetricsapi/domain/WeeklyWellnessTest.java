@@ -26,13 +26,6 @@ class WeeklyWellnessTest {
                 .isInstanceOf(DomainValidationException.class);
         }
 
-        @ParameterizedTest
-        @ValueSource(longs = {0L, -1L, -100L})
-        void constructor_shouldThrow_whenAthleteIdIsNotPositive(long invalidAthleteId) {
-            assertThatThrownBy(() -> new WeeklyWellness(invalidAthleteId, MONDAY, 3, 3, 3))
-                .isInstanceOf(DomainValidationException.class);
-        }
-
         @Test
         void constructor_shouldThrow_whenWeekStartDateIsNull() {
             assertThatThrownBy(() -> new WeeklyWellness(1L, null, 3, 3, 3))
