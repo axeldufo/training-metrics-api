@@ -1,9 +1,10 @@
 package com.axel.trainingmetricsapi.repository;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDate;
+import java.util.List;
+
 public interface TrainingSessionJpaRepository extends JpaRepository<TrainingSessionJpaEntity, Long> {
-    Page<TrainingSessionJpaEntity> findAllByAthleteId(long athleteId, Pageable pageRequest);
+    List<TrainingSessionJpaEntity> findAllByAthleteIdAndDateBetween(long athleteId, LocalDate from, LocalDate to);
 }

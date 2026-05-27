@@ -1,12 +1,10 @@
 package com.axel.trainingmetricsapi.repository;
 
-import com.axel.trainingmetricsapi.domain.PageResult;
 import com.axel.trainingmetricsapi.domain.TrainingSession;
 import com.axel.trainingmetricsapi.domain.TrainingSessionRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,19 +34,11 @@ public class TrainingSessionJpaAdapter implements TrainingSessionRepository {
     }
 
     @Override
-    public PageResult<TrainingSession> findAllByAthleteId(long athleteId, int pageNumber, int pageSize) {
-        Page<TrainingSessionJpaEntity> trainingSessionPage = trainingSessionRepository
-            .findAllByAthleteId(athleteId, PageRequest.of(pageNumber, pageSize));
-
-        List<TrainingSession> trainingSessions = trainingSessionPage.stream()
+    public List<TrainingSession> findByAthleteIdAndPeriod(long athleteId, LocalDate from, LocalDate to) {
+        return trainingSessionRepository.findAllByAthleteIdAndDateBetween(athleteId, from, to)
+            .stream()
             .map(trainingSessionPersistenceMapper::entityToDomain)
             .toList();
-
-        return new PageResult<>(
-            trainingSessions,
-            trainingSessionPage.getTotalElements(),
-            trainingSessionPage.getNumber(),
-            trainingSessionPage.getSize());
     }
 
     @Override

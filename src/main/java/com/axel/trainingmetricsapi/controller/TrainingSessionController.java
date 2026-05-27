@@ -2,27 +2,27 @@ package com.axel.trainingmetricsapi.controller;
 
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoach;
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoachResolver;
-import com.axel.trainingmetricsapi.domain.PageResult;
 import com.axel.trainingmetricsapi.domain.TrainingSession;
 import com.axel.trainingmetricsapi.dto.request.TrainingSessionRequest;
 import com.axel.trainingmetricsapi.dto.response.ApiError;
-import com.axel.trainingmetricsapi.dto.response.PagedResponse;
+import com.axel.trainingmetricsapi.dto.response.ErrorCode;
 import com.axel.trainingmetricsapi.dto.response.TrainingSessionResponse;
 import com.axel.trainingmetricsapi.service.AthleteService;
 import com.axel.trainingmetricsapi.service.TrainingSessionService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
-
-import static com.axel.trainingmetricsapi.controller.ApiConstants.DEFAULT_PAGE;
-import static com.axel.trainingmetricsapi.controller.ApiConstants.DEFAULT_SIZE;
+import java.time.LocalDate;
+import java.util.List;
 
 @RequestMapping(path = ApiConstants.API_VERSION + "/athletes/{id}/sessions")
 @RestController
@@ -66,26 +66,35 @@ public class TrainingSessionController {
     }
 
     @GetMapping
-    @Operation(summary = "Retrieve all athlete training sessions")
-    @ApiResponse(responseCode = "200", description = "Paginated list of training sessions (content, totalElements, page, size)." +
-        "Content contains TrainingSessionResponse objects.", content = @Content(mediaType = "application/json",
-        schema = @Schema(implementation = PagedResponse.class)))
+    @Operation(summary = "Retrieve training sessions for a period")
+    @ApiResponse(responseCode = "200", description = "List of training sessions in the period", content = @Content(mediaType =
+        "application/json", array = @ArraySchema(schema = @Schema(implementation = TrainingSessionResponse.class))))
+    @ApiResponse(responseCode = "400", description = "Invalid period parameters", content = @Content(mediaType =
+        "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
     @ApiResponse(responseCode = "401", description = "Missing or invalid JWT token")
     @ApiResponse(responseCode = "404", description = "Athlete not found", content = @Content(mediaType =
         "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
-    public ResponseEntity<PagedResponse<TrainingSessionResponse>> getAll(@PathVariable("id")  long athleteId,
-                                                                         @RequestParam(defaultValue = DEFAULT_PAGE) int page,
-                                                                         @RequestParam(defaultValue = DEFAULT_SIZE) int size) {
+    public ResponseEntity<List<?>> getByPeriod(
+        @PathVariable("id") long athleteId,
+        @Parameter(description = "Start date (inclusive), format YYYY-MM-DD", required = true)
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+        @Parameter(description = "End date (inclusive), format YYYY-MM-DD, defaults to today")
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
         athleteService.findById(athleteId, coach.id()); // validates Coach→Athlete ownership
 
-        PageResult<TrainingSession> pageResult = trainingSessionService.findAllByAthleteId(athleteId, page, size);
+        LocalDate effectiveTo = to != null ? to : LocalDate.now();
+        if (from.isAfter(effectiveTo)) {
+            return ResponseEntity.badRequest().body(
+                List.of(new ApiError(ErrorCode.HTTP_VALIDATION_ERROR, "to", "to must be after or equal to from")));
+        }
 
-        return ResponseEntity.ok(new PagedResponse<>(
-            pageResult.content().stream().map(trainingSessionWebMapper::domainToResponse).toList(),
-            pageResult.totalElements(),
-            pageResult.pageNumber(),
-            pageResult.pageSize()));
+        List<TrainingSession> sessions = trainingSessionService.findByAthleteIdAndPeriod(athleteId, from, effectiveTo);
+        List<TrainingSessionResponse> responses = sessions.stream()
+            .map(trainingSessionWebMapper::domainToResponse)
+            .toList();
+        return ResponseEntity.ok(responses);
     }
 
     @GetMapping("/{sessionId}")

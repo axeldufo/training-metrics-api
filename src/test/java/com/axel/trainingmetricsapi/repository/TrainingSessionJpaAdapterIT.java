@@ -11,6 +11,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -82,44 +83,30 @@ class TrainingSessionJpaAdapterIT {
     }
 
     @Test
-    void findAllByAthleteId_shouldReturnOnlySessionsForGivenAthlete() {
-        Athlete otherAthlete = athleteRepository.save(
-            new Athlete("Bob", "Jones", LocalDate.of(1985, 6, 15), Sport.ROAD_RUNNING, coachId, 75.0));
-        trainingSessionRepository.save(aSession(athleteId));
-        trainingSessionRepository.save(aSession(athleteId));
-        trainingSessionRepository.save(aSession(otherAthlete.getId()));
+    void findByAthleteIdAndPeriod_shouldReturnOnlySessionsWithinRange() {
+        trainingSessionRepository.save(aSessionOn(athleteId, LocalDate.of(2024, 1, 1)));  // before range
+        trainingSessionRepository.save(aSessionOn(athleteId, LocalDate.of(2024, 1, 15))); // in range
+        trainingSessionRepository.save(aSessionOn(athleteId, LocalDate.of(2024, 1, 31))); // in range (inclusive)
+        trainingSessionRepository.save(aSessionOn(athleteId, LocalDate.of(2024, 2, 15))); // after range
 
-        PageResult<TrainingSession> sessions = trainingSessionRepository.findAllByAthleteId(athleteId, 0, 20);
+        LocalDate from = LocalDate.of(2024, 1, 8);
+        LocalDate to = LocalDate.of(2024, 1, 31);
 
-        assertThat(sessions.content()).hasSize(2).allMatch(s -> s.getAthleteId() == athleteId);
+        List<TrainingSession> result = trainingSessionRepository.findByAthleteIdAndPeriod(athleteId, from, to);
+
+        assertThat(result).hasSize(2);
+        assertThat(result).extracting(TrainingSession::getDate)
+            .containsExactlyInAnyOrder(LocalDate.of(2024, 1, 15), LocalDate.of(2024, 1, 31));
     }
 
     @Test
-    void findAllByAthleteId_shouldReturnEmpty_whenAthleteHasNoSessions() {
-        PageResult<TrainingSession> sessions = trainingSessionRepository.findAllByAthleteId(athleteId, 0, 20);
+    void findByAthleteIdAndPeriod_shouldReturnEmpty_whenNoneInRange() {
+        trainingSessionRepository.save(aSession(athleteId)); // date: 2024-03-01 (outside range)
 
-        assertThat(sessions.content()).isEmpty();
-        assertThat(sessions.totalElements()).isZero();
-    }
+        List<TrainingSession> result = trainingSessionRepository.findByAthleteIdAndPeriod(
+            athleteId, LocalDate.of(2024, 1, 1), LocalDate.of(2024, 2, 28));
 
-    @Test
-    void findAllByAthleteId_shouldPaginateAthleteSessions() {
-        int nbSessionsCreated = 6;
-        for (int i = 0; i < nbSessionsCreated; i++) {
-            trainingSessionRepository.save(aSession(athleteId));
-        }
-        int pageSize = 4;
-
-        PageResult<TrainingSession> firstPage = trainingSessionRepository.findAllByAthleteId(athleteId, 0, pageSize);
-        PageResult<TrainingSession> secondPage = trainingSessionRepository.findAllByAthleteId(athleteId, 1, pageSize);
-
-        assertThat(firstPage.totalElements()).isEqualTo(nbSessionsCreated);
-        assertThat(firstPage.content()).hasSize(pageSize);
-        assertThat(firstPage.pageNumber()).isZero();
-
-        assertThat(secondPage.totalElements()).isEqualTo(nbSessionsCreated);
-        assertThat(secondPage.content()).hasSize(nbSessionsCreated-pageSize);
-        assertThat(secondPage.pageNumber()).isEqualTo(1);
+        assertThat(result).isEmpty();
     }
 
     @Test
@@ -162,12 +149,10 @@ class TrainingSessionJpaAdapterIT {
     }
 
     private TrainingSession aSession(long forAthleteId) {
-        return new TrainingSession(
-            LocalDate.of(2024, 3, 1),
-            Sport.CYCLING,
-            5,
-            60,
-            TargetZone.Z2,
-            forAthleteId);
+        return aSessionOn(forAthleteId, LocalDate.of(2024, 3, 1));
+    }
+
+    private TrainingSession aSessionOn(long forAthleteId, LocalDate date) {
+        return new TrainingSession(date, Sport.CYCLING, 5, 60, TargetZone.Z2, forAthleteId);
     }
 }
