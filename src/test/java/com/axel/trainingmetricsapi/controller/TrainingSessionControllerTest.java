@@ -11,6 +11,7 @@ import com.axel.trainingmetricsapi.service.AthleteService;
 import com.axel.trainingmetricsapi.service.TrainingSessionService;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
@@ -22,6 +23,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.instancio.Select.field;
 import static org.mockito.ArgumentMatchers.*;
@@ -141,6 +143,22 @@ class TrainingSessionControllerTest  extends SecurityMockControllerSupport {
             .andExpect(jsonPath("$[0].field").value("to"));
 
         verify(trainingSessionService, never()).findByAthleteIdAndPeriod(anyLong(), any(), any());
+    }
+
+    @Test
+    void getByPeriod_shouldUseToday_whenToIsAbsent() throws Exception {
+        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
+        LocalDate from = LocalDate.of(2024, 1, 1);
+        when(trainingSessionService.findByAthleteIdAndPeriod(eq(ATHLETE_ID), eq(from), any(LocalDate.class)))
+            .thenReturn(List.of());
+
+        mvc.perform(get(URL_PREFIX)
+                .param("from", from.toString()))
+            .andExpect(status().isOk());
+
+        ArgumentCaptor<LocalDate> toCaptor = ArgumentCaptor.forClass(LocalDate.class);
+        verify(trainingSessionService).findByAthleteIdAndPeriod(eq(ATHLETE_ID), eq(from), toCaptor.capture());
+        assertThat(toCaptor.getValue()).isEqualTo(LocalDate.now());
     }
 
     @Test
