@@ -4,6 +4,7 @@ import com.axel.trainingmetricsapi.domain.exception.DomainValidationException;
 import com.axel.trainingmetricsapi.domain.exception.EmailAlreadyExistsException;
 import com.axel.trainingmetricsapi.domain.exception.InvalidCredentialsException;
 import com.axel.trainingmetricsapi.domain.exception.ResourceNotFoundException;
+import com.axel.trainingmetricsapi.domain.exception.WeeklyWellnessAlreadyExistsException;
 import com.axel.trainingmetricsapi.dto.response.ApiError;
 import com.axel.trainingmetricsapi.dto.response.ErrorCode;
 import org.springframework.http.HttpStatus;
@@ -49,6 +50,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<List<ApiError>> handleInvalidCredentialsException(InvalidCredentialsException exception) {
         ApiError apiError = new ApiError(ErrorCode.INVALID_CREDENTIALS, null, exception.getMessage());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(List.of(apiError));
+    }
+
+    @ExceptionHandler(WeeklyWellnessAlreadyExistsException.class)
+    public ResponseEntity<List<ApiError>> handleWeeklyWellnessAlreadyExists(WeeklyWellnessAlreadyExistsException exception) {
+        ApiError apiError = new ApiError(ErrorCode.WELLNESS_ALREADY_EXISTS, null, exception.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(List.of(apiError));
     }
 
 }

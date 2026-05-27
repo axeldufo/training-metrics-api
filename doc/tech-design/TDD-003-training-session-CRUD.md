@@ -41,7 +41,7 @@ Calculated on the fly: `rpe × durationInMin` (arbitrary units). Not stored in D
 public interface TrainingSessionRepository {
     TrainingSession save(TrainingSession session);
     Optional<TrainingSession> findById(long id);
-    List<TrainingSession> findAllByAthleteId(long athleteId);
+    PageResult<TrainingSession> findAllByAthleteId(long athleteId, int pageNumber, int pageSize);
     void deleteById(long id);
     boolean existsById(long id);
 }
@@ -49,13 +49,14 @@ public interface TrainingSessionRepository {
 
 ### Exceptions (domain/exception/)
 - `TrainingSessionNotFoundException(long id)` → 404
+- `DomainValidationException(String message)` → 400
 
 ## API Contract
 
 ### Endpoints
 | Method | URL | Request | Response | Success | Errors |
 |---|---|---|---|---|---|
-| GET | /v1/athletes/{id}/sessions | — | `List<TrainingSessionResponse>` | 200 | 404 |
+| GET | /v1/athletes/{id}/sessions | — | `PagedResponse<TrainingSessionResponse>` | 200 | 401, 404 |
 | POST | /v1/athletes/{id}/sessions | `TrainingSessionRequest` | `TrainingSessionResponse` | 201 | 400, 404 |
 | GET | /v1/athletes/{id}/sessions/{sessionId} | — | `TrainingSessionResponse` | 200 | 404 |
 | PUT | /v1/athletes/{id}/sessions/{sessionId} | `TrainingSessionRequest` | `TrainingSessionResponse` | 200 | 400, 404 |
@@ -119,7 +120,5 @@ No new dependencies.
 - Coach→Athlete ownership verified via `athleteService.findById(athleteId, coachId)` in controller — compromise assumed, refactoring planned in hexagonal phase via Use Cases
 
 ## Out of scope
-- Testcontainers integration tests (TDD-004)
 - WeeklyReport / ACWR calculation (phase 2)
 - Kafka overload alerts (phase 2)
-- Pagination on session list (phase 3)

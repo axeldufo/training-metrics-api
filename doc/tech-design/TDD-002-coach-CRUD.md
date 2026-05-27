@@ -43,6 +43,7 @@ public interface CoachRepository {
 
 ### Exceptions (domain/exception/)
 - `CoachNotFoundException(long id)` → 404
+- `DomainValidationException(String message)` → 400
 - `CoachHasAthletesException(long id)` → 409 (deletion blocked by FK)
 
 ## API Contract
@@ -90,6 +91,5 @@ No new dependencies.
 - `CoachService.findAll()` removed accordingly
 
 ## Out of scope
-- Coach authentication and JWT (TDD-005)
+- Coach authentication and JWT (TDD-004)
 - Profile update (email/password change) — future ProfileController
-- Pagination

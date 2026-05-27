@@ -68,22 +68,32 @@ HTTP → Controller → WebMapper (request→domain) → Service → JPA Adapter
 
 **Architecture enforcement:** `ArchitectureTests.java` uses ArchUnit — it is the source of truth for architectural constraints and design rules (e.g., no Spring in domain, correct dependency directions). Update it explicitly if the architecture evolves.
 
+**Authenticated coach resolution:** Controllers inject `AuthenticatedCoachResolver` (not `@AuthenticationPrincipal`) 
+to resolve the current coach id from the security context.
+
+**Pagination:** `PageResult<T>` (domain/) carries paginated results without framework dependency. `PagedResponse<T>` (dto/response/) is the HTTP envelope.
+
+**Period filter endpoints:** `from` (required) + `to` (optional, defaults to `LocalDate.now()`). Validate `from <= to` at controller level → 400. Port always receives two `LocalDate` parameters.
+
 ## Development Rules
 
 **TDD is mandatory.** Always Red → Green → Refactor. Write the test first.
 Outside-in: start from controller test, then service, then repository.
 
-**No complete classes unless explicitly blocked.** Guide with questions, validate before moving on.
-
 **No new dependencies** without explicit request. Never modify pom.xml autonomously.
 
 **Mappers are manual** — no MapStruct in phase 1.
 
-**Always ask before deciding.** Whenever there are multiple implementation options or a design decision to make, stop and ask. Never pick silently.
-
 **Always explain the why** of each significant choice in one sentence when proposing code.
 
 **Permissions:** Read any file or directory without asking. Always ask before writing files or running non-read commands.
+
+**When used interactively (guided mode):** No complete classes unless explicitly blocked.
+Guide with questions, validate before moving on. Always ask before deciding.
+
+**When used autonomously (Claude Code):** Follow the TDD spec exactly.
+If a decision is not covered by CLAUDE.md or the TDD, make the most conservative choice
+and document it in a comment.
 
 ## Code Conventions
 
@@ -94,7 +104,7 @@ Outside-in: start from controller test, then service, then repository.
 
 **Transactional:** `@Transactional(readOnly = true)` at class level, `@Transactional` on write methods.
 
-**Lombok on domain:** `@Getter @RequiredArgsConstructor @EqualsAndHashCode(exclude="id") @ToString`. No `@Builder` unless a concrete case arises.
+**Lombok on domain:** `@Getter @EqualsAndHashCode(exclude="id") @ToString`. Manual constructor mandatory — enforces domain invariants. No `@RequiredArgsConstructor`.
 
 **Lombok on JPA entities:** `@Getter @Setter @NoArgsConstructor @AllArgsConstructor` only. No `@ToString` (N+1 risk), no `@EqualsAndHashCode`.
 
@@ -110,6 +120,8 @@ Outside-in: start from controller test, then service, then repository.
 - `durationInMin`: `gen.ints().min(1)`
 - `RegisterRequest.email` / `LoginRequest.email`: `gen.net().email()`
 - `RegisterRequest.password` / `LoginRequest.password`: `gen.string().minLength(8)`
+- `perceivedDifficulty`, `perceivedFatigue`, `motivation`: `gen.ints().range(1, 5)`
+- `weekStartDate`: must be a Monday — use `LocalDate.now().with(DayOfWeek.MONDAY)`
 
 For request DTOs with multiple validation constraints, extract a private helper:
 ```java
@@ -121,6 +133,10 @@ private RegisterRequest aValidRegisterRequest() {
 }
 ```
 This keeps test setup concise and reusable across multiple test methods in the same class.
+
+**Controller tests:** All `@WebMvcTest` test classes must extend `SecurityMockControllerSupport`.
+Inject `@MockitoBean AuthenticatedCoachResolver` and mock per test with
+`when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(coachId))`.
 
 **Integration tests (IT):** explicit manual construction — readable, no FK risk, failures mean real issues.
 Use a private helper (e.g. `anAthlete()`) when the same object is constructed 3+ times in the same IT class.
