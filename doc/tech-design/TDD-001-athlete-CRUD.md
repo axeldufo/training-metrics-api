@@ -19,6 +19,7 @@ and the repository port/adapter pattern. All subsequent domains follow this blue
 | last_name | VARCHAR(100) | NOT NULL |
 | birth_date | DATE | nullable |
 | sport | VARCHAR(255) | NOT NULL |
+| coach_id | BIGINT | NOT NULL, FK → coach(id) |
 | weight_in_kg | DOUBLE PRECISION | nullable |
 
 ### Domain Entity
@@ -35,7 +36,7 @@ Final fields except `id`. Manual constructor with domain invariants (no `@Requir
 public interface AthleteRepository {
     Athlete save(Athlete athlete);
     Optional<Athlete> findById(long id);
-    List<Athlete> findAll();
+    List<Athlete> findAllByCoachId(long coachId);
     void deleteById(long id);
     boolean existsById(long id);
 }
@@ -48,13 +49,13 @@ public interface AthleteRepository {
 ## API Contract
 
 ### Endpoints
-| Method | URL | Request | Response | Success | Errors |
-|---|---|---|---|---|---|
-| GET | /v1/athletes | — | `List<AthleteResponse>` | 200 | — |
-| POST | /v1/athletes | `AthleteRequest` | `AthleteResponse` | 201 | 400 |
-| GET | /v1/athletes/{id} | — | `AthleteResponse` | 200 | 404 |
-| PUT | /v1/athletes/{id} | `AthleteRequest` | `AthleteResponse` | 200 | 400, 404 |
-| DELETE | /v1/athletes/{id} | — | — | 204 | 404 |
+| Method | URL | Request | Response | Success | Errors        |
+|---|---|---|---|---|---------------|
+| GET | /v1/athletes | — | `List<AthleteResponse>` | 200 | 401           |
+| POST | /v1/athletes | `AthleteRequest` | `AthleteResponse` | 201 | 400, 401      |
+| GET | /v1/athletes/{id} | — | `AthleteResponse` | 200 | 401, 404      |
+| PUT | /v1/athletes/{id} | `AthleteRequest` | `AthleteResponse` | 200 | 400, 401, 404 |
+| DELETE | /v1/athletes/{id} | — | — | 204 | 401, 404      |
 
 ### DTOs
 **`AthleteRequest`** (record)
@@ -104,6 +105,12 @@ None — first domain.
 - Domain POJOs: no Spring/JPA annotations, no framework dependencies
 - Manual constructor with domain invariants — no `@RequiredArgsConstructor` — defensive, for future non-HTTP entry points (Kafka, gRPC)
 - DTOs as Java records
+- `coachId` NOT NULL in athlete table — an athlete is always linked to a coach via the API
+- `coachId` removed from `AthleteRequest` — injected from JWT token via `AuthenticatedCoachResolver`
+- `findAll()` replaced by `findAllByCoachId(long coachId)` — a coach only sees their own athletes
+- `findById(long athleteId, long coachId)` — verifies Coach→Athlete ownership; returns 404 instead of 403 to prevent id enumeration
+- `update(Athlete)` — verifies Coach→Athlete ownership via `athlete.coachId` before save
+- `deleteById(long athleteId, long coachId)` — verifies ownership before delete
 - `@Transactional(readOnly = true)` at class level, `@Transactional` on write methods
 - `ResponseEntity` on all endpoints for explicit HTTP code control
 - `GlobalExceptionHandler` in `controller/` — maps domain exceptions to `ApiError`
@@ -119,6 +126,5 @@ None — first domain.
 
 ## Out of scope
 - Coach relationship (added in TDD-002)
-- Testcontainers (added in TDD-004)
-- Spring Security (TDD-005)
+- Spring Security (added in TDD-004)
 - Pagination

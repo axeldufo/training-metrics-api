@@ -1,5 +1,6 @@
 package com.axel.trainingmetricsapi.repository;
 
+import com.axel.trainingmetricsapi.domain.PageResult;
 import com.axel.trainingmetricsapi.domain.TrainingSession;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
@@ -7,6 +8,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
 import java.util.Optional;
@@ -14,7 +17,6 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class TrainingSessionJpaAdapterTest {
@@ -83,30 +85,38 @@ class TrainingSessionJpaAdapterTest {
     void findAllByAthleteId_shouldMapAllTrainingSessions() {
         int sizePersisted = 8;
         long athleteId = 4L;
+        int pageNumber = 0;
+        int pageSize = 20;
         List<TrainingSessionJpaEntity> persistedTrainingSessions =
             Instancio.ofList(TrainingSessionJpaEntity.class).size(sizePersisted).create();
-        when(trainingSessionJpaRepository.findAllByAthleteId(athleteId)).thenReturn(persistedTrainingSessions);
+        when(trainingSessionJpaRepository.findAllByAthleteId(athleteId, PageRequest.of(pageNumber, pageSize)))
+            .thenReturn(new PageImpl<>(persistedTrainingSessions));
         when(trainingSessionPersistenceMapper.entityToDomain(any(TrainingSessionJpaEntity.class)))
             .thenReturn(Instancio.create(TrainingSession.class));
 
-        List<TrainingSession> trainingSessionsFound = trainingSessionJpaAdapter.findAllByAthleteId(athleteId);
+        PageResult<TrainingSession> trainingSessionsFound = trainingSessionJpaAdapter
+            .findAllByAthleteId(athleteId, pageNumber, pageSize);
 
-        verify(trainingSessionJpaRepository).findAllByAthleteId(athleteId);
+        verify(trainingSessionJpaRepository).findAllByAthleteId(athleteId, PageRequest.of(pageNumber, pageSize));
         verify(trainingSessionPersistenceMapper, times(sizePersisted)).entityToDomain(any(TrainingSessionJpaEntity.class));
-        assertThat(trainingSessionsFound).hasSize(sizePersisted);
+        assertThat(trainingSessionsFound.content()).hasSize(sizePersisted);
     }
 
     @Test
     void findAllByAthleteId_shouldReturnEmptyList_ifNoTrainingSessions() {
         long athleteId = 4L;
+        int pageNumber = 0;
+        int pageSize = 20;
         List<TrainingSessionJpaEntity> persistedTrainingSessions = List.of();
-        when(trainingSessionJpaRepository.findAllByAthleteId(athleteId)).thenReturn(persistedTrainingSessions);
+        when(trainingSessionJpaRepository.findAllByAthleteId(athleteId, PageRequest.of(pageNumber, pageSize)))
+            .thenReturn(new PageImpl<>(persistedTrainingSessions));
 
-        List<TrainingSession> trainingSessionsFound = trainingSessionJpaAdapter.findAllByAthleteId(athleteId);
+        PageResult<TrainingSession> trainingSessionsFound = trainingSessionJpaAdapter
+            .findAllByAthleteId(athleteId, pageNumber, pageSize);
 
-        verify(trainingSessionJpaRepository).findAllByAthleteId(athleteId);
+        verify(trainingSessionJpaRepository).findAllByAthleteId(athleteId, PageRequest.of(pageNumber, pageSize));
         verify(trainingSessionPersistenceMapper, never()).entityToDomain(any(TrainingSessionJpaEntity.class));
-        assertThat(trainingSessionsFound).isEmpty();
+        assertThat(trainingSessionsFound.content()).isEmpty();
     }
 
     @Test

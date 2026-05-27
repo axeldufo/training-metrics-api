@@ -2,6 +2,9 @@ package com.axel.trainingmetricsapi.repository;
 
 import com.axel.trainingmetricsapi.domain.Athlete;
 import com.axel.trainingmetricsapi.domain.AthleteRepository;
+import com.axel.trainingmetricsapi.domain.PageResult;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -32,10 +35,19 @@ public class AthleteJpaAdapter implements AthleteRepository {
     }
 
     @Override
-    public List<Athlete> findAllByCoachId(long coachId) {
-        return athleteJpaRepository.findAllByCoachId(coachId).stream()
+    public PageResult<Athlete> findAllByCoachId(long coachId, int pageNumber, int pageSize) {
+        Page<AthleteJpaEntity> athletePage = athleteJpaRepository
+            .findAllByCoachId(coachId, PageRequest.of(pageNumber, pageSize));
+
+        List<Athlete> athletes = athletePage.stream()
             .map(athletePersistenceMapper::entityToDomain)
             .toList();
+
+        return new PageResult<>(
+            athletes,
+            athletePage.getTotalElements(),
+            athletePage.getNumber(),
+            athletePage.getSize());
     }
 
     @Override

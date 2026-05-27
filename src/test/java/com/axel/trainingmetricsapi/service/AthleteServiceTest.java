@@ -2,6 +2,7 @@ package com.axel.trainingmetricsapi.service;
 
 import com.axel.trainingmetricsapi.domain.Athlete;
 import com.axel.trainingmetricsapi.domain.AthleteRepository;
+import com.axel.trainingmetricsapi.domain.PageResult;
 import com.axel.trainingmetricsapi.domain.exception.AthleteNotFoundException;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
@@ -30,13 +31,20 @@ class AthleteServiceTest {
     @Test
     void findAllByCoachId_shouldReturnAllAthletes_whenRepositoryReturnsThem() {
         long coachId = 4L;
-        List<Athlete> persistedAthletes = Instancio.ofList(Athlete.class).size(3).create();
-        when(athleteRepository.findAllByCoachId(coachId)).thenReturn(persistedAthletes);
+        int pageNumber = 0;
+        int pageSize = 20;
+        int nbPersistedAthletes = 3;
+        List<Athlete> persistedAthletes = Instancio.ofList(Athlete.class).size(nbPersistedAthletes).create();
+        when(athleteRepository.findAllByCoachId(coachId, pageNumber, pageSize)).thenReturn(
+            new PageResult<>(persistedAthletes, nbPersistedAthletes, pageNumber, pageSize));
 
-        List<Athlete> returnedAthletes = athleteService.findAllByCoachId(coachId);
+        PageResult<Athlete> returnedAthletes = athleteService.findAllByCoachId(coachId, pageNumber, pageSize);
 
-        verify(athleteRepository).findAllByCoachId(coachId);
-        assertThat(returnedAthletes).isEqualTo(persistedAthletes);
+        verify(athleteRepository).findAllByCoachId(coachId, pageNumber, pageSize);
+        assertThat(returnedAthletes.content()).isEqualTo(persistedAthletes);
+        assertThat(returnedAthletes.totalElements()).isEqualTo(nbPersistedAthletes);
+        assertThat(returnedAthletes.pageNumber()).isEqualTo(pageNumber);
+        assertThat(returnedAthletes.pageSize()).isEqualTo(pageSize);
     }
 
     @Test

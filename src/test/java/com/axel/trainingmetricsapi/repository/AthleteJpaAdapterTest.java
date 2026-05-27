@@ -1,12 +1,15 @@
 package com.axel.trainingmetricsapi.repository;
 
 import com.axel.trainingmetricsapi.domain.Athlete;
+import com.axel.trainingmetricsapi.domain.PageResult;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
 import java.util.Optional;
@@ -79,16 +82,20 @@ class AthleteJpaAdapterTest {
     void findAllByCoachId_shouldMapAllAthletes() {
         long coachId = 4L;
         int sizePersisted = 5;
+        int pageNumber = 0;
+        int pageSize = 20;
         List<AthleteJpaEntity> persistedAthletes =
             Instancio.ofList(AthleteJpaEntity.class).size(sizePersisted).create();
-        when(athleteJpaRepository.findAllByCoachId(coachId)).thenReturn(persistedAthletes);
-        when(athletePersistenceMapper.entityToDomain(any(AthleteJpaEntity.class))).thenReturn(Instancio.create(Athlete.class));
+        when(athleteJpaRepository.findAllByCoachId(coachId, PageRequest.of(pageNumber, pageSize)))
+            .thenReturn(new PageImpl<>(persistedAthletes));
+        when(athletePersistenceMapper.entityToDomain(any(AthleteJpaEntity.class)))
+            .thenReturn(Instancio.create(Athlete.class));
 
-        List<Athlete> athletesFound = athleteJpaAdapter.findAllByCoachId(coachId);
+        PageResult<Athlete> athletePage = athleteJpaAdapter.findAllByCoachId(coachId, pageNumber, pageSize);
 
-        verify(athleteJpaRepository).findAllByCoachId(coachId);
+        verify(athleteJpaRepository).findAllByCoachId(coachId, PageRequest.of(pageNumber, pageSize));
         verify(athletePersistenceMapper, times(sizePersisted)).entityToDomain(any(AthleteJpaEntity.class));
-        assertThat(athletesFound).hasSize(sizePersisted);
+        assertThat(athletePage.content()).hasSize(sizePersisted);
     }
 
     @Test

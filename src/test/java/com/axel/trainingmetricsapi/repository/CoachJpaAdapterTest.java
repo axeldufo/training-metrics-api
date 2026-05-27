@@ -8,12 +8,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class CoachJpaAdapterTest {
@@ -51,21 +50,6 @@ class CoachJpaAdapterTest {
         Optional<Coach> coachFound = coachJpaAdapter.findById(18L);
 
         assertThat(coachFound).isEmpty();
-    }
-
-    @Test
-    void findAll_shouldMapAllCoaches() {
-        int sizePersisted = 5;
-        List<CoachJpaEntity> persistedCoaches =
-            Instancio.ofList(CoachJpaEntity.class).size(sizePersisted).create();
-        when(coachJpaRepository.findAll()).thenReturn(persistedCoaches);
-        when(coachPersistenceMapper.entityToDomain(any(CoachJpaEntity.class))).thenReturn(Instancio.create(Coach.class));
-
-        List<Coach> coachesFound = coachJpaAdapter.findAll();
-
-        verify(coachJpaRepository).findAll();
-        verify(coachPersistenceMapper, times(sizePersisted)).entityToDomain(any(CoachJpaEntity.class));
-        assertThat(coachesFound).hasSize(sizePersisted);
     }
 
     @Test

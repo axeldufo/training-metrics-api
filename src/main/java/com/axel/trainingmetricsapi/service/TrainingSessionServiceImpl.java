@@ -1,14 +1,13 @@
 package com.axel.trainingmetricsapi.service;
 
 import com.axel.trainingmetricsapi.domain.AthleteRepository;
+import com.axel.trainingmetricsapi.domain.PageResult;
 import com.axel.trainingmetricsapi.domain.TrainingSession;
 import com.axel.trainingmetricsapi.domain.TrainingSessionRepository;
 import com.axel.trainingmetricsapi.domain.exception.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.domain.exception.TrainingSessionNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @Transactional(readOnly = true)
@@ -34,11 +33,11 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
     }
 
     @Override
-    public List<TrainingSession> findAllByAthleteId(long athleteId) {
+    public PageResult<TrainingSession> findAllByAthleteId(long athleteId, int pageNumber, int pageSize) {
         if (!athleteRepository.existsById(athleteId)) {
             throw new AthleteNotFoundException(athleteId);
         }
-        return trainingSessionRepository.findAllByAthleteId(athleteId);
+        return trainingSessionRepository.findAllByAthleteId(athleteId, pageNumber, pageSize);
     }
 
     @Override

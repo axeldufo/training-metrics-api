@@ -3,6 +3,7 @@ package com.axel.trainingmetricsapi.repository;
 import com.axel.trainingmetricsapi.PostgresTestContainersConfiguration;
 import com.axel.trainingmetricsapi.domain.Athlete;
 import com.axel.trainingmetricsapi.domain.AthleteRepository;
+import com.axel.trainingmetricsapi.domain.PageResult;
 import com.axel.trainingmetricsapi.domain.Sport;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +13,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -72,21 +72,42 @@ class AthleteJpaAdapterIT {
     void findAllByCoachId_shouldReturnOnlyAthletesOfRequestingCoach() {
         CoachJpaEntity requestingCoach = coachJpaRepository.save(aCoach("Coach Requesting", "coach@test.com"));
         long requestingCoachId = requestingCoach.getId();
-        athleteRepository.save(new Athlete("Bob", "Jones", LocalDate.of(1985, 6, 15), Sport.ROAD_RUNNING,
-            requestingCoachId, 75.0));
-        athleteRepository.save(new Athlete("Dylan", "Vernon", LocalDate.of(1999, 8, 27), Sport.DUATHLON,
-            requestingCoachId, 69.0));
+        saveAthlete("Bob", "Jones", requestingCoachId);
+        saveAthlete("Dylan", "Vernon", requestingCoachId);
 
         CoachJpaEntity anOtherCoach = coachJpaRepository.save(aCoach("Other Coach", "other@test.com"));
-        athleteRepository.save(new Athlete("John", "Thomas", LocalDate.of(2001, 10, 9), Sport.CYCLING,
-            anOtherCoach.getId(), 72.0));
+        saveAthlete("John", "Thomas", anOtherCoach.getId());
 
-        List<Athlete> athletes = athleteRepository.findAllByCoachId(requestingCoachId);
+        PageResult<Athlete> athletePage = athleteRepository.findAllByCoachId(requestingCoachId, 0, 20);
 
-        assertThat(athletes).hasSize(2);
-        assertThat(athletes)
+        assertThat(athletePage.totalElements()).isEqualTo(2);
+        assertThat(athletePage.content()).hasSize(2);
+        assertThat(athletePage.content())
             .extracting(Athlete::getFirstName)
             .containsExactlyInAnyOrder("Bob", "Dylan");
+        assertThat(athletePage.pageNumber()).isZero();
+    }
+
+    @Test
+    void findAllByCoachId_shouldPaginateAthletesOfRequestingCoach() {
+        CoachJpaEntity requestingCoach = coachJpaRepository.save(aCoach("Coach Requesting", "coach@test.com"));
+        long requestingCoachId = requestingCoach.getId();
+        int nbAthletesCreated = 6;
+        for (int i = 0; i < nbAthletesCreated; i++) {
+            saveAthlete("Athlete" + i, "LastName" + i, requestingCoachId);
+        }
+        int pageSize = 5;
+
+        PageResult<Athlete> firstPage = athleteRepository.findAllByCoachId(requestingCoachId, 0, pageSize);
+        PageResult<Athlete> secondPage = athleteRepository.findAllByCoachId(requestingCoachId, 1, pageSize);
+
+        assertThat(firstPage.totalElements()).isEqualTo(nbAthletesCreated);
+        assertThat(firstPage.content()).hasSize(pageSize);
+        assertThat(firstPage.pageNumber()).isZero();
+
+        assertThat(secondPage.totalElements()).isEqualTo(nbAthletesCreated);
+        assertThat(secondPage.content()).hasSize(nbAthletesCreated-pageSize);
+        assertThat(secondPage.pageNumber()).isEqualTo(1);
     }
 
     @Test
@@ -122,5 +143,10 @@ class AthleteJpaAdapterIT {
             .email(email)
             .hashedPassword("hashed")
             .build();
+    }
+
+    private void saveAthlete(String firstName, String lastName, long coachId) {
+        athleteRepository.save(new Athlete(firstName, lastName,
+            LocalDate.of(1990, 1, 1), Sport.DUATHLON, coachId, 70.0));
     }
 }

@@ -3,6 +3,7 @@ package com.axel.trainingmetricsapi.controller;
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoach;
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoachResolver;
 import com.axel.trainingmetricsapi.domain.Athlete;
+import com.axel.trainingmetricsapi.domain.PageResult;
 import com.axel.trainingmetricsapi.domain.exception.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.dto.request.AthleteRequest;
 import com.axel.trainingmetricsapi.dto.response.AthleteResponse;
@@ -19,7 +20,10 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 
+import static com.axel.trainingmetricsapi.controller.ApiConstants.DEFAULT_PAGE;
+import static com.axel.trainingmetricsapi.controller.ApiConstants.DEFAULT_SIZE;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -45,19 +49,51 @@ class AthleteControllerTest extends SecurityMockControllerSupport {
     private ObjectMapper objectMapper;
 
     @Test
-    void getAll_shouldReturnListAsJson() throws Exception {
+    void getAll_withDefaultPagination_shouldReturnListAsJson() throws Exception {
         long coachId = 4L;
+        int pageNumber = Integer.parseInt(DEFAULT_PAGE);
+        int pageSize = Integer.parseInt(DEFAULT_SIZE);
+        int nbAthletesFound = 3;
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(coachId));
-        List<Athlete> athletes = Instancio.ofList(Athlete.class).size(3).create();
-        when(athleteService.findAllByCoachId(coachId)).thenReturn(athletes);
+        List<Athlete> athletes = Instancio.ofList(Athlete.class).size(nbAthletesFound).create();
+        when(athleteService.findAllByCoachId(coachId, pageNumber, pageSize)).thenReturn(
+            new PageResult<>(athletes, nbAthletesFound, pageNumber, pageSize));
         when(athleteWebMapper.domainToResponse(any(Athlete.class))).thenReturn(Instancio.create(AthleteResponse.class));
 
         mvc.perform(get(URL_PREFIX))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$", hasSize(3)));
+            .andExpect(jsonPath("$.content", hasSize(nbAthletesFound)))
+            .andExpect(jsonPath("$.totalElements", is(nbAthletesFound)))
+            .andExpect(jsonPath("$.page", is(pageNumber)))
+            .andExpect(jsonPath("$.size", is(pageSize)));
 
-        verify(athleteService).findAllByCoachId(coachId);
-        verify(athleteWebMapper, times(3)).domainToResponse(any(Athlete.class));
+        verify(athleteService).findAllByCoachId(coachId, pageNumber, pageSize);
+        verify(athleteWebMapper, times(nbAthletesFound)).domainToResponse(any(Athlete.class));
+    }
+
+    @Test
+    void getAll_withCustomPagination_shouldReturnListAsJson() throws Exception {
+        long coachId = 4L;
+        int pageNumber = 1;
+        int pageSize = 5;
+        int nbAthletesFound = 3;
+        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(coachId));
+        List<Athlete> athletes = Instancio.ofList(Athlete.class).size(nbAthletesFound).create();
+        when(athleteService.findAllByCoachId(coachId, pageNumber, pageSize)).thenReturn(
+            new PageResult<>(athletes, nbAthletesFound, pageNumber, pageSize));
+        when(athleteWebMapper.domainToResponse(any(Athlete.class))).thenReturn(Instancio.create(AthleteResponse.class));
+
+        mvc.perform(get(URL_PREFIX)
+            .param("page", String.valueOf(pageNumber))
+            .param("size", String.valueOf(pageSize)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.content", hasSize(nbAthletesFound)))
+            .andExpect(jsonPath("$.totalElements", is(nbAthletesFound)))
+            .andExpect(jsonPath("$.page", is(pageNumber)))
+            .andExpect(jsonPath("$.size", is(pageSize)));
+
+        verify(athleteService).findAllByCoachId(coachId, pageNumber, pageSize);
+        verify(athleteWebMapper, times(nbAthletesFound)).domainToResponse(any(Athlete.class));
     }
 
     @Test

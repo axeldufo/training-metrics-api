@@ -2,6 +2,7 @@ package com.axel.trainingmetricsapi.controller;
 
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoach;
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoachResolver;
+import com.axel.trainingmetricsapi.domain.PageResult;
 import com.axel.trainingmetricsapi.domain.TrainingSession;
 import com.axel.trainingmetricsapi.domain.exception.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.domain.exception.TrainingSessionNotFoundException;
@@ -21,7 +22,10 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 
+import static com.axel.trainingmetricsapi.controller.ApiConstants.DEFAULT_PAGE;
+import static com.axel.trainingmetricsapi.controller.ApiConstants.DEFAULT_SIZE;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.instancio.Select.field;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -106,26 +110,62 @@ class TrainingSessionControllerTest  extends SecurityMockControllerSupport {
     }
 
     @Test
-    void getAll_shouldReturnListAsJson() throws Exception {
+    void getAll_withDefaultPagination_shouldReturnListAsJson() throws Exception {
         long coachId = 2L;
+        int pageNumber = Integer.parseInt(DEFAULT_PAGE);
+        int pageSize = Integer.parseInt(DEFAULT_SIZE);
+        int nbSessionsFound = 3;
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(coachId));
-        List<TrainingSession> trainingSessions = Instancio.ofList(TrainingSession.class).size(3).create();
-        when(trainingSessionService.findAllByAthleteId(ATHLETE_ID)).thenReturn(trainingSessions);
+        List<TrainingSession> trainingSessions = Instancio.ofList(TrainingSession.class).size(nbSessionsFound).create();
+        when(trainingSessionService.findAllByAthleteId(ATHLETE_ID, pageNumber, pageSize)).thenReturn(
+            new PageResult<>(trainingSessions, nbSessionsFound, pageNumber, pageSize));
         when(trainingSessionWebMapper.domainToResponse(any(TrainingSession.class)))
             .thenReturn(Instancio.create(TrainingSessionResponse.class));
 
         mvc.perform(get(URL_PREFIX))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$", hasSize(3)));
+            .andExpect(jsonPath("$.content", hasSize(nbSessionsFound)))
+            .andExpect(jsonPath("$.totalElements", is(nbSessionsFound)))
+            .andExpect(jsonPath("$.page", is(pageNumber)))
+            .andExpect(jsonPath("$.size", is(pageSize)));
 
         verify(athleteService).findById(ATHLETE_ID, coachId);
-        verify(trainingSessionService).findAllByAthleteId(ATHLETE_ID);
-        verify(trainingSessionWebMapper, times(3)).domainToResponse(any(TrainingSession.class));
+        verify(trainingSessionService).findAllByAthleteId(ATHLETE_ID, pageNumber, pageSize);
+        verify(trainingSessionWebMapper, times(nbSessionsFound)).domainToResponse(any(TrainingSession.class));
+    }
+
+    @Test
+    void getAll_withCustomPagination_shouldReturnListAsJson() throws Exception {
+        long coachId = 2L;
+        int pageNumber = 1;
+        int pageSize = 5;
+        int nbSessionsFound = 3;
+        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(coachId));
+        List<TrainingSession> trainingSessions = Instancio.ofList(TrainingSession.class).size(nbSessionsFound).create();
+        when(trainingSessionService.findAllByAthleteId(ATHLETE_ID, pageNumber, pageSize)).thenReturn(
+            new PageResult<>(trainingSessions, nbSessionsFound, pageNumber, pageSize));
+        when(trainingSessionWebMapper.domainToResponse(any(TrainingSession.class)))
+            .thenReturn(Instancio.create(TrainingSessionResponse.class));
+
+        mvc.perform(get(URL_PREFIX)
+            .param("page", String.valueOf(pageNumber))
+            .param("size", String.valueOf(pageSize)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.content", hasSize(nbSessionsFound)))
+            .andExpect(jsonPath("$.totalElements", is(nbSessionsFound)))
+            .andExpect(jsonPath("$.page", is(pageNumber)))
+            .andExpect(jsonPath("$.size", is(pageSize)));
+
+        verify(athleteService).findById(ATHLETE_ID, coachId);
+        verify(trainingSessionService).findAllByAthleteId(ATHLETE_ID, pageNumber, pageSize);
+        verify(trainingSessionWebMapper, times(nbSessionsFound)).domainToResponse(any(TrainingSession.class));
     }
 
     @Test
     void getAll_shouldReturnNotFound_whenAthleteNotFoundException() throws Exception {
         long coachId = 2L;
+        int pageNumber = Integer.parseInt(DEFAULT_PAGE);
+        int pageSize = Integer.parseInt(DEFAULT_SIZE);
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(coachId));
         when(athleteService.findById(ATHLETE_ID, coachId)).thenThrow(new AthleteNotFoundException(ATHLETE_ID));
 
@@ -134,7 +174,7 @@ class TrainingSessionControllerTest  extends SecurityMockControllerSupport {
             .andExpect(jsonPath("$[0].code").value("NOT_FOUND"));
 
         verify(athleteService).findById(ATHLETE_ID, coachId);
-        verify(trainingSessionService, never()).findAllByAthleteId(ATHLETE_ID);
+        verify(trainingSessionService, never()).findAllByAthleteId(ATHLETE_ID, pageNumber, pageSize);
         verify(trainingSessionWebMapper, never()).domainToResponse(any());
     }
 
