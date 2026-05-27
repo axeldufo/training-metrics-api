@@ -36,7 +36,7 @@ Final fields except `id`. Manual constructor with domain invariants (no `@Requir
 public interface AthleteRepository {
     Athlete save(Athlete athlete);
     Optional<Athlete> findById(long id);
-    List<Athlete> findAllByCoachId(long coachId);
+    PageResult<Athlete> findAllByCoachId(long coachId, int pageNumber, int pageSize);
     void deleteById(long id);
     boolean existsById(long id);
 }
@@ -51,7 +51,7 @@ public interface AthleteRepository {
 ### Endpoints
 | Method | URL | Request | Response | Success | Errors        |
 |---|---|---|---|---|---------------|
-| GET | /v1/athletes | — | `List<AthleteResponse>` | 200 | 401           |
+| GET | /v1/athletes | — | `PagedResponse<AthleteResponse>` | 200 | 401 |
 | POST | /v1/athletes | `AthleteRequest` | `AthleteResponse` | 201 | 400, 401      |
 | GET | /v1/athletes/{id} | — | `AthleteResponse` | 200 | 401, 404      |
 | PUT | /v1/athletes/{id} | `AthleteRequest` | `AthleteResponse` | 200 | 400, 401, 404 |
@@ -127,4 +127,3 @@ None — first domain.
 ## Out of scope
 - Coach relationship (added in TDD-002)
 - Spring Security (added in TDD-004)
-- Pagination
