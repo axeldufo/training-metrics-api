@@ -84,7 +84,7 @@ class WeeklyWellnessControllerTest extends SecurityMockControllerSupport {
 
     @Test
     void create_shouldReturn400_whenRequestIsInvalid() throws Exception {
-        WeeklyWellnessRequest invalidRequest = new WeeklyWellnessRequest(null, 0, 6, null);
+        WeeklyWellnessRequest invalidRequest = new WeeklyWellnessRequest(LocalDate.now().plusWeeks(1), 0, 6, null);
 
         mvc.perform(post(URL_PREFIX).contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(invalidRequest)))

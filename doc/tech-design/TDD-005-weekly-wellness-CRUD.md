@@ -3,7 +3,7 @@
 ## Context
 Fourth domain. Introduces weekly wellness surveys linked to athletes.
 One survey per athlete per week (Monday to Sunday).
-Feeds the WeeklyReport aggregate in TDD-006 (Foster load + ACWR + wellness correlation).
+Feeds the WellnessReport aggregate (TDD-008) and CorrelationReport (TDD-009).
 Follows the same patterns as TDD-003 (TrainingSession) — sub-resource of athlete,
 ownership chain Coach→Athlete→WeeklyWellness.
 
@@ -62,6 +62,8 @@ public interface WeeklyWellnessRepository {
 | POST | /v1/athletes/{id}/wellness | `WeeklyWellnessRequest` | `WeeklyWellnessResponse` | 201 | 400, 401, 404, 409 |
 | GET | /v1/athletes/{id}/wellness | `from` (required), `to` (optional) | `List<WeeklyWellnessResponse>` | 200 | 400, 401, 404 |
 | GET | /v1/athletes/{id}/wellness/{wId} | — | `WeeklyWellnessResponse` | 200 | 401, 404 |
+| GET | /v1/athletes/{id}/wellness?weekStartDate=2026-05-19 | — | `WeeklyWellnessResponse` | 200 | 401, 404 |
+| GET | /v1/athletes/{id}/wellness/latest | — | `WeeklyWellnessResponse` | 200 | 401, 404 |
 | PUT | /v1/athletes/{id}/wellness/{wId} | `WeeklyWellnessRequest` | `WeeklyWellnessResponse` | 200 | 400, 401, 404, 409 |
 | DELETE | /v1/athletes/{id}/wellness/{wId} | — | — | 204 | 401, 404 |
 
@@ -126,6 +128,8 @@ No new dependencies.
 - `weekStartDate` must be Monday — enforced in domain constructor via `DayOfWeek.MONDAY` check
 - Uniqueness `(athlete_id, week_start_date)` enforced at both DB level (UNIQUE constraint) and service level (`existsByAthleteIdAndWeekStartDate`) — defense in depth
 - `WeeklyWellnessAlreadyExistsException` → 409 Conflict — client can GET the existing entry and PUT to update it
+- `WeeklyWellnessRequest.weekStartDate` annotated with `@PastOrPresent` — future wellness
+  entries have no business value; validation at HTTP boundary
 - Values 1-5 enforced at three levels: DB CHECK constraint, domain constructor invariant, Bean Validation on DTO
 - `athleteId` injected from `@PathVariable`, not in request body — consistent with `TrainingSession`
 - `WeeklyWellnessWebMapper.requestToDomain(request, athleteId)` — two parameters, consistent with `TrainingSessionWebMapper`
@@ -135,7 +139,6 @@ No new dependencies.
 - `GET /v1/athletes/{id}/wellness` uses period filter (`from` required, `to` optional defaults to today) instead of 
   pagination — use case is time-series display and WeeklyReport aggregation, not generic list browsing
 - `from <= to` validated at web layer only — query parameter constraint, not a domain invariant nor a DB constraint
-- Same pattern to be applied to `GET /v1/athletes/{id}/sessions` for consistency
 - `WeeklyWellnessJpaRepository` derived method : `findAllByAthleteIdAndWeekStartDateBetween(long athleteId, 
 LocalDate from, LocalDate to)` — Spring Data generates `WHERE week_start_date >= from AND week_start_date <= to` 
   (inclusive)

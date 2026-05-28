@@ -1,6 +1,6 @@
 package com.axel.trainingmetricsapi.repository;
 
-import com.axel.trainingmetricsapi.PostgresTestContainersConfiguration;
+import com.axel.trainingmetricsapi.TestContainersConfiguration;
 import com.axel.trainingmetricsapi.domain.AuthRepository;
 import com.axel.trainingmetricsapi.domain.CoachAuthData;
 import com.axel.trainingmetricsapi.domain.CoachCredentials;
@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
-@Import(PostgresTestContainersConfiguration.class)
+@Import(TestContainersConfiguration.class)
 @Transactional
 class AuthJpaAdapterIT {
 
