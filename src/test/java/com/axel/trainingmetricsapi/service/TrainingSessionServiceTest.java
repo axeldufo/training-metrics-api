@@ -3,6 +3,9 @@ package com.axel.trainingmetricsapi.service;
 import com.axel.trainingmetricsapi.domain.AthleteRepository;
 import com.axel.trainingmetricsapi.domain.TrainingSession;
 import com.axel.trainingmetricsapi.domain.TrainingSessionRepository;
+import com.axel.trainingmetricsapi.domain.event.TrainingSessionCreatedEvent;
+import com.axel.trainingmetricsapi.domain.event.TrainingSessionDeletedEvent;
+import com.axel.trainingmetricsapi.domain.event.TrainingSessionUpdatedEvent;
 import com.axel.trainingmetricsapi.domain.exception.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.domain.exception.TrainingSessionNotFoundException;
 import org.instancio.Instancio;
@@ -11,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -33,6 +37,9 @@ class TrainingSessionServiceTest {
     @Mock
     private AthleteRepository athleteRepository;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     @InjectMocks
     private TrainingSessionServiceImpl trainingSessionService;
 
@@ -48,6 +55,8 @@ class TrainingSessionServiceTest {
 
         verify(athleteRepository).existsById(athleteId);
         verify(trainingSessionRepository).save(trainingSession);
+        verify(eventPublisher).publishEvent(
+            new TrainingSessionCreatedEvent(returnedTrainingSession.getAthleteId(), returnedTrainingSession.getDate()));
         assertThat(returnedTrainingSession).isEqualTo(persistedTrainingSession);
         assertThat(returnedTrainingSession.getId()).isEqualTo(persistedTrainingSession.getId()); // id is excluded from TrainingSession.isEqualTo()
     }
@@ -151,6 +160,8 @@ class TrainingSessionServiceTest {
 
         verify(trainingSessionRepository).findById(trainingSessionId);
         verify(trainingSessionRepository).save(trainingSession);
+        verify(eventPublisher).publishEvent(
+            new TrainingSessionUpdatedEvent(returnedTrainingSession.getAthleteId(), returnedTrainingSession.getDate()));
         assertThat(returnedTrainingSession).isEqualTo(persistedTrainingSession);
         assertThat(returnedTrainingSession.getId()).isEqualTo(persistedTrainingSession.getId()); // id is excluded from TrainingSession.isEqualTo()
     }
@@ -201,6 +212,8 @@ class TrainingSessionServiceTest {
 
         verify(trainingSessionRepository).findById(sessionId);
         verify(trainingSessionRepository).deleteById(sessionId);
+        verify(eventPublisher).publishEvent(
+            new TrainingSessionDeletedEvent(athleteId, trainingSessionToFind.getDate()));
     }
 
     @Test

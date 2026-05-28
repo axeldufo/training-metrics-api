@@ -75,6 +75,15 @@ to resolve the current coach id from the security context.
 
 **Period filter endpoints:** `from` (required) + `to` (optional, defaults to `LocalDate.now()`). Validate `from <= to` at controller level → 400. Port always receives two `LocalDate` parameters.
 
+**Cache pattern:** `@Cacheable` for read path (declarative, Spring-managed).
+`RedisTemplate` for manual eviction (explicit control).
+Cache names as public constants in `CacheConfig` (config/).
+Always use `Jackson2JsonRedisSerializer` — human-readable entries, no Java serialization.
+
+**Domain Events:** Records in `domain/event/`. Published via `ApplicationEventPublisher`
+in service layer after successful persistence. Handled by `*EventHandler` classes in `service/`.
+Synchronous in phase 2 layered — will become `@Async` in hexagonal phase.
+
 ## Development Rules
 
 **TDD is mandatory.** Always Red → Green → Refactor. Write the test first.
@@ -116,8 +125,9 @@ and document it in a comment.
 - Repository layer: Mockito & Testcontainers with real PostgreSQL; no @DataJpaTest -> H2 is not PostgreSQL
 
 **Instancio:** Use throughout all test layers (unit tests with Mockito). Always constrain bounded or validated fields:
-- `rpe`: `gen.ints().range(1, 10)`
-- `durationInMin`: `gen.ints().min(1)`
+- `TrainingSessionRequest.rpe`: `gen.ints().range(1, 10)`
+- `TrainingSessionRequest.durationInMin`: `gen.ints().min(1)`
+- `TrainingSessionRequest.date`: `gen.temporal().localDate().past()`
 - `RegisterRequest.email` / `LoginRequest.email`: `gen.net().email()`
 - `RegisterRequest.password` / `LoginRequest.password`: `gen.string().minLength(8)`
 - `perceivedDifficulty`, `perceivedFatigue`, `motivation`: `gen.ints().range(1, 5)`

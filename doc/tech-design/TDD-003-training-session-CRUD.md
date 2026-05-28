@@ -41,7 +41,7 @@ Calculated on the fly: `rpe × durationInMin` (arbitrary units). Not stored in D
 public interface TrainingSessionRepository {
     TrainingSession save(TrainingSession session);
     Optional<TrainingSession> findById(long id);
-    List<TrainingSession> findByAthleteIdAndPeriod(long athleteId, LocalDate from, LocalDate to);    
+    List<TrainingSession> findByAthleteIdAndPeriod(long athleteId, LocalDate from, LocalDate to);
     void deleteById(long id);
     boolean existsById(long id);
 }
@@ -106,6 +106,7 @@ No new dependencies.
 
 ## Decisions
 - `athleteId` passed via `@PathVariable`, not in request body
+- `TrainingSessionRequest.date` annotated with `@PastOrPresent` — future sessions have no business value; validation at HTTP boundary, not in domain constructor
 - `TrainingSessionWebMapper.requestToDomain(request, athleteId)` — two parameters, athleteId injected from path
 - `target_zone` stored as `VARCHAR(2)` — `CHAR(2)` rejected due to Hibernate/PostgreSQL `bpchar` friction
 - Foster load calculated on the fly — not stored in DB

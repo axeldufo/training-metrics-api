@@ -83,7 +83,7 @@ class TrainingSessionControllerTest  extends SecurityMockControllerSupport {
 
     @Test
     void create_shouldReturnBadRequest_whenArgumentsNotValid() throws Exception {
-        TrainingSessionRequest trainingSessionRequest = new TrainingSessionRequest(null, null, 11, -1, null);
+        TrainingSessionRequest trainingSessionRequest = new TrainingSessionRequest(LocalDate.now().plusDays(1), null, 11, -1, null);
 
         mvc.perform(post(URL_PREFIX).contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(trainingSessionRequest)))
@@ -340,6 +340,7 @@ class TrainingSessionControllerTest  extends SecurityMockControllerSupport {
 
     private TrainingSessionRequest aValidSessionRequest() {
         return Instancio.of(TrainingSessionRequest.class)
+            .generate(field(TrainingSessionRequest::date), gen -> gen.temporal().localDate().past())
             .generate(field(TrainingSessionRequest::rpe), gen -> gen.ints().range(1, 10))
             .generate(field(TrainingSessionRequest::durationInMin), gen -> gen.ints().min(1))
             .create();

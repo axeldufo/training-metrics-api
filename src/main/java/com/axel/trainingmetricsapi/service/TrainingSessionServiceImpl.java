@@ -3,8 +3,12 @@ package com.axel.trainingmetricsapi.service;
 import com.axel.trainingmetricsapi.domain.AthleteRepository;
 import com.axel.trainingmetricsapi.domain.TrainingSession;
 import com.axel.trainingmetricsapi.domain.TrainingSessionRepository;
+import com.axel.trainingmetricsapi.domain.event.TrainingSessionCreatedEvent;
+import com.axel.trainingmetricsapi.domain.event.TrainingSessionDeletedEvent;
+import com.axel.trainingmetricsapi.domain.event.TrainingSessionUpdatedEvent;
 import com.axel.trainingmetricsapi.domain.exception.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.domain.exception.TrainingSessionNotFoundException;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,11 +21,14 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
 
     private final TrainingSessionRepository trainingSessionRepository;
     private final AthleteRepository athleteRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     public TrainingSessionServiceImpl(TrainingSessionRepository trainingSessionRepository,
-                                      AthleteRepository athleteRepository) {
+                                      AthleteRepository athleteRepository,
+                                      ApplicationEventPublisher eventPublisher) {
         this.trainingSessionRepository = trainingSessionRepository;
         this.athleteRepository = athleteRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -31,7 +38,9 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
         if (!athleteRepository.existsById(athleteId)) {
             throw new AthleteNotFoundException(athleteId);
         }
-        return trainingSessionRepository.save(trainingSession);
+        TrainingSession saved = trainingSessionRepository.save(trainingSession);
+        eventPublisher.publishEvent(new TrainingSessionCreatedEvent(saved.getAthleteId(), saved.getDate()));
+        return saved;
     }
 
     @Override
@@ -63,7 +72,9 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
             // Return 404 instead of 403 to avoid revealing that the session belongs to another athlete
             throw new TrainingSessionNotFoundException(id);
         }
-        return trainingSessionRepository.save(trainingSession);
+        TrainingSession updated = trainingSessionRepository.save(trainingSession);
+        eventPublisher.publishEvent(new TrainingSessionUpdatedEvent(updated.getAthleteId(), updated.getDate()));
+        return updated;
     }
 
     @Override
@@ -75,6 +86,7 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
             throw new TrainingSessionNotFoundException(id);
         }
         trainingSessionRepository.deleteById(id);
+        eventPublisher.publishEvent(new TrainingSessionDeletedEvent(athleteId, existingTrainingSession.getDate()));
     }
 
 }

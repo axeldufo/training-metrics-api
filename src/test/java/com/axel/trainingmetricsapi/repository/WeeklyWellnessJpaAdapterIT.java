@@ -1,6 +1,6 @@
 package com.axel.trainingmetricsapi.repository;
 
-import com.axel.trainingmetricsapi.PostgresTestContainersConfiguration;
+import com.axel.trainingmetricsapi.TestContainersConfiguration;
 import com.axel.trainingmetricsapi.domain.Athlete;
 import com.axel.trainingmetricsapi.domain.AthleteRepository;
 import com.axel.trainingmetricsapi.domain.Sport;
@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
-@Import(PostgresTestContainersConfiguration.class)
+@Import(TestContainersConfiguration.class)
 @Transactional
 class WeeklyWellnessJpaAdapterIT {
 
