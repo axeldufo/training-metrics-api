@@ -72,7 +72,7 @@ class AcwrCalculatorTest {
             assertThat(report.acwr()).isEqualTo(0.0);
             assertThat(report.acwrAlert()).isEqualTo(AcwrAlert.NO_DATA);
             assertThat(report.acwrReliable()).isFalse();
-            assertThat(report.weeksOfDataAvailable()).isEqualTo(0);
+            assertThat(report.weeksOfDataAvailable()).isZero();
         }
 
         @Test

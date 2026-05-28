@@ -75,8 +75,8 @@ class TrainingSessionEventHandlerTest {
     void refreshAcwrReport_shouldThrow_whenCacheNotConfigured() {
         when(cacheManager.getCache(CacheConfig.ACWR_REPORT_CACHE)).thenReturn(null);
 
-        assertThatThrownBy(() ->
-            handler.onSessionCreated(new TrainingSessionCreatedEvent(ATHLETE_ID, LocalDate.now())))
+        TrainingSessionCreatedEvent event = new TrainingSessionCreatedEvent(ATHLETE_ID, LocalDate.now());
+        assertThatThrownBy(() -> handler.onSessionCreated(event))
             .isInstanceOf(IllegalStateException.class);
     }
 

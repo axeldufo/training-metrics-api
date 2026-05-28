@@ -26,7 +26,7 @@ public class AcwrCalculator {
             .sum();
 
         double chronicLoad = weeksOfDataAvailable == 0 ? 0.0
-            : totalFosterLoad / (double) weeksOfDataAvailable;
+            : totalFosterLoad / weeksOfDataAvailable;
 
         boolean acwrReliable = weeksOfDataAvailable >= 4;
         double acwr = chronicLoad == 0.0 ? 0.0 : acuteLoad / chronicLoad;
