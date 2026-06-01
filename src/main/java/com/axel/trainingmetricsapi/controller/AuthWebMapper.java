@@ -20,7 +20,7 @@ public class AuthWebMapper {
         return new CoachCredentials(
             registerRequest.name(),
             registerRequest.email(),
-            registerRequest.rawPassword()
+            registerRequest.password()
         );
     }
 

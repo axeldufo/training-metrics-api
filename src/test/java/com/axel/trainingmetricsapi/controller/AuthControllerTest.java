@@ -96,7 +96,7 @@ class AuthControllerTest {
     void login_shouldReturnAuthResponse_whenAuthenticationIsValid() throws Exception {
         LoginRequest loginRequest = aValidLoginRequest();
         CoachAuthData authData = Instancio.create(CoachAuthData.class);
-        when(authService.login(loginRequest.email(), loginRequest.rawPassword())).thenReturn(authData);
+        when(authService.login(loginRequest.email(), loginRequest.password())).thenReturn(authData);
         AuthResponse authResponse = Instancio.create(AuthResponse.class);
         when(authWebMapper.toAuthResponse(authData)).thenReturn(authResponse);
 
@@ -105,14 +105,14 @@ class AuthControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.token").value(authResponse.token()));
 
-        verify(authService).login(loginRequest.email(), loginRequest.rawPassword());
+        verify(authService).login(loginRequest.email(), loginRequest.password());
         verify(authWebMapper).toAuthResponse(authData);
     }
 
     @Test
     void login_shouldReturnUnauthorized_whenCredentialsAreNotValid() throws Exception {
         LoginRequest loginRequest = aValidLoginRequest();
-        when(authService.login(loginRequest.email(), loginRequest.rawPassword()))
+        when(authService.login(loginRequest.email(), loginRequest.password()))
             .thenThrow(new InvalidCredentialsException());
 
         mvc.perform(post(URL_PREFIX + "/login").contentType(MediaType.APPLICATION_JSON)
@@ -120,7 +120,7 @@ class AuthControllerTest {
             .andExpect(status().isUnauthorized())
             .andExpect(jsonPath("$[0].code").value("INVALID_CREDENTIALS"));
 
-        verify(authService).login(loginRequest.email(), loginRequest.rawPassword());
+        verify(authService).login(loginRequest.email(), loginRequest.password());
     }
 
     @Test
@@ -136,7 +136,7 @@ class AuthControllerTest {
     private RegisterRequest aValidRegisterRequest() {
         return Instancio.of(RegisterRequest.class)
             .generate(field(RegisterRequest::email), gen -> gen.net().email())
-            .generate(field(RegisterRequest::rawPassword), gen -> gen.string().minLength(8))
+            .generate(field(RegisterRequest::password), gen -> gen.string().minLength(8))
             .create();
     }
 

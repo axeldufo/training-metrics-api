@@ -56,7 +56,7 @@ public class AuthController {
     @ApiResponse(responseCode = "401", description = "Invalid credentials", content = @Content(mediaType =
         "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
     public ResponseEntity<AuthResponse> login(@RequestBody @Valid LoginRequest loginRequest) {
-        CoachAuthData authData = authService.login(loginRequest.email(), loginRequest.rawPassword());
+        CoachAuthData authData = authService.login(loginRequest.email(), loginRequest.password());
         AuthResponse authResponse = authWebMapper.toAuthResponse(authData);
         return ResponseEntity.ok(authResponse);
     }

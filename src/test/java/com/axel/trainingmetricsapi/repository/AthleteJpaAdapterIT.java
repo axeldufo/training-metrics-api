@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -41,7 +42,10 @@ class AthleteJpaAdapterIT {
         assertThat(saved.getSport()).isEqualTo(Sport.CYCLING);
     }
 
+    // FK constraints are only checked at commit time in PostgreSQL.
+    // NOT_SUPPORTED suspends the class-level transaction so operations commit immediately.
     @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     void save_shouldThrowException_whenCoachDoesNotExist() {
         Athlete athlete = new Athlete("Alice", "Smith",
             LocalDate.of(1990, 1, 1), Sport.CYCLING, 9999L, 60.0);
