@@ -157,7 +157,7 @@ class WeeklyWellnessControllerTest extends SecurityMockControllerSupport {
                 .param("to", to.toString()))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$[0].code").value("HTTP_VALIDATION_ERROR"))
-            .andExpect(jsonPath("$[0].field").value("to"));
+            .andExpect(jsonPath("$[0].field").value("from"));
 
         verify(wellnessService, never()).findByAthleteIdAndPeriod(anyLong(), any(), any());
     }

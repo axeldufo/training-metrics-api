@@ -1,11 +1,11 @@
 package com.axel.trainingmetricsapi.controller;
 
+import com.axel.trainingmetricsapi.controller.exception.InvalidPeriodException;
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoach;
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoachResolver;
 import com.axel.trainingmetricsapi.domain.WeeklyWellness;
 import com.axel.trainingmetricsapi.dto.request.WeeklyWellnessRequest;
 import com.axel.trainingmetricsapi.dto.response.ApiError;
-import com.axel.trainingmetricsapi.dto.response.ErrorCode;
 import com.axel.trainingmetricsapi.dto.response.WeeklyWellnessResponse;
 import com.axel.trainingmetricsapi.service.AthleteService;
 import com.axel.trainingmetricsapi.service.WeeklyWellnessService;
@@ -15,14 +15,17 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.PastOrPresent;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.time.LocalDate;
 import java.util.List;
 
+@Validated
 @RequestMapping(path = ApiConstants.API_VERSION + "/athletes/{id}/wellness")
 @RestController
 public class WeeklyWellnessController {
@@ -76,16 +79,17 @@ public class WeeklyWellnessController {
     @ApiResponse(responseCode = "401", description = "Missing or invalid JWT token")
     @ApiResponse(responseCode = "404", description = "Athlete not found", content = @Content(mediaType =
         "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
-    public ResponseEntity<List<?>> getByPeriod(@PathVariable("id") long athleteId,
-                                         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-                                         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+    public ResponseEntity<List<WeeklyWellnessResponse>> getByPeriod(@PathVariable("id") long athleteId,
+                                                                @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                                                    @PastOrPresent LocalDate from,
+                                                                @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                                                   @PastOrPresent LocalDate to) {
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
         athleteService.findById(athleteId, coach.id()); // validates Coach→Athlete ownership
 
         LocalDate effectiveTo = to != null ? to : LocalDate.now();
         if (from.isAfter(effectiveTo)) {
-            return ResponseEntity.badRequest().body(
-                List.of(new ApiError(ErrorCode.HTTP_VALIDATION_ERROR, "to", "to must be after or equal to from")));
+            throw new InvalidPeriodException("from must be before or equal to to");
         }
 
         List<WeeklyWellness> wellnessList = wellnessService.findByAthleteIdAndPeriod(athleteId, from, effectiveTo);

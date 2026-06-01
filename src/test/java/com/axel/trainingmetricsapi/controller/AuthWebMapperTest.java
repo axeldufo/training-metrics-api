@@ -33,7 +33,7 @@ class AuthWebMapperTest {
 
         assertThat(coachCredentials.name()).isEqualTo(registerRequest.name());
         assertThat(coachCredentials.email()).isEqualTo(registerRequest.email());
-        assertThat(coachCredentials.rawPassword()).isEqualTo(registerRequest.rawPassword());
+        assertThat(coachCredentials.rawPassword()).isEqualTo(registerRequest.password());
     }
 
     @Test

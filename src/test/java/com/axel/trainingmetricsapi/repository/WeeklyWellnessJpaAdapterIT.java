@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -64,7 +65,10 @@ class WeeklyWellnessJpaAdapterIT {
         assertThat(saved.getMotivation()).isEqualTo(2);
     }
 
+    // FK constraints are only checked at commit time in PostgreSQL.
+    // NOT_SUPPORTED suspends the class-level transaction so operations commit immediately.
     @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     void save_shouldThrowException_whenAthleteDoesNotExist() {
         WeeklyWellness wellness = aWellness(9999L, WEEK_1);
 
@@ -72,7 +76,10 @@ class WeeklyWellnessJpaAdapterIT {
             .isInstanceOf(DataIntegrityViolationException.class);
     }
 
+    // UNIQUE constraints are only checked at commit time in PostgreSQL.
+    // NOT_SUPPORTED suspends the class-level transaction so operations commit immediately.
     @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     void save_shouldThrowException_whenDuplicateAthleteAndWeekStartDate() {
         wellnessRepository.save(aWellness(athleteId, WEEK_1));
 

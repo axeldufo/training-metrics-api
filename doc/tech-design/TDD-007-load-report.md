@@ -23,7 +23,8 @@ Current week included — coach can consult in-progress week load at any time.
 | — | — | UNIQUE (athlete_id, week_start_date) |
 
 ### Domain Object
-`LoadReport` — Java record, not persisted in domain/.
+`LoadReport` — Java record in domain/. Never persisted directly — constructed
+either from DB via PersistenceMapper or on-the-fly in service.
 
 ```java
 public record LoadReport(
@@ -35,23 +36,43 @@ public record LoadReport(
 ) {}
 ```
 
+**Domain invariants (enforced in compact constructor — DomainValidationException → 400) :**
+- `weekStartDate` not null + must be a Monday (no silent normalization)
+- `totalFosterLoad` >= 0
+- `sessionCount` >= 0
+- `sessionCount == 0` iff `totalFosterLoad == 0` — a report with sessions and zero load,
+  or zero sessions and non-zero load, is a domain error
+- `updatedAt` nullable — null signals an on-the-fly report (no sessions persisted yet)
+
 ### JPA Entity
 `LoadReportJpaEntity` in repository/ — standard @Entity with @UpdateTimestamp on updatedAt.
 
-## Domain Interface
+## Domain Interfaces
 
 ### New port (domain/)
 ```java
 public interface LoadReportRepository {
     LoadReport save(LoadReport report);
     Optional<LoadReport> findByAthleteIdAndWeekStartDate(long athleteId, LocalDate weekStartDate);
+    Optional<LoadReport> findLatestByAthleteId(long athleteId);
     List<LoadReport> findByAthleteIdAndWeekStartDateBetween(long athleteId, LocalDate from, LocalDate to);
     void deleteByAthleteIdAndWeekStartDate(long athleteId, LocalDate weekStartDate);
 }
 ```
 
+### New service interface (service/)
+```java
+public interface LoadReportService {
+    LoadReport findByAthleteIdAndWeekStartDate(long athleteId, LocalDate weekStartDate);
+    LoadReport findLatestByAthleteId(long athleteId);
+    List<LoadReport> findByAthleteIdAndPeriod(long athleteId, LocalDate from, LocalDate to);
+}
+```
+
 ### New exception (domain/exception/)
 - `LoadReportNotFoundException(long athleteId, LocalDate weekStartDate)` → 404
+- Used exclusively by GET latest — the only endpoint where absence of any report
+  is a true missing resource (athlete has no load data at all)
 
 ## Domain Events
 No new events — reuses `TrainingSessionCreatedEvent`, `TrainingSessionUpdatedEvent`,
@@ -62,20 +83,32 @@ No new events — reuses `TrainingSessionCreatedEvent`, `TrainingSessionUpdatedE
 
 Event flow:
 1. Compute `weekStartDate` = Monday of `event.date()`
-2. Fetch all sessions for that athlete on that week via `TrainingSessionRepository.findByAthleteIdAndPeriod(athleteId, weekStartDate, weekStartDate.plusDays(6))`
-3. If sessions exist → calculate `totalFosterLoad` + `sessionCount` → save/update `LoadReport`
-4. If no sessions remain → delete `LoadReport` for that week
+2. Fetch all sessions for that athlete on that week via
+   `TrainingSessionRepository.findByAthleteIdAndPeriod(athleteId, weekStartDate, weekStartDate.plusDays(6))`
+3. If sessions exist → calculate `totalFosterLoad` + `sessionCount` → `LoadReportRepository.save()`
+4. If no sessions remain → `LoadReportRepository.deleteByAthleteIdAndWeekStartDate()`
+
+A zero-load report is never persisted — it is always computed on-the-fly on GET.
 
 ## API Contract
 
 ### Endpoints
 | Method | URL | Query params | Response | Success | Errors |
 |---|---|---|---|---|---|
-| GET | /v1/athletes/{id}/reports/load | `weekStartDate` (required) | `LoadReportResponse` | 200 | 400, 401, 404 |
+| GET | /v1/athletes/{id}/reports/load | `weekStartDate` (required) | `LoadReportResponse` | 200 | 400, 401 |
 | GET | /v1/athletes/{id}/reports/load/latest | — | `LoadReportResponse` | 200 | 401, 404 |
-| GET | /v1/athletes/{id}/reports/load | `from` (required), `to` (optional) | `List<LoadReportResponse>` | 200 | 400, 401, 404 |
+| GET | /v1/athletes/{id}/reports/load | `from` (required), `to` (optional) | `List<LoadReportResponse>` | 200 | 400, 401 |
 
-Query param `weekStartDate` and `from`/`to` : `@PastOrPresent` — future weeks rejected at HTTP boundary.
+Query params `weekStartDate` and `from`/`to` : `@PastOrPresent` — future weeks rejected at HTTP boundary.
+
+The two `GET /v1/athletes/{id}/reports/load` endpoints are implemented as two separate
+controller methods discriminated by Spring MVC params:
+- `@GetMapping(params = "weekStartDate")` → single LoadReportResponse
+- `@GetMapping(params = "from")` → List<LoadReportResponse>
+
+Note: GET by weekStartDate never returns 404 — a valid week with no sessions returns a
+zero-value report (totalFosterLoad=0, sessionCount=0, updatedAt=null). 404 is reserved
+for GET latest when no report exists at all.
 
 ### DTO
 **`LoadReportResponse`** (record)
@@ -83,29 +116,45 @@ Query param `weekStartDate` and `from`/`to` : `@PastOrPresent` — future weeks 
 - `LocalDate weekStartDate`
 - `int totalFosterLoad`
 - `int sessionCount`
-- `LocalDateTime updatedAt` — null if calculated on the fly (no sessions yet persisted)
+- `LocalDateTime updatedAt` — null if on-the-fly (no sessions for this week)
 
 ## Service flow
 
 ### GET by weekStartDate
 GET /v1/athletes/{id}/reports/load?weekStartDate=2026-05-19
-→ LoadReportController — validates @PastOrPresent on weekStartDate
+→ LoadReportController — @PastOrPresent on weekStartDate
 → athleteService.findById(athleteId, coachId) — Coach→Athlete ownership
 → LoadReportService.findByAthleteIdAndWeekStartDate(athleteId, weekStartDate)
 → LoadReportRepository.findByAthleteIdAndWeekStartDate()
-→ found → return
-→ not found → calculate on the fly from TrainingSessionRepository
-→ sessions found → return calculated LoadReport (not persisted)
+→ found → return persisted report
+→ not found → TrainingSessionRepository.findByAthleteIdAndPeriod(
+athleteId, weekStartDate, weekStartDate.plusDays(6))
+→ sessions found → calculate and return LoadReport (not persisted)
 → no sessions → return LoadReport(totalFosterLoad=0, sessionCount=0, updatedAt=null)
 → LoadReportWebMapper.domainToResponse(report)
 → ResponseEntity.ok(response)
 
-Note: future weekStartDate → 400 at controller level before any service call.
-
 ### GET latest
+GET /v1/athletes/{id}/reports/load/latest
+→ LoadReportController
+→ athleteService.findById(athleteId, coachId) — Coach→Athlete ownership
 → LoadReportService.findLatestByAthleteId(athleteId)
-→ LoadReportRepository.findTopByAthleteIdOrderByWeekStartDateDesc()
-→ empty → 404 LoadReportNotFoundException
+→ LoadReportRepository.findLatestByAthleteId()
+→ found → return
+→ empty → throw LoadReportNotFoundException → 404
+→ LoadReportWebMapper.domainToResponse(report)
+→ ResponseEntity.ok(response)
+
+### GET by period
+GET /v1/athletes/{id}/reports/load?from=2026-04-01&to=2026-05-26
+→ LoadReportController — @PastOrPresent on from and to, validate from <= to → 400
+→ athleteService.findById(athleteId, coachId) — Coach→Athlete ownership
+→ LoadReportService.findByAthleteIdAndPeriod(athleteId, from, to)
+→ LoadReportRepository.findByAthleteIdAndWeekStartDateBetween()
+→ returns list (empty list if no reports in range — no 404)
+→ LoadReportWebMapper.domainToResponse() on each element
+→ ResponseEntity.ok(list)
+
 
 ### Event flow
 TrainingSession created/updated/deleted
@@ -114,34 +163,44 @@ TrainingSession created/updated/deleted
 → sessions = TrainingSessionRepository.findByAthleteIdAndPeriod(
 athleteId, weekStartDate, weekStartDate.plusDays(6))
 → if sessions empty → LoadReportRepository.deleteByAthleteIdAndWeekStartDate()
-→ else → calculate totalFosterLoad + sessionCount → LoadReportRepository.save()
+→ else → totalFosterLoad = sum of getFosterLoad(), sessionCount = sessions.size()
+→ LoadReportRepository.save(new LoadReport(athleteId, weekStartDate,
+totalFosterLoad, sessionCount, LocalDateTime.now()))
 
 ## Impact on existing code
 - `LoadReportNotFoundException` → 404, extends `ResourceNotFoundException`
 - `GlobalExceptionHandler` — already handles `ResourceNotFoundException`, no change needed
-- `TrainingSessionEventHandler` already exists — `LoadReportEventHandler` is a separate 
+- `TrainingSessionEventHandler` already exists — `LoadReportEventHandler` is a separate
   handler listening to the same events, consistent pattern
 
 ## Decisions
 - LoadReport persisted — aggregated weekly data, avoids recalculating from all sessions on every request
-- `updated_at` only (no `created_at`) — operational tracing of last recalculation; managed by @UpdateTimestamp
-- Delete on last session removal — no sessions = no load = no report; on-demand GET returns zero-value report
-- On-demand calculation when not in DB — always returns a report, never 404 for valid past or current weeks
+- `updated_at` only (no `created_at`) — operational tracing of last recalculation; managed by
+  @UpdateTimestamp. Distinguishes persisted reports (updatedAt set) from on-the-fly reports
+  (updatedAt=null) in the API response
+- Zero-load report never persisted — GET has no write side effect (idempotent).
+  On-the-fly calculation is a defensive fallback; in normal operation the event chain
+  ensures the report is always in DB when sessions exist
+- GET by weekStartDate never returns 404 — absence of sessions is information, not an error
+- GET latest returns 404 if no report exists — true missing resource (athlete has no data at all)
 - Future weekStartDate → 400 at HTTP boundary, not 404 — invalid input, not missing resource
 - No Redis cache — weekly data changes only on session events; DB read sufficient for this access pattern
 - `LoadReportEventHandler` in service/ — consistent with `TrainingSessionEventHandler` placement
-- weekStartDate always normalized to Monday — consistent with WeeklyWellness convention
+- weekStartDate must be a Monday — domain invariant, DomainValidationException → 400, no silent normalization
+- sessionCount == 0 iff totalFosterLoad == 0 — domain invariant, incoherent report is a domain error
 - Current week included — coach can consult in-progress week (e.g. Saturday afternoon preview)
 - LoadReport does NOT calculate ACWR — raw weekly aggregate only; ACWR computed in WeeklyReport (TDD-008)
-- `updatedAt = null` in on-the-fly response — signals report not yet persisted, informational only
 
 ## Test strategy
 - `LoadReportJpaAdapterTest` — Mockito
 - `LoadReportJpaAdapterIT` — Testcontainers: save, find, delete, period filter, latest
-- `LoadReportServiceImplTest` — Mockito: found in DB, not found → on-the-fly calc, no sessions → zero report
-- `LoadReportWebMapperTest` — unit
-- `LoadReportControllerTest` — @WebMvcTest: 200 found, 200 on-the-fly zero, 400 future date, 404 latest missing
-- `LoadReportEventHandlerTest` — Mockito: recalculate+save on create/update, delete on last session removed
+- `LoadReportServiceImplTest` — Mockito: found in DB, not found → on-the-fly calc,
+  no sessions → zero report, latest found, latest not found → LoadReportNotFoundException
+- `LoadReportWebMapperTest` — unit: domainToResponse nominal + updatedAt=null (on-the-fly report)
+- `LoadReportControllerTest` — @WebMvcTest: 200 found, 200 on-the-fly zero, 400 future date,
+  400 from > to, 404 latest missing
+- `LoadReportEventHandlerTest` — Mockito: recalculate+save on create/update,
+  delete on last session removed
 - `LoadReportEventIT` — @SpringBootTest + Testcontainers: end-to-end event → DB persistence verified
 
 ## Out of scope

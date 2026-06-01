@@ -1,5 +1,6 @@
 package com.axel.trainingmetricsapi.controller;
 
+import com.axel.trainingmetricsapi.controller.exception.InvalidPeriodException;
 import com.axel.trainingmetricsapi.domain.exception.DomainValidationException;
 import com.axel.trainingmetricsapi.domain.exception.EmailAlreadyExistsException;
 import com.axel.trainingmetricsapi.domain.exception.InvalidCredentialsException;
@@ -7,6 +8,7 @@ import com.axel.trainingmetricsapi.domain.exception.ResourceNotFoundException;
 import com.axel.trainingmetricsapi.domain.exception.WeeklyWellnessAlreadyExistsException;
 import com.axel.trainingmetricsapi.dto.response.ApiError;
 import com.axel.trainingmetricsapi.dto.response.ErrorCode;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -50,6 +52,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(List.of(apiError));
     }
 
+    @ExceptionHandler(InvalidPeriodException.class)
+    public ResponseEntity<List<ApiError>> handleInvalidPeriod(InvalidPeriodException exception) {
+        return ResponseEntity.badRequest().body(
+            List.of(new ApiError(ErrorCode.HTTP_VALIDATION_ERROR, "from", exception.getMessage())));
+    }
+
     // Web infrastructure exception — handled here for consistent ApiError format across all 400 responses
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<List<ApiError>> handleHttpValidationErrors(MethodArgumentNotValidException exception) {
@@ -62,9 +70,25 @@ public class GlobalExceptionHandler {
 
     // Web infrastructure exception — handled here for consistent ApiError format across all 400 responses
     @ExceptionHandler(MissingServletRequestParameterException.class)
-    public ResponseEntity<List<ApiError>> handleMissingParams(MissingServletRequestParameterException e) {
-        ApiError error = new ApiError(ErrorCode.HTTP_VALIDATION_ERROR, e.getParameterName(), e.getMessage());
+    public ResponseEntity<List<ApiError>> handleMissingParams(MissingServletRequestParameterException exception) {
+        ApiError error = new ApiError(ErrorCode.HTTP_VALIDATION_ERROR, exception.getParameterName(), exception.getMessage());
         return ResponseEntity.badRequest().body(List.of(error));
     }
 
+    // Web infrastructure exception — handled here for consistent ApiError format across all 400 responses
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<List<ApiError>> handleConstraintViolation(ConstraintViolationException exception) {
+        List<ApiError> errors = exception.getConstraintViolations().stream()
+            .map(violation -> new ApiError(
+                ErrorCode.HTTP_VALIDATION_ERROR,
+                extractFieldName(violation.getPropertyPath().toString()),
+                violation.getMessage()))
+            .toList();
+        return ResponseEntity.badRequest().body(errors);
+    }
+
+    private String extractFieldName(String propertyPath) {
+        String[] parts = propertyPath.split("\\.");
+        return parts[parts.length - 1];
+    }
 }
