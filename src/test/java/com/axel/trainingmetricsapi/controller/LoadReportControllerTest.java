@@ -181,4 +181,18 @@ class LoadReportControllerTest extends SecurityMockControllerSupport {
 
         verify(loadReportService, never()).findByAthleteIdAndPeriod(anyLong(), any(), any());
     }
+
+    @Test
+    void getByPeriod_shouldReturn200_withDefaultToToday_whenToNotProvided() throws Exception {
+        LocalDate from = LocalDate.of(2025, 4, 7);
+        LocalDate today = LocalDate.now();
+        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
+        when(loadReportService.findByAthleteIdAndPeriod(ATHLETE_ID, from, today)).thenReturn(List.of());
+
+        mvc.perform(get(BASE_URL).param("from", "2025-04-07"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(0));
+
+        verify(loadReportService).findByAthleteIdAndPeriod(ATHLETE_ID, from, today);
+    }
 }

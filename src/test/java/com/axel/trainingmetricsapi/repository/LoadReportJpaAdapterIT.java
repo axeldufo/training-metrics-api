@@ -1,11 +1,7 @@
 package com.axel.trainingmetricsapi.repository;
 
 import com.axel.trainingmetricsapi.TestContainersConfiguration;
-import com.axel.trainingmetricsapi.domain.Athlete;
-import com.axel.trainingmetricsapi.domain.AthleteRepository;
-import com.axel.trainingmetricsapi.domain.LoadReport;
-import com.axel.trainingmetricsapi.domain.LoadReportRepository;
-import com.axel.trainingmetricsapi.domain.Sport;
+import com.axel.trainingmetricsapi.domain.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +12,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
