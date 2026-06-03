@@ -1,9 +1,6 @@
 package com.axel.trainingmetricsapi.service;
 
-import com.axel.trainingmetricsapi.domain.LoadReport;
-import com.axel.trainingmetricsapi.domain.LoadReportRepository;
-import com.axel.trainingmetricsapi.domain.TrainingSession;
-import com.axel.trainingmetricsapi.domain.TrainingSessionRepository;
+import com.axel.trainingmetricsapi.domain.*;
 import com.axel.trainingmetricsapi.domain.exception.LoadReportNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -11,7 +8,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -20,11 +16,13 @@ public class LoadReportServiceImpl implements LoadReportService {
 
     private final LoadReportRepository loadReportRepository;
     private final TrainingSessionRepository trainingSessionRepository;
+    private final LoadReportCalculator loadReportCalculator;
 
     public LoadReportServiceImpl(LoadReportRepository loadReportRepository,
                                  TrainingSessionRepository trainingSessionRepository) {
         this.loadReportRepository = loadReportRepository;
         this.trainingSessionRepository = trainingSessionRepository;
+        this.loadReportCalculator = new LoadReportCalculator();
     }
 
     @Override
@@ -51,8 +49,7 @@ public class LoadReportServiceImpl implements LoadReportService {
         if (!sessions.isEmpty()) {
             log.warn("LoadReport not found in DB for athleteId={} weekStartDate={} but {} session(s) exist " +
                 "— event chain may be broken", athleteId, weekStartDate, sessions.size());
-            int totalFosterLoad = sessions.stream().mapToInt(TrainingSession::getFosterLoad).sum();
-            return new LoadReport(athleteId, weekStartDate, totalFosterLoad, sessions.size(), null);
+            return loadReportCalculator.calculate(athleteId, weekStartDate, sessions, null);
         }
 
         return new LoadReport(athleteId, weekStartDate, 0, 0, null);
