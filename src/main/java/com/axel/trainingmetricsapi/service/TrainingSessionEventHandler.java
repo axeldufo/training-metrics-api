@@ -1,7 +1,7 @@
 package com.axel.trainingmetricsapi.service;
 
 import com.axel.trainingmetricsapi.config.CacheConfig;
-import com.axel.trainingmetricsapi.domain.LoadReport;
+import com.axel.trainingmetricsapi.domain.LoadReportCalculator;
 import com.axel.trainingmetricsapi.domain.LoadReportRepository;
 import com.axel.trainingmetricsapi.domain.TrainingSession;
 import com.axel.trainingmetricsapi.domain.TrainingSessionRepository;
@@ -25,6 +25,7 @@ public class TrainingSessionEventHandler {
     private final AcwrReportService acwrReportService;
     private final TrainingSessionRepository trainingSessionRepository;
     private final LoadReportRepository loadReportRepository;
+    private final LoadReportCalculator loadReportCalculator;
 
     public TrainingSessionEventHandler(CacheManager cacheManager,
                                        AcwrReportService acwrReportService,
@@ -34,6 +35,7 @@ public class TrainingSessionEventHandler {
         this.acwrReportService = acwrReportService;
         this.trainingSessionRepository = trainingSessionRepository;
         this.loadReportRepository = loadReportRepository;
+        this.loadReportCalculator = new LoadReportCalculator();
     }
 
     @EventListener
@@ -73,8 +75,7 @@ public class TrainingSessionEventHandler {
             return;
         }
 
-        int totalFosterLoad = sessions.stream().mapToInt(TrainingSession::getFosterLoad).sum();
-        loadReportRepository.save(new LoadReport(
-            athleteId, weekStartDate, totalFosterLoad, sessions.size(), LocalDateTime.now()));
+        loadReportRepository.save(
+            loadReportCalculator.calculate(athleteId, weekStartDate, sessions, LocalDateTime.now()));
     }
 }

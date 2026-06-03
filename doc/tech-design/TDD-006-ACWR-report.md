@@ -16,7 +16,8 @@ AcwrCalculator in domain/ isolates pure business logic — anticipates hexagonal
 
 ### Definitions
 - `acuteLoad` = total Foster load over last 7 days (J-6 to J0 inclusive)
-- `chronicLoad` = total Foster load over last 28 days (J-27 to J0 inclusive) / 4
+- `cchronicLoad` = total Foster load over last 28 days / weeksOfDataAvailable
+             (weeksOfDataAvailable = distinct weeks with at least one session)
 - `acwr` = acuteLoad / chronicLoad
 - Standard Banister/Gabbett definition — chronic window includes acute week
 
@@ -39,16 +40,21 @@ public enum AcwrAlert {
 
 ### AcwrCalculator (domain/)
 Pure POJO, no Spring annotations. Anticipates hexagonal Domain Service extraction.
+Owns a `LoadReportCalculator` instance (instantiated internally with `new`).
+
+Public API:
 ```java
-public class AcwrCalculator {
-    public AcwrReport calculate(long athleteId, List<TrainingSession> sessions, LocalDate today);
-}
+public AcwrReport calculate(long athleteId, List<TrainingSession> sessions, LocalDate today);
 ```
-Receives all sessions from last 28 days (J-27 to J0).
-Filters internally: acute = sessions where date >= today-6, chronic = all 28 days.
-Handles chronicLoad = 0 → acwr = 0.0, acwrReliable = false, acwrAlert = NO_DATA.
-Counts distinct weeks with at least one session → weeksOfDataAvailable.
-acwrReliable = true only if weeksOfDataAvailable >= 4.
+Groups sessions by weekStartDate via `LoadReportCalculator`, builds List<LoadReport>
+ordered current week first, then delegates to `computeFromWeeklyLoads()`.
+
+Package-private API (used by WeeklyReportCalculator in TDD-008):
+```java
+AcwrReport computeFromWeeklyLoads(long athleteId, LocalDate weekStartDate, List<LoadReport> loadReports);
+```
+Single source of truth for ACWR business rules: ratio, thresholds 0.8/1.3,
+reliability (weeksOfData >= 4), chronicLoad=0 → acwr=0.0.
 
 ## Domain Object
 
@@ -214,6 +220,10 @@ TrainingSession created/updated/deleted
 - ApplicationEvent sync (same transaction) — @Async in hexagonal phase
 - TrainingSessionEventHandler in service/ — cache coherence is business concern
 - Events in domain/event/ — domain owns its events
+- AcwrCalculator owns LoadReportCalculator internally — sessions grouped into weekly
+  LoadReports before ACWR computation; single aggregation primitive across the domain
+- computeFromWeeklyLoads() package-private — ACWR business rules reusable by
+  WeeklyReportCalculator (TDD-008) without duplication, not exposed outside domain/
 
 ## Test strategy
 - `AcwrCalculatorTest` — pure unit, no Spring
@@ -223,6 +233,15 @@ TrainingSession created/updated/deleted
   - boundary: acwr exactly 0.8 → OK (0.8 inclusive = OK per spec)
   - boundary: acwr exactly 1.3 → OK (1.3 inclusive = OK per spec)
   - verify calculatedAt = today (ArgumentCaptor on LocalDate)
+  - computeFromWeeklyLoads — nominal: 4 LoadReports, sessionCount > 0 → acwrReliable=true
+  - computeFromWeeklyLoads — weeksOfData < 4 → acwrReliable=false
+  - computeFromWeeklyLoads — all sessionCount=0 → chronicLoad=0.0, acwr=0.0, NO_DATA
+  - computeFromWeeklyLoads — boundary: acwr exactly 0.8 → OK
+  - computeFromWeeklyLoads — boundary: acwr exactly 1.3 → OK
+  - computeFromWeeklyLoads — current week sessionCount=0 → acuteLoad=0
+- `LoadReportCalculatorTest` — pure unit
+  - nominal: 3 sessions → totalFosterLoad = sum, sessionCount = 3
+  - single session → totalFosterLoad = session.getFosterLoad(), sessionCount = 1
 - `AcwrReportWebMapperTest` — unit, all fields mapped
 - `AcwrReportServiceImplTest` — Mockito
   - verify findByAthleteIdAndPeriod called with today-27 to today

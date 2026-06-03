@@ -77,9 +77,7 @@ public interface LoadReportService {
 ## Domain Events
 No new events — reuses `TrainingSessionCreatedEvent`, `TrainingSessionUpdatedEvent`,
 `TrainingSessionDeletedEvent` already published by `TrainingSessionServiceImpl`.
-
-### New handler
-`LoadReportEventHandler` in service/ — listens to all 3 TrainingSession events.
+Load report recalculation merged into TrainingSessionEventHandler — no separate handler.
 
 Event flow:
 1. Compute `weekStartDate` = Monday of `event.date()`
@@ -129,7 +127,8 @@ GET /v1/athletes/{id}/reports/load?weekStartDate=2026-05-19
 → found → return persisted report
 → not found → TrainingSessionRepository.findByAthleteIdAndPeriod(
 athleteId, weekStartDate, weekStartDate.plusDays(6))
-→ sessions found → calculate and return LoadReport (not persisted)
+→ sessions found → loadReportCalculator.calculate(athleteId, weekStartDate, sessions)
+                   → return LoadReport (not persisted)
 → no sessions → return LoadReport(totalFosterLoad=0, sessionCount=0, updatedAt=null)
 → LoadReportWebMapper.domainToResponse(report)
 → ResponseEntity.ok(response)
@@ -158,20 +157,19 @@ GET /v1/athletes/{id}/reports/load?from=2026-04-01&to=2026-05-26
 
 ### Event flow
 TrainingSession created/updated/deleted
-→ LoadReportEventHandler
+→ TrainingSessionEventHandler
 → weekStartDate = Monday of event.date()
 → sessions = TrainingSessionRepository.findByAthleteIdAndPeriod(
 athleteId, weekStartDate, weekStartDate.plusDays(6))
 → if sessions empty → LoadReportRepository.deleteByAthleteIdAndWeekStartDate()
-→ else → totalFosterLoad = sum of getFosterLoad(), sessionCount = sessions.size()
-→ LoadReportRepository.save(new LoadReport(athleteId, weekStartDate,
-totalFosterLoad, sessionCount, LocalDateTime.now()))
+→ else → LoadReportRepository.save(
+     loadReportCalculator.calculate(athleteId, weekStartDate, sessions))
 
 ## Impact on existing code
 - `LoadReportNotFoundException` → 404, extends `ResourceNotFoundException`
 - `GlobalExceptionHandler` — already handles `ResourceNotFoundException`, no change needed
-- `TrainingSessionEventHandler` already exists — `LoadReportEventHandler` is a separate
-  handler listening to the same events, consistent pattern
+- TrainingSessionEventHandler extended — recalculateLoadReport() added alongside refreshAcwrReport().
+LoadReportEventHandler does not exist.
 
 ## Decisions
 - LoadReport persisted — aggregated weekly data, avoids recalculating from all sessions on every request
@@ -190,6 +188,8 @@ totalFosterLoad, sessionCount, LocalDateTime.now()))
 - sessionCount == 0 iff totalFosterLoad == 0 — domain invariant, incoherent report is a domain error
 - Current week included — coach can consult in-progress week (e.g. Saturday afternoon preview)
 - LoadReport does NOT calculate ACWR — raw weekly aggregate only; ACWR computed in WeeklyReport (TDD-008)
+- Load calculation delegated to LoadReportCalculator (domain/) —
+  business logic (Foster load sum = week's load) belongs in domain, not in event handler
 
 ## Test strategy
 - `LoadReportJpaAdapterTest` — Mockito
@@ -199,8 +199,8 @@ totalFosterLoad, sessionCount, LocalDateTime.now()))
 - `LoadReportWebMapperTest` — unit: domainToResponse nominal + updatedAt=null (on-the-fly report)
 - `LoadReportControllerTest` — @WebMvcTest: 200 found, 200 on-the-fly zero, 400 future date,
   400 from > to, 404 latest missing
-- `LoadReportEventHandlerTest` — Mockito: recalculate+save on create/update,
-  delete on last session removed
+- `LoadReportEventHandlerTest` — Mockito: verify loadReportCalculator.calculate() called on create/update (not inline stream),
+delete on last session removed
 - `LoadReportEventIT` — @SpringBootTest + Testcontainers: end-to-end event → DB persistence verified
 
 ## Out of scope
