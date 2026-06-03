@@ -26,7 +26,7 @@ public class AcwrCalculator {
             .entrySet().stream()
             .map(e -> loadReportCalculator.calculate(athleteId, e.getKey(), e.getValue(), LocalDateTime.now()))
             .sorted(Comparator.comparing(LoadReport::weekStartDate).reversed())
-            .collect(Collectors.toList());
+            .toList();
 
         return computeFromWeeklyLoads(athleteId, today, loadReports);
     }
