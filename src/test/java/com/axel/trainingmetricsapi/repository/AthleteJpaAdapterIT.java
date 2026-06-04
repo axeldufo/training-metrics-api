@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,7 +49,7 @@ class AthleteJpaAdapterIT {
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     void save_shouldThrowException_whenCoachDoesNotExist() {
         Athlete athlete = new Athlete("Alice", "Smith",
-            LocalDate.of(1990, 1, 1), Sport.CYCLING, 9999L, 60.0);
+            LocalDate.of(1990, Month.JANUARY, 1), Sport.CYCLING, 9999L, 60.0);
 
         assertThatThrownBy(() -> athleteRepository.save(athlete))
             .isInstanceOf(DataIntegrityViolationException.class);
@@ -138,7 +139,7 @@ class AthleteJpaAdapterIT {
     private Athlete anAthlete() {
         CoachJpaEntity requestingCoach = coachJpaRepository.save(
             aCoach("Coach Requesting", "coach@test.com"));
-        return new Athlete("Alice", "Smith", LocalDate.of(1990, 1, 1), Sport.CYCLING, requestingCoach.getId(), 60.0);
+        return new Athlete("Alice", "Smith", LocalDate.of(1990, Month.JANUARY, 1), Sport.CYCLING, requestingCoach.getId(), 60.0);
     }
 
     private CoachJpaEntity aCoach(String name, String email) {
@@ -151,6 +152,6 @@ class AthleteJpaAdapterIT {
 
     private void saveAthlete(String firstName, String lastName, long coachId) {
         athleteRepository.save(new Athlete(firstName, lastName,
-            LocalDate.of(1990, 1, 1), Sport.DUATHLON, coachId, 70.0));
+            LocalDate.of(1990, Month.JANUARY, 1), Sport.DUATHLON, coachId, 70.0));
     }
 }

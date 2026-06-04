@@ -13,6 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 
@@ -61,8 +62,8 @@ class WeeklyWellnessServiceImplTest {
     @Test
     void findByAthleteIdAndPeriod_shouldReturnList() {
         long athleteId = 4L;
-        LocalDate from = LocalDate.of(2024, 1, 1);
-        LocalDate to = LocalDate.of(2024, 1, 29);
+        LocalDate from = LocalDate.of(2024, Month.JANUARY, 1);
+        LocalDate to = LocalDate.of(2024, Month.JANUARY, 29);
         List<WeeklyWellness> expected = Instancio.ofList(WeeklyWellness.class).size(2).create();
         when(wellnessRepository.findByAthleteIdAndPeriod(athleteId, from, to)).thenReturn(expected);
 
@@ -155,8 +156,8 @@ class WeeklyWellnessServiceImplTest {
     @Test
     void update_shouldCheckUniqueness_whenWeekStartDateChanged() {
         long athleteId = 3L;
-        LocalDate newMonday = LocalDate.of(2024, 1, 15);
-        LocalDate oldMonday = LocalDate.of(2024, 1, 8);
+        LocalDate newMonday = LocalDate.of(2024, Month.JANUARY, 15);
+        LocalDate oldMonday = LocalDate.of(2024, Month.JANUARY, 8);
         WeeklyWellness incoming = Instancio.of(WeeklyWellness.class)
             .set(field(WeeklyWellness::getAthleteId), athleteId)
             .set(field(WeeklyWellness::getWeekStartDate), newMonday)
@@ -186,8 +187,8 @@ class WeeklyWellnessServiceImplTest {
     @Test
     void update_shouldThrowAlreadyExists_whenWeekStartDateChangedAndConflicts() {
         long athleteId = 3L;
-        LocalDate newMonday = LocalDate.of(2024, 1, 15);
-        LocalDate oldMonday = LocalDate.of(2024, 1, 8);
+        LocalDate newMonday = LocalDate.of(2024, Month.JANUARY, 15);
+        LocalDate oldMonday = LocalDate.of(2024, Month.JANUARY, 8);
         WeeklyWellness incoming = Instancio.of(WeeklyWellness.class)
             .set(field(WeeklyWellness::getAthleteId), athleteId)
             .set(field(WeeklyWellness::getWeekStartDate), newMonday)

@@ -1,0 +1,144 @@
+package com.axel.trainingmetricsapi;
+
+import com.axel.trainingmetricsapi.domain.Athlete;
+import com.axel.trainingmetricsapi.domain.AthleteRepository;
+import com.axel.trainingmetricsapi.domain.CorrelationAlert;
+import com.axel.trainingmetricsapi.domain.Sport;
+import com.axel.trainingmetricsapi.domain.TargetZone;
+import com.axel.trainingmetricsapi.domain.TrainingSession;
+import com.axel.trainingmetricsapi.domain.TrainingSessionRepository;
+import com.axel.trainingmetricsapi.domain.WeeklyReport;
+import com.axel.trainingmetricsapi.domain.WeeklyWellness;
+import com.axel.trainingmetricsapi.domain.WeeklyWellnessRepository;
+import com.axel.trainingmetricsapi.domain.event.TrainingSessionCreatedEvent;
+import com.axel.trainingmetricsapi.domain.exception.WeeklyReportNotFoundException;
+import com.axel.trainingmetricsapi.repository.CoachJpaEntity;
+import com.axel.trainingmetricsapi.repository.CoachJpaRepository;
+import com.axel.trainingmetricsapi.service.WeeklyReportService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.annotation.Import;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.time.Month;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+@SpringBootTest
+@Import(TestContainersConfiguration.class)
+@Transactional
+class WeeklyReportIT {
+
+    private static final LocalDate MONDAY = LocalDate.of(2025, Month.MAY, 19);
+    private static final LocalDate SESSION_DATE = MONDAY.plusDays(2); // Wednesday
+
+    @Autowired
+    private WeeklyReportService weeklyReportService;
+
+    @Autowired
+    private TrainingSessionRepository trainingSessionRepository;
+
+    @Autowired
+    private WeeklyWellnessRepository weeklyWellnessRepository;
+
+    @Autowired
+    private AthleteRepository athleteRepository;
+
+    @Autowired
+    private CoachJpaRepository coachJpaRepository;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
+
+    private long athleteId;
+
+    @BeforeEach
+    void setUp() {
+        CoachJpaEntity coach = coachJpaRepository.save(aCoach());
+        Athlete athlete = athleteRepository.save(anAthlete(coach.getId()));
+        athleteId = athlete.getId();
+    }
+
+    @Test
+    void scenario1_nominalEndToEnd_sessionsAndWellnessPresent_returns200WithCorrectFields() {
+        trainingSessionRepository.save(aSession(athleteId, SESSION_DATE, 6, 60));
+        trainingSessionRepository.save(aSession(athleteId, SESSION_DATE, 7, 45));
+        trainingSessionRepository.save(aSession(athleteId, SESSION_DATE, 5, 30));
+        eventPublisher.publishEvent(new TrainingSessionCreatedEvent(athleteId, SESSION_DATE));
+
+        weeklyWellnessRepository.save(new WeeklyWellness(athleteId, MONDAY.minusWeeks(1), 4, 3, 4));
+        weeklyWellnessRepository.save(new WeeklyWellness(athleteId, MONDAY, 4, 3, 5));
+
+        WeeklyReport report = weeklyReportService.getWeeklyReport(athleteId, MONDAY);
+
+        assertThat(report.wellnessAvailable()).isTrue();
+        assertThat(report.sessionCount()).isEqualTo(3);
+        assertThat(report.perceivedDifficulty()).isEqualTo(4);
+        assertThat(report.perceivedFatigue()).isEqualTo(3);
+        assertThat(report.motivation()).isEqualTo(5);
+        assertThat(report.acwrReliable()).isFalse(); // only 1 week of data
+        assertThat(report.sessionCount()).isEqualTo(3);
+        assertThat(report.totalFosterLoad()).isGreaterThan(0);
+        assertThat(report.correlationAlert()).isNotEqualTo(CorrelationAlert.INSUFFICIENT_DATA);
+    }
+
+    @Test
+    void scenario2_zeroLoadWeek_noSessions_wellnessPresent_returns200() {
+        weeklyWellnessRepository.save(new WeeklyWellness(athleteId, MONDAY.minusWeeks(1), 3, 3, 4));
+        weeklyWellnessRepository.save(new WeeklyWellness(athleteId, MONDAY, 3, 2, 4));
+
+        WeeklyReport report = weeklyReportService.getWeeklyReport(athleteId, MONDAY);
+
+        assertThat(report.wellnessAvailable()).isTrue();
+        assertThat(report.sessionCount()).isZero();
+        assertThat(report.totalFosterLoad()).isZero();
+        assertThat(report.perceivedDifficulty()).isEqualTo(3);
+        assertThat(report.acwr()).isEqualTo(0.0); // no load history
+        assertThat(report.acwrReliable()).isFalse();
+        assertThat(report.correlationAlert()).isNotEqualTo(CorrelationAlert.INSUFFICIENT_DATA);
+    }
+
+    @Test
+    void scenario3_loadOnly_noWellness_returns200WithInsufficientData() {
+        trainingSessionRepository.save(aSession(athleteId, SESSION_DATE, 5, 60));
+        trainingSessionRepository.save(aSession(athleteId, SESSION_DATE, 6, 45));
+        eventPublisher.publishEvent(new TrainingSessionCreatedEvent(athleteId, SESSION_DATE));
+
+        WeeklyReport report = weeklyReportService.getWeeklyReport(athleteId, MONDAY);
+
+        assertThat(report.wellnessAvailable()).isFalse();
+        assertThat(report.correlationAlert()).isEqualTo(CorrelationAlert.INSUFFICIENT_DATA);
+        assertThat(report.perceivedDifficulty()).isNull();
+        assertThat(report.perceivedFatigue()).isNull();
+        assertThat(report.motivation()).isNull();
+    }
+
+    @Test
+    void scenario4_noDataAtAll_throws404() {
+        assertThatThrownBy(() -> weeklyReportService.getWeeklyReport(athleteId, MONDAY))
+            .isInstanceOf(WeeklyReportNotFoundException.class)
+            .hasMessageContaining("No weekly report available for athlete " + athleteId)
+            .hasMessageContaining("on week " + MONDAY);
+    }
+
+    private CoachJpaEntity aCoach() {
+        return CoachJpaEntity.builder()
+            .name("IT Coach")
+            .email("coach@test.com")
+            .hashedPassword("hashed")
+            .build();
+    }
+
+    private Athlete anAthlete(long coachId) {
+        return new Athlete("Test", "Athlete", LocalDate.of(1990, Month.JANUARY, 1), Sport.ROAD_RUNNING, coachId, 70.0);
+    }
+
+    private TrainingSession aSession(long forAthleteId, LocalDate date, int rpe, int durationInMin) {
+        return new TrainingSession(date, Sport.ROAD_RUNNING, rpe, durationInMin, TargetZone.Z2, forAthleteId);
+    }
+}

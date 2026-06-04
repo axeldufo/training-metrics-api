@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Month;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -12,7 +13,7 @@ class LoadReportPersistenceMapperTest {
 
     private final LoadReportPersistenceMapper mapper = new LoadReportPersistenceMapper();
 
-    private static final LocalDate MONDAY = LocalDate.of(2025, 5, 19);
+    private static final LocalDate MONDAY = LocalDate.of(2025, Month.MAY, 19);
 
     @Test
     void domainToEntity_shouldMapAllFields_withNullEntityId() {

@@ -10,6 +10,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,7 +21,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class LoadReportJpaAdapterTest {
 
-    private static final LocalDate MONDAY = LocalDate.of(2025, 5, 19);
+    private static final LocalDate MONDAY = LocalDate.of(2025, Month.MAY, 19);
     private static final long ATHLETE_ID = 1L;
 
     @Mock
@@ -125,8 +126,8 @@ class LoadReportJpaAdapterTest {
 
     @Test
     void findByAthleteIdAndWeekStartDateBetween_shouldMapAll() {
-        LocalDate from = LocalDate.of(2025, 4, 1);
-        LocalDate to = LocalDate.of(2025, 5, 26);
+        LocalDate from = LocalDate.of(2025, Month.APRIL, 1);
+        LocalDate to = LocalDate.of(2025, Month.MAY, 26);
         int size = 3;
         List<LoadReportJpaEntity> entities = Instancio.ofList(LoadReportJpaEntity.class).size(size).create();
         when(loadReportJpaRepository.findAllByAthleteIdAndWeekStartDateBetween(ATHLETE_ID, from, to))
@@ -142,8 +143,8 @@ class LoadReportJpaAdapterTest {
 
     @Test
     void findByAthleteIdAndWeekStartDateBetween_shouldReturnEmpty_whenNone() {
-        LocalDate from = LocalDate.of(2025, 4, 1);
-        LocalDate to = LocalDate.of(2025, 5, 26);
+        LocalDate from = LocalDate.of(2025, Month.APRIL, 1);
+        LocalDate to = LocalDate.of(2025, Month.MAY, 26);
         when(loadReportJpaRepository.findAllByAthleteIdAndWeekStartDateBetween(ATHLETE_ID, from, to))
             .thenReturn(List.of());
 

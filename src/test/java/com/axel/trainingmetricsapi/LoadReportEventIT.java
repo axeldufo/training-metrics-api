@@ -22,6 +22,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,8 +32,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Transactional
 class LoadReportEventIT {
 
-    private static final LocalDate MONDAY = LocalDate.of(2025, 5, 19);
-    private static final LocalDate SESSION_DATE = LocalDate.of(2025, 5, 21); // Wednesday
+    private static final LocalDate MONDAY = LocalDate.of(2025, Month.MAY, 19);
+    private static final LocalDate SESSION_DATE = LocalDate.of(2025, Month.MAY, 21); // Wednesday
 
     @Autowired
     private ApplicationEventPublisher eventPublisher;
@@ -110,7 +111,7 @@ class LoadReportEventIT {
     }
 
     private Athlete anAthlete(long coachId) {
-        return new Athlete("Bob", "Johnson", LocalDate.of(1985, 3, 15), Sport.ROAD_RUNNING, coachId, 75.0);
+        return new Athlete("Bob", "Johnson", LocalDate.of(1985, Month.MARCH, 15), Sport.ROAD_RUNNING, coachId, 75.0);
     }
 
     private TrainingSession aSession(long forAthleteId, LocalDate date, int rpe, int durationInMin) {

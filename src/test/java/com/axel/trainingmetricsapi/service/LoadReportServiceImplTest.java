@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,7 +29,7 @@ import static org.mockito.Mockito.when;
 class LoadReportServiceImplTest {
 
     private static final long ATHLETE_ID = 1L;
-    private static final LocalDate MONDAY = LocalDate.of(2025, 5, 19);
+    private static final LocalDate MONDAY = LocalDate.of(2025, Month.MAY, 19);
 
     @Mock
     private LoadReportRepository loadReportRepository;
@@ -108,8 +109,8 @@ class LoadReportServiceImplTest {
 
     @Test
     void findByAthleteIdAndPeriod_shouldDelegateToRepository() {
-        LocalDate from = LocalDate.of(2025, 4, 1);
-        LocalDate to = LocalDate.of(2025, 5, 26);
+        LocalDate from = LocalDate.of(2025, Month.APRIL, 1);
+        LocalDate to = LocalDate.of(2025, Month.MAY, 26);
         List<LoadReport> reports = List.of(new LoadReport(ATHLETE_ID, MONDAY, 200, 2, LocalDateTime.now()));
         when(loadReportRepository.findByAthleteIdAndWeekStartDateBetween(ATHLETE_ID, from, to))
             .thenReturn(reports);

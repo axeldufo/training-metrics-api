@@ -16,6 +16,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -51,8 +52,8 @@ class LoadReportControllerTest extends SecurityMockControllerSupport {
 
     @Test
     void getByWeekStartDate_shouldReturn200_withPersistedReport() throws Exception {
-        LocalDate monday = LocalDate.of(2025, 4, 28);
-        LocalDateTime updatedAt = LocalDateTime.of(2025, 4, 30, 10, 0);
+        LocalDate monday = LocalDate.of(2025, Month.APRIL, 28);
+        LocalDateTime updatedAt = LocalDateTime.of(2025, Month.APRIL, 30, 10, 0);
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
         LoadReport report = new LoadReport(ATHLETE_ID, monday, 200, 2, updatedAt);
         when(loadReportService.findByAthleteIdAndWeekStartDate(ATHLETE_ID, monday)).thenReturn(report);
@@ -73,7 +74,7 @@ class LoadReportControllerTest extends SecurityMockControllerSupport {
 
     @Test
     void getByWeekStartDate_shouldReturn200_withZeroReport_whenNoSessions() throws Exception {
-        LocalDate monday = LocalDate.of(2025, 4, 28);
+        LocalDate monday = LocalDate.of(2025, Month.APRIL, 28);
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
         LoadReport report = new LoadReport(ATHLETE_ID, monday, 0, 0, null);
         when(loadReportService.findByAthleteIdAndWeekStartDate(ATHLETE_ID, monday)).thenReturn(report);
@@ -102,8 +103,8 @@ class LoadReportControllerTest extends SecurityMockControllerSupport {
 
     @Test
     void getLatest_shouldReturn200_whenReportExists() throws Exception {
-        LocalDate monday = LocalDate.of(2025, 5, 19);
-        LocalDateTime updatedAt = LocalDateTime.of(2025, 5, 22, 12, 0);
+        LocalDate monday = LocalDate.of(2025, Month.MAY, 19);
+        LocalDateTime updatedAt = LocalDateTime.of(2025, Month.MAY, 22, 12, 0);
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
         LoadReport report = new LoadReport(ATHLETE_ID, monday, 300, 3, updatedAt);
         when(loadReportService.findLatestByAthleteId(ATHLETE_ID)).thenReturn(report);
@@ -135,10 +136,10 @@ class LoadReportControllerTest extends SecurityMockControllerSupport {
 
     @Test
     void getByPeriod_shouldReturn200_withList() throws Exception {
-        LocalDate from = LocalDate.of(2025, 4, 7);
-        LocalDate to = LocalDate.of(2025, 4, 21);
-        LocalDate monday1 = LocalDate.of(2025, 4, 7);
-        LocalDate monday2 = LocalDate.of(2025, 4, 14);
+        LocalDate from = LocalDate.of(2025, Month.APRIL, 7);
+        LocalDate to = LocalDate.of(2025, Month.APRIL, 21);
+        LocalDate monday1 = LocalDate.of(2025, Month.APRIL, 7);
+        LocalDate monday2 = LocalDate.of(2025, Month.APRIL, 14);
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
         List<LoadReport> reports = List.of(
             new LoadReport(ATHLETE_ID, monday1, 150, 1, LocalDateTime.now()),
@@ -184,7 +185,7 @@ class LoadReportControllerTest extends SecurityMockControllerSupport {
 
     @Test
     void getByPeriod_shouldReturn200_withDefaultToToday_whenToNotProvided() throws Exception {
-        LocalDate from = LocalDate.of(2025, 4, 7);
+        LocalDate from = LocalDate.of(2025, Month.APRIL, 7);
         LocalDate today = LocalDate.now();
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
         when(loadReportService.findByAthleteIdAndPeriod(ATHLETE_ID, from, today)).thenReturn(List.of());

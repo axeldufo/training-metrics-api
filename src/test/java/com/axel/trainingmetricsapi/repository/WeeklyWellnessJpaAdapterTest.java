@@ -10,6 +10,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 
@@ -84,8 +85,8 @@ class WeeklyWellnessJpaAdapterTest {
     @Test
     void findByAthleteIdAndPeriod_shouldMapAll() {
         long athleteId = 4L;
-        LocalDate from = LocalDate.of(2024, 1, 1);
-        LocalDate to = LocalDate.of(2024, 1, 29);
+        LocalDate from = LocalDate.of(2024, Month.JANUARY, 1);
+        LocalDate to = LocalDate.of(2024, Month.JANUARY, 29);
         int size = 3;
         List<WeeklyWellnessJpaEntity> entities = Instancio.ofList(WeeklyWellnessJpaEntity.class).size(size).create();
         when(wellnessJpaRepository.findAllByAthleteIdAndWeekStartDateBetween(athleteId, from, to))
@@ -103,8 +104,8 @@ class WeeklyWellnessJpaAdapterTest {
     @Test
     void findByAthleteIdAndPeriod_shouldReturnEmpty_whenNone() {
         long athleteId = 4L;
-        LocalDate from = LocalDate.of(2024, 1, 1);
-        LocalDate to = LocalDate.of(2024, 1, 29);
+        LocalDate from = LocalDate.of(2024, Month.JANUARY, 1);
+        LocalDate to = LocalDate.of(2024, Month.JANUARY, 29);
         when(wellnessJpaRepository.findAllByAthleteIdAndWeekStartDateBetween(athleteId, from, to))
             .thenReturn(List.of());
 
