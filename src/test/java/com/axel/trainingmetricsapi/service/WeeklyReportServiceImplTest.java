@@ -120,8 +120,8 @@ class WeeklyReportServiceImplTest {
 
         WeeklyReport report = weeklyReportService.getWeeklyReport(ATHLETE_ID, MONDAY);
 
-        assertThat(report.sessionCount()).isEqualTo(0);
-        assertThat(report.totalFosterLoad()).isEqualTo(0);
+        assertThat(report.sessionCount()).isZero();
+        assertThat(report.totalFosterLoad()).isZero();
         assertThat(report.wellnessAvailable()).isTrue();
         assertThat(report.correlationAlert()).isNotEqualTo(CorrelationAlert.INSUFFICIENT_DATA);
         verify(loadReportService).findByAthleteIdAndWeekStartDate(ATHLETE_ID, MONDAY);
@@ -141,7 +141,7 @@ class WeeklyReportServiceImplTest {
 
         WeeklyReport report = weeklyReportService.getWeeklyReport(ATHLETE_ID, MONDAY);
 
-        assertThat(report.sessionCount()).isEqualTo(0);
+        assertThat(report.sessionCount()).isZero();
         assertThat(report.wellnessAvailable()).isTrue();
         assertThat(report.correlationAlert()).isNotEqualTo(CorrelationAlert.INSUFFICIENT_DATA);
     }
@@ -201,29 +201,29 @@ class WeeklyReportServiceImplTest {
 
         // m1: has load in DB
         when(loadReportRepository.findByAthleteIdAndWeekStartDateBetween(
-            eq(ATHLETE_ID), eq(m1.minusWeeks(3)), eq(m1)))
+            ATHLETE_ID, m1.minusWeeks(3), m1))
             .thenReturn(List.of(aLoad(m1, 100, 1)));
         when(weeklyWellnessRepository.findByAthleteIdAndPeriod(
-            eq(ATHLETE_ID), eq(m1.minusWeeks(4)), eq(m1)))
+            ATHLETE_ID, m1.minusWeeks(4), m1))
             .thenReturn(List.of());
 
         // m2: zero-load week (athlete did not train), wellness present
         LoadReport zeroLoadWithTs = new LoadReport(ATHLETE_ID, m2, 0, 0, null);
         when(loadReportRepository.findByAthleteIdAndWeekStartDateBetween(
-            eq(ATHLETE_ID), eq(m2.minusWeeks(3)), eq(m2)))
+            ATHLETE_ID, m2.minusWeeks(3), m2))
             .thenReturn(List.of());
         when(weeklyWellnessRepository.findByAthleteIdAndPeriod(
-            eq(ATHLETE_ID), eq(m2.minusWeeks(4)), eq(m2)))
+            ATHLETE_ID, m2.minusWeeks(4), m2))
             .thenReturn(List.of(aWellness(m2, 3, 3, 4)));
-        when(loadReportService.findByAthleteIdAndWeekStartDate(eq(ATHLETE_ID), eq(m2)))
+        when(loadReportService.findByAthleteIdAndWeekStartDate(ATHLETE_ID, m2))
             .thenReturn(zeroLoadWithTs);
 
         // m3: has load in DB
         when(loadReportRepository.findByAthleteIdAndWeekStartDateBetween(
-            eq(ATHLETE_ID), eq(m3.minusWeeks(3)), eq(m3)))
+            ATHLETE_ID, m3.minusWeeks(3), m3))
             .thenReturn(List.of(aLoad(m3, 120, 2)));
         when(weeklyWellnessRepository.findByAthleteIdAndPeriod(
-            eq(ATHLETE_ID), eq(m3.minusWeeks(4)), eq(m3)))
+            ATHLETE_ID, m3.minusWeeks(4), m3))
             .thenReturn(List.of());
 
         List<WeeklyReport> reports = weeklyReportService.getWeeklyReportsByPeriod(ATHLETE_ID, from, to);
@@ -237,8 +237,6 @@ class WeeklyReportServiceImplTest {
     void getWeeklyReportsByPeriod_athleteHasNoData_returnsEmptyList() {
         LocalDate from = LocalDate.of(2025, 4, 28);
         LocalDate to = LocalDate.of(2025, 5, 5);
-        LocalDate m1 = LocalDate.of(2025, 4, 28);
-        LocalDate m2 = LocalDate.of(2025, 5, 5);
 
         // Both weeks: empty DB, zero onTheFlyLoad (null updatedAt), no wellness → not-found caught and skipped
         when(loadReportRepository.findByAthleteIdAndWeekStartDateBetween(anyLong(), any(), any()))

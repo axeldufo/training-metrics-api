@@ -94,8 +94,8 @@ class WeeklyReportIT {
         WeeklyReport report = weeklyReportService.getWeeklyReport(athleteId, MONDAY);
 
         assertThat(report.wellnessAvailable()).isTrue();
-        assertThat(report.sessionCount()).isEqualTo(0);
-        assertThat(report.totalFosterLoad()).isEqualTo(0);
+        assertThat(report.sessionCount()).isZero();
+        assertThat(report.totalFosterLoad()).isZero();
         assertThat(report.perceivedDifficulty()).isEqualTo(3);
         assertThat(report.acwr()).isEqualTo(0.0); // no load history
         assertThat(report.acwrReliable()).isFalse();

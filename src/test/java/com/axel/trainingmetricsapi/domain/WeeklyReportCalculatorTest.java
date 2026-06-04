@@ -76,8 +76,8 @@ class WeeklyReportCalculatorTest {
         WeeklyReport report = calculator.calculate(ATHLETE_ID, MONDAY, loads, wellness);
 
         assertThat(report.wellnessAvailable()).isTrue();
-        assertThat(report.sessionCount()).isEqualTo(0);
-        assertThat(report.totalFosterLoad()).isEqualTo(0);
+        assertThat(report.sessionCount()).isZero();
+        assertThat(report.totalFosterLoad()).isZero();
         assertThat(report.correlationAlert()).isNotEqualTo(CorrelationAlert.INSUFFICIENT_DATA);
     }
 
@@ -109,7 +109,7 @@ class WeeklyReportCalculatorTest {
 
         assertThat(report.wellnessAvailable()).isFalse();
         assertThat(report.correlationAlert()).isEqualTo(CorrelationAlert.INSUFFICIENT_DATA);
-        assertThat(report.sessionCount()).isEqualTo(0);
+        assertThat(report.sessionCount()).isZero();
     }
 
     @Test
@@ -171,7 +171,7 @@ class WeeklyReportCalculatorTest {
 
         WeeklyReport report = calculator.calculate(ATHLETE_ID, MONDAY, loads, wellness);
 
-        assertThat(report.motivationAlerts()).doesNotContain(WellnessAlert.TREND_DECLINING);
+        assertThat(report.motivationAlerts()).isEmpty();
     }
 
     @Test
@@ -399,7 +399,7 @@ class WeeklyReportCalculatorTest {
 
         WeeklyReport report = calculator.calculate(ATHLETE_ID, MONDAY, loads, wellness);
 
-        assertThat(report.motivationAlerts()).doesNotContain(WellnessAlert.TREND_DECLINING);
+        assertThat(report.motivationAlerts()).isEmpty();
     }
 
     private LoadReport aLoad(LocalDate weekStart, int totalFosterLoad, int sessionCount) {
