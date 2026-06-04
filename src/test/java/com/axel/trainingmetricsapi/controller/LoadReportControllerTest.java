@@ -136,10 +136,10 @@ class LoadReportControllerTest extends SecurityMockControllerSupport {
 
     @Test
     void getByPeriod_shouldReturn200_withList() throws Exception {
-        LocalDate from = LocalDate.of(2025, Month.MAY, 7);
-        LocalDate to = LocalDate.of(2025, Month.MAY, 21);
-        LocalDate monday1 = LocalDate.of(2025, Month.MAY, 7);
-        LocalDate monday2 = LocalDate.of(2025, Month.MAY, 14);
+        LocalDate from = LocalDate.of(2025, Month.APRIL, 7);
+        LocalDate to = LocalDate.of(2025, Month.APRIL, 21);
+        LocalDate monday1 = LocalDate.of(2025, Month.APRIL, 7);
+        LocalDate monday2 = LocalDate.of(2025, Month.APRIL, 14);
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
         List<LoadReport> reports = List.of(
             new LoadReport(ATHLETE_ID, monday1, 150, 1, LocalDateTime.now()),
@@ -185,7 +185,7 @@ class LoadReportControllerTest extends SecurityMockControllerSupport {
 
     @Test
     void getByPeriod_shouldReturn200_withDefaultToToday_whenToNotProvided() throws Exception {
-        LocalDate from = LocalDate.of(2025, Month.MAY, 7);
+        LocalDate from = LocalDate.of(2025, Month.APRIL, 7);
         LocalDate today = LocalDate.now();
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
         when(loadReportService.findByAthleteIdAndPeriod(ATHLETE_ID, from, today)).thenReturn(List.of());
