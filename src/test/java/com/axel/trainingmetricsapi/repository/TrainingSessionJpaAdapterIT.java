@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 
@@ -88,19 +89,19 @@ class TrainingSessionJpaAdapterIT {
 
     @Test
     void findByAthleteIdAndPeriod_shouldReturnOnlySessionsWithinRange() {
-        trainingSessionRepository.save(aSessionOn(athleteId, LocalDate.of(2024, 1, 1)));  // before range
-        trainingSessionRepository.save(aSessionOn(athleteId, LocalDate.of(2024, 1, 15))); // in range
-        trainingSessionRepository.save(aSessionOn(athleteId, LocalDate.of(2024, 1, 31))); // in range (inclusive)
-        trainingSessionRepository.save(aSessionOn(athleteId, LocalDate.of(2024, 2, 15))); // after range
+        trainingSessionRepository.save(aSessionOn(athleteId, LocalDate.of(2024, Month.JANUARY, 1)));  // before range
+        trainingSessionRepository.save(aSessionOn(athleteId, LocalDate.of(2024, Month.JANUARY, 15))); // in range
+        trainingSessionRepository.save(aSessionOn(athleteId, LocalDate.of(2024, Month.JANUARY, 31))); // in range (inclusive)
+        trainingSessionRepository.save(aSessionOn(athleteId, LocalDate.of(2024, Month.FEBRUARY, 15))); // after range
 
-        LocalDate from = LocalDate.of(2024, 1, 8);
-        LocalDate to = LocalDate.of(2024, 1, 31);
+        LocalDate from = LocalDate.of(2024, Month.JANUARY, 8);
+        LocalDate to = LocalDate.of(2024, Month.JANUARY, 31);
 
         List<TrainingSession> result = trainingSessionRepository.findByAthleteIdAndPeriod(athleteId, from, to);
 
         assertThat(result).hasSize(2);
         assertThat(result).extracting(TrainingSession::getDate)
-            .containsExactlyInAnyOrder(LocalDate.of(2024, 1, 15), LocalDate.of(2024, 1, 31));
+            .containsExactlyInAnyOrder(LocalDate.of(2024, Month.JANUARY, 15), LocalDate.of(2024, Month.JANUARY, 31));
     }
 
     @Test
@@ -108,7 +109,7 @@ class TrainingSessionJpaAdapterIT {
         trainingSessionRepository.save(aSession(athleteId)); // date: 2024-03-01 (outside range)
 
         List<TrainingSession> result = trainingSessionRepository.findByAthleteIdAndPeriod(
-            athleteId, LocalDate.of(2024, 1, 1), LocalDate.of(2024, 2, 28));
+            athleteId, LocalDate.of(2024, Month.JANUARY, 1), LocalDate.of(2024, Month.FEBRUARY, 28));
 
         assertThat(result).isEmpty();
     }
@@ -146,14 +147,14 @@ class TrainingSessionJpaAdapterIT {
         return new Athlete(
             "Alice",
             "Smith",
-            LocalDate.of(1990, 1, 1),
+            LocalDate.of(1990, Month.JANUARY, 1),
             Sport.CYCLING,
             coachId,
             56.0);
     }
 
     private TrainingSession aSession(long forAthleteId) {
-        return aSessionOn(forAthleteId, LocalDate.of(2024, 3, 1));
+        return aSessionOn(forAthleteId, LocalDate.of(2024, Month.MARCH, 1));
     }
 
     private TrainingSession aSessionOn(long forAthleteId, LocalDate date) {

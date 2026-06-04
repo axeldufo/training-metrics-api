@@ -16,6 +16,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
+import java.time.Month;
 
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -50,7 +51,7 @@ class AcwrReportControllerTest extends SecurityMockControllerSupport {
         AcwrReport report = Instancio.create(AcwrReport.class);
         when(acwrReportService.getAcwrReport(ATHLETE_ID)).thenReturn(report);
         AcwrReportResponse response = new AcwrReportResponse(
-            ATHLETE_ID, LocalDate.of(2024, 1, 28), 120.0, 100.0, 1.2, AcwrAlert.OK, 4, true);
+            ATHLETE_ID, LocalDate.of(2024, Month.JANUARY, 28), 120.0, 100.0, 1.2, AcwrAlert.OK, 4, true);
         when(acwrReportWebMapper.domainToResponse(report)).thenReturn(response);
 
         mvc.perform(get(URL))

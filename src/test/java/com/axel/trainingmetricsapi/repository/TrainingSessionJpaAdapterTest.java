@@ -9,6 +9,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 
@@ -82,8 +83,8 @@ class TrainingSessionJpaAdapterTest {
     @Test
     void findByAthleteIdAndPeriod_shouldMapAll() {
         long athleteId = 4L;
-        LocalDate from = LocalDate.of(2024, 1, 1);
-        LocalDate to = LocalDate.of(2024, 1, 31);
+        LocalDate from = LocalDate.of(2024, Month.JANUARY, 1);
+        LocalDate to = LocalDate.of(2024, Month.JANUARY, 31);
         int size = 3;
         List<TrainingSessionJpaEntity> entities = Instancio.ofList(TrainingSessionJpaEntity.class).size(size).create();
         when(trainingSessionJpaRepository.findAllByAthleteIdAndDateBetween(athleteId, from, to)).thenReturn(entities);
@@ -100,8 +101,8 @@ class TrainingSessionJpaAdapterTest {
     @Test
     void findByAthleteIdAndPeriod_shouldReturnEmpty_whenNone() {
         long athleteId = 4L;
-        LocalDate from = LocalDate.of(2024, 1, 1);
-        LocalDate to = LocalDate.of(2024, 1, 31);
+        LocalDate from = LocalDate.of(2024, Month.JANUARY, 1);
+        LocalDate to = LocalDate.of(2024, Month.JANUARY, 31);
         when(trainingSessionJpaRepository.findAllByAthleteIdAndDateBetween(athleteId, from, to)).thenReturn(List.of());
 
         List<TrainingSession> result = trainingSessionJpaAdapter.findByAthleteIdAndPeriod(athleteId, from, to);

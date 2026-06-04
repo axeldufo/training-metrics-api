@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,10 +24,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @Transactional
 class LoadReportJpaAdapterIT {
 
-    private static final LocalDate WEEK_1 = LocalDate.of(2025, 4, 7);  // Monday
-    private static final LocalDate WEEK_2 = LocalDate.of(2025, 4, 14); // Monday
-    private static final LocalDate WEEK_3 = LocalDate.of(2025, 4, 21); // Monday
-    private static final LocalDate WEEK_5 = LocalDate.of(2025, 5, 5);  // Monday
+    private static final LocalDate WEEK_1 = LocalDate.of(2025, Month.APRIL, 7);  // Monday
+    private static final LocalDate WEEK_2 = LocalDate.of(2025, Month.APRIL, 14); // Monday
+    private static final LocalDate WEEK_3 = LocalDate.of(2025, Month.APRIL, 21); // Monday
+    private static final LocalDate WEEK_5 = LocalDate.of(2025, Month.MAY, 5);  // Monday
 
     @Autowired
     private LoadReportRepository loadReportRepository;
@@ -167,7 +168,7 @@ class LoadReportJpaAdapterIT {
     }
 
     private Athlete anAthlete(long coachId) {
-        return new Athlete("Alice", "Smith", LocalDate.of(1990, 1, 1), Sport.CYCLING, coachId, 60.0);
+        return new Athlete("Alice", "Smith", LocalDate.of(1990, Month.JANUARY, 1), Sport.CYCLING, coachId, 60.0);
     }
 
     private LoadReport aReport(long forAthleteId, LocalDate weekStartDate, int totalFosterLoad, int sessionCount) {

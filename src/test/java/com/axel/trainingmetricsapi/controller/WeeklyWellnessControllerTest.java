@@ -23,6 +23,7 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -139,8 +140,8 @@ class WeeklyWellnessControllerTest extends SecurityMockControllerSupport {
     @Test
     void getByPeriod_shouldReturn200WithList_whenRequestIsValid() throws Exception {
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
-        LocalDate from = LocalDate.of(2024, 1, 1);
-        LocalDate to = LocalDate.of(2024, 1, 29);
+        LocalDate from = LocalDate.of(2024, Month.JANUARY, 1);
+        LocalDate to = LocalDate.of(2024, Month.JANUARY, 29);
         int count = 2;
         List<WeeklyWellness> wellnessList = Instancio.ofList(WeeklyWellness.class).size(count).create();
         when(wellnessService.findByAthleteIdAndPeriod(ATHLETE_ID, from, to)).thenReturn(wellnessList);
@@ -161,7 +162,7 @@ class WeeklyWellnessControllerTest extends SecurityMockControllerSupport {
     @Test
     void getByPeriod_shouldUseToday_whenToIsAbsent() throws Exception {
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
-        LocalDate from = LocalDate.of(2024, 1, 1);
+        LocalDate from = LocalDate.of(2024, Month.JANUARY, 1);
         when(wellnessService.findByAthleteIdAndPeriod(eq(ATHLETE_ID), eq(from), any(LocalDate.class)))
             .thenReturn(List.of());
 
@@ -176,8 +177,8 @@ class WeeklyWellnessControllerTest extends SecurityMockControllerSupport {
     @Test
     void getByPeriod_shouldReturn400_whenFromIsAfterTo() throws Exception {
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
-        LocalDate from = LocalDate.of(2024, 1, 20);
-        LocalDate to = LocalDate.of(2024, 1, 13);
+        LocalDate from = LocalDate.of(2024, Month.JANUARY, 20);
+        LocalDate to = LocalDate.of(2024, Month.JANUARY, 13);
 
         mvc.perform(get(URL_PREFIX)
                 .param("from", from.toString())

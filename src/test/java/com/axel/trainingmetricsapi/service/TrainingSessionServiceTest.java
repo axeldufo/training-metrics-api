@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,8 +29,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class TrainingSessionServiceTest {
 
-    private static final LocalDate FROM = LocalDate.of(2024, 1, 1);
-    private static final LocalDate TO = LocalDate.of(2024, 1, 31);
+    private static final LocalDate FROM = LocalDate.of(2024, Month.JANUARY, 1);
+    private static final LocalDate TO = LocalDate.of(2024, Month.JANUARY, 31);
 
     @Mock
     private TrainingSessionRepository trainingSessionRepository;

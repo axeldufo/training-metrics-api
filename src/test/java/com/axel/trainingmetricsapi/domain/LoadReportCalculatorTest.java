@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -11,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class LoadReportCalculatorTest {
 
     private static final long ATHLETE_ID = 1L;
-    private static final LocalDate WEEK_START = LocalDate.of(2024, 1, 22); // Monday
+    private static final LocalDate WEEK_START = LocalDate.of(2024, Month.JANUARY, 22); // Monday
 
     private final LoadReportCalculator calculator = new LoadReportCalculator();
 

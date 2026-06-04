@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,10 +29,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class WeeklyWellnessJpaAdapterIT {
 
     // Week dates — 2024-01-01 is a Monday
-    private static final LocalDate WEEK_1 = LocalDate.of(2024, 1, 1);
-    private static final LocalDate WEEK_3 = LocalDate.of(2024, 1, 15);
-    private static final LocalDate WEEK_5 = LocalDate.of(2024, 1, 29);
-    private static final LocalDate WEEK_7 = LocalDate.of(2024, 2, 12);
+    private static final LocalDate WEEK_1 = LocalDate.of(2024, Month.JANUARY, 1);
+    private static final LocalDate WEEK_3 = LocalDate.of(2024, Month.JANUARY, 15);
+    private static final LocalDate WEEK_5 = LocalDate.of(2024, Month.JANUARY, 29);
+    private static final LocalDate WEEK_7 = LocalDate.of(2024, Month.FEBRUARY, 12);
 
     @Autowired
     private WeeklyWellnessRepository wellnessRepository;
@@ -112,7 +113,7 @@ class WeeklyWellnessJpaAdapterIT {
         wellnessRepository.save(aWellness(athleteId, WEEK_5)); // in range (inclusive boundary)
         wellnessRepository.save(aWellness(athleteId, WEEK_7)); // after range
 
-        LocalDate from = LocalDate.of(2024, 1, 8);  // week 2
+        LocalDate from = LocalDate.of(2024, Month.JANUARY, 8);  // week 2
         LocalDate to = WEEK_5;                      // week 5 inclusive
 
         List<WeeklyWellness> result = wellnessRepository.findByAthleteIdAndPeriod(athleteId, from, to);
@@ -127,7 +128,7 @@ class WeeklyWellnessJpaAdapterIT {
         wellnessRepository.save(aWellness(athleteId, WEEK_1));
 
         List<WeeklyWellness> result = wellnessRepository.findByAthleteIdAndPeriod(
-            athleteId, LocalDate.of(2024, 2, 1), LocalDate.of(2024, 3, 1));
+            athleteId, LocalDate.of(2024, Month.FEBRUARY, 1), LocalDate.of(2024, Month.MARCH, 1));
 
         assertThat(result).isEmpty();
     }
@@ -177,7 +178,7 @@ class WeeklyWellnessJpaAdapterIT {
         return new Athlete(
             "Alice",
             "Smith",
-            LocalDate.of(1990, 1, 1),
+            LocalDate.of(1990, Month.JANUARY, 1),
             Sport.CYCLING,
             coachId,
             56.0);

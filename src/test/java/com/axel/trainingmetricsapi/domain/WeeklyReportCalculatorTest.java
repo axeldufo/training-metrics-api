@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -12,7 +13,7 @@ import static org.assertj.core.api.Assertions.within;
 class WeeklyReportCalculatorTest {
 
     private static final long ATHLETE_ID = 1L;
-    private static final LocalDate MONDAY = LocalDate.of(2025, 5, 19);
+    private static final LocalDate MONDAY = LocalDate.of(2025, Month.MAY, 19);
     private static final LocalDate PREV_1 = MONDAY.minusWeeks(1);
     private static final LocalDate PREV_2 = MONDAY.minusWeeks(2);
     private static final LocalDate PREV_3 = MONDAY.minusWeeks(3);

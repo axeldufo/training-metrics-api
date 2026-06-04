@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -66,7 +67,7 @@ class CoachJpaAdapterIT {
         Coach saved = persistACoach();
         long coachId = saved.getId();
         Athlete athleteSaved = athleteRepository.save(
-            new Athlete("Bob", "Jones", LocalDate.of(1990, 1, 1), Sport.CYCLING, coachId, 70.0));
+            new Athlete("Bob", "Jones", LocalDate.of(1990, Month.JANUARY, 1), Sport.CYCLING, coachId, 70.0));
 
         assertThatThrownBy(() -> coachRepository.deleteById(coachId))
             .isInstanceOf(DataIntegrityViolationException.class);

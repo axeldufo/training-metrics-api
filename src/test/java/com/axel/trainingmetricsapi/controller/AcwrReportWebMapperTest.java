@@ -6,6 +6,7 @@ import com.axel.trainingmetricsapi.dto.response.AcwrReportResponse;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
+import java.time.Month;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -17,7 +18,7 @@ class AcwrReportWebMapperTest {
     void domainToResponse_shouldMapAllFields() {
         AcwrReport report = new AcwrReport(
             5L,
-            LocalDate.of(2024, 1, 28),
+            LocalDate.of(2024, Month.JANUARY, 28),
             120.0,
             100.0,
             1.2,
@@ -29,7 +30,7 @@ class AcwrReportWebMapperTest {
         AcwrReportResponse response = mapper.domainToResponse(report);
 
         assertThat(response.athleteId()).isEqualTo(5L);
-        assertThat(response.calculatedAt()).isEqualTo(LocalDate.of(2024, 1, 28));
+        assertThat(response.calculatedAt()).isEqualTo(LocalDate.of(2024, Month.JANUARY, 28));
         assertThat(response.acuteLoad()).isEqualTo(120.0);
         assertThat(response.chronicLoad()).isEqualTo(100.0);
         assertThat(response.acwr()).isEqualTo(1.2);

@@ -16,6 +16,7 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -28,7 +29,7 @@ import static org.mockito.Mockito.*;
 class TrainingSessionEventHandlerTest {
 
     private static final long ATHLETE_ID = 7L;
-    private static final LocalDate MONDAY = LocalDate.of(2025, 5, 19);
+    private static final LocalDate MONDAY = LocalDate.of(2025, Month.MAY, 19);
 
     @Mock
     private CacheManager cacheManager;

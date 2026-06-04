@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,7 +32,7 @@ import static org.mockito.Mockito.when;
 class WeeklyReportServiceImplTest {
 
     private static final long ATHLETE_ID = 1L;
-    private static final LocalDate MONDAY = LocalDate.of(2025, 5, 19);
+    private static final LocalDate MONDAY = LocalDate.of(2025, Month.MAY, 19);
 
     @Mock
     private LoadReportRepository loadReportRepository;
@@ -192,12 +193,12 @@ class WeeklyReportServiceImplTest {
 
     @Test
     void getWeeklyReportsByPeriod_3MondaysInRange_2HaveLoad_1ZeroLoad_returns3Reports() {
-        LocalDate from = LocalDate.of(2025, 4, 28);
-        LocalDate to = LocalDate.of(2025, 5, 12);
+        LocalDate from = LocalDate.of(2025, Month.APRIL, 28);
+        LocalDate to = LocalDate.of(2025, Month.MAY, 12);
         // Mondays: Apr-28, May-05, May-12
-        LocalDate m1 = LocalDate.of(2025, 4, 28);
-        LocalDate m2 = LocalDate.of(2025, 5, 5);
-        LocalDate m3 = LocalDate.of(2025, 5, 12);
+        LocalDate m1 = LocalDate.of(2025, Month.APRIL, 28);
+        LocalDate m2 = LocalDate.of(2025, Month.MAY, 5);
+        LocalDate m3 = LocalDate.of(2025, Month.MAY, 12);
 
         // m1: has load in DB
         when(loadReportRepository.findByAthleteIdAndWeekStartDateBetween(
@@ -235,8 +236,8 @@ class WeeklyReportServiceImplTest {
 
     @Test
     void getWeeklyReportsByPeriod_athleteHasNoData_returnsEmptyList() {
-        LocalDate from = LocalDate.of(2025, 4, 28);
-        LocalDate to = LocalDate.of(2025, 5, 5);
+        LocalDate from = LocalDate.of(2025, Month.APRIL, 28);
+        LocalDate to = LocalDate.of(2025, Month.MAY, 5);
 
         // Both weeks: empty DB, zero onTheFlyLoad (null updatedAt), no wellness → not-found caught and skipped
         when(loadReportRepository.findByAthleteIdAndWeekStartDateBetween(anyLong(), any(), any()))

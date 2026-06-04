@@ -8,6 +8,7 @@ import com.axel.trainingmetricsapi.dto.response.WeeklyReportResponse;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -15,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class WeeklyReportWebMapperTest {
 
     private static final long ATHLETE_ID = 1L;
-    private static final LocalDate MONDAY = LocalDate.of(2025, 5, 19);
+    private static final LocalDate MONDAY = LocalDate.of(2025, Month.MAY, 19);
 
     private final WeeklyReportWebMapper mapper = new WeeklyReportWebMapper();
 

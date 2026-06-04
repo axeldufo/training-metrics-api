@@ -18,6 +18,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import java.util.Set;
 
@@ -39,7 +40,7 @@ class WeeklyReportControllerTest extends SecurityMockControllerSupport {
     private static final long ATHLETE_ID = 5L;
     private static final long COACH_ID = 2L;
     private static final String URL_PREFIX = ApiConstants.API_VERSION + "/athletes/" + ATHLETE_ID + "/reports/weekly";
-    private static final LocalDate MONDAY = LocalDate.of(2025, 5, 19);
+    private static final LocalDate MONDAY = LocalDate.of(2025, Month.MAY, 19);
 
     @MockitoBean
     private WeeklyReportService weeklyReportService;
@@ -183,10 +184,10 @@ class WeeklyReportControllerTest extends SecurityMockControllerSupport {
 
     @Test
     void getByPeriod_200_returnsListIncludingZeroLoadEntries() throws Exception {
-        LocalDate from = LocalDate.of(2025, 4, 28);
-        LocalDate to = LocalDate.of(2025, 5, 12);
-        LocalDate m1 = LocalDate.of(2025, 4, 28);
-        LocalDate m2 = LocalDate.of(2025, 5, 5);
+        LocalDate from = LocalDate.of(2025, Month.APRIL, 28);
+        LocalDate to = LocalDate.of(2025, Month.MAY, 12);
+        LocalDate m1 = LocalDate.of(2025, Month.APRIL, 28);
+        LocalDate m2 = LocalDate.of(2025, Month.MAY, 5);
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
         List<WeeklyReport> reports = List.of(
             aReport(m1, true, 100, 2, CorrelationAlert.NO_ALERT),
@@ -211,8 +212,8 @@ class WeeklyReportControllerTest extends SecurityMockControllerSupport {
 
     @Test
     void getByPeriod_200_returnsEmptyList_whenNoDataAtAll() throws Exception {
-        LocalDate from = LocalDate.of(2025, 4, 28);
-        LocalDate to = LocalDate.of(2025, 5, 5);
+        LocalDate from = LocalDate.of(2025, Month.APRIL, 28);
+        LocalDate to = LocalDate.of(2025, Month.MAY, 5);
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
         when(weeklyReportService.getWeeklyReportsByPeriod(ATHLETE_ID, from, to)).thenReturn(List.of());
 
@@ -230,7 +231,7 @@ class WeeklyReportControllerTest extends SecurityMockControllerSupport {
     @Test
     void getByPeriod_200_shouldUseToday_whenToIsAbsent() throws Exception {
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
-        LocalDate from = LocalDate.of(2024, 1, 1);
+        LocalDate from = LocalDate.of(2024, Month.JANUARY, 1);
         when(weeklyReportService.getWeeklyReportsByPeriod(eq(ATHLETE_ID), eq(from), any(LocalDate.class)))
             .thenReturn(List.of());
 

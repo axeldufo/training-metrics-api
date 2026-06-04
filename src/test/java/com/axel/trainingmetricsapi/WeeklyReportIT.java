@@ -24,6 +24,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.Month;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -33,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @Transactional
 class WeeklyReportIT {
 
-    private static final LocalDate MONDAY = LocalDate.of(2025, 5, 19);
+    private static final LocalDate MONDAY = LocalDate.of(2025, Month.MAY, 19);
     private static final LocalDate SESSION_DATE = MONDAY.plusDays(2); // Wednesday
 
     @Autowired
@@ -134,7 +135,7 @@ class WeeklyReportIT {
     }
 
     private Athlete anAthlete(long coachId) {
-        return new Athlete("Test", "Athlete", LocalDate.of(1990, 1, 1), Sport.ROAD_RUNNING, coachId, 70.0);
+        return new Athlete("Test", "Athlete", LocalDate.of(1990, Month.JANUARY, 1), Sport.ROAD_RUNNING, coachId, 70.0);
     }
 
     private TrainingSession aSession(long forAthleteId, LocalDate date, int rpe, int durationInMin) {
