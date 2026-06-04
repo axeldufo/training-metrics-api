@@ -16,7 +16,7 @@ AcwrCalculator in domain/ isolates pure business logic — anticipates hexagonal
 
 ### Definitions
 - `acuteLoad` = total Foster load over last 7 days (J-6 to J0 inclusive)
-- `cchronicLoad` = total Foster load over last 28 days / weeksOfDataAvailable
+- `chronicLoad` = total Foster load over last 28 days / weeksOfDataAvailable
              (weeksOfDataAvailable = distinct weeks with at least one session)
 - `acwr` = acuteLoad / chronicLoad
 - Standard Banister/Gabbett definition — chronic window includes acute week
@@ -211,7 +211,7 @@ TrainingSession created/updated/deleted
   constructor — no Spring annotation on domain class, consistent with domain purity rule.
   AcwrReportServiceImplTest verifies final result (AcwrReport fields),
   not the internal call to AcwrCalculator — calculator logic covered by AcwrCalculatorTest.
-- - No new Repository port — reuses TrainingSessionRepository.findByAthleteIdAndPeriod()
+- No new Repository port — reuses TrainingSessionRepository.findByAthleteIdAndPeriod()
 - Proactive refresh on event — coach always finds report ready, optimal UX
 - TTL 7 days — safety net only, real freshness via proactive refresh
 - @Cacheable for read path (declarative, simple)

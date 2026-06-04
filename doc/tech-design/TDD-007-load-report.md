@@ -183,7 +183,6 @@ LoadReportEventHandler does not exist.
 - GET latest returns 404 if no report exists — true missing resource (athlete has no data at all)
 - Future weekStartDate → 400 at HTTP boundary, not 404 — invalid input, not missing resource
 - No Redis cache — weekly data changes only on session events; DB read sufficient for this access pattern
-- `LoadReportEventHandler` in service/ — consistent with `TrainingSessionEventHandler` placement
 - weekStartDate must be a Monday — domain invariant, DomainValidationException → 400, no silent normalization
 - sessionCount == 0 iff totalFosterLoad == 0 — domain invariant, incoherent report is a domain error
 - Current week included — coach can consult in-progress week (e.g. Saturday afternoon preview)

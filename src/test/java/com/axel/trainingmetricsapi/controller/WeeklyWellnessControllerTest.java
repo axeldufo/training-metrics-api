@@ -12,6 +12,7 @@ import com.axel.trainingmetricsapi.service.AthleteService;
 import com.axel.trainingmetricsapi.service.WeeklyWellnessService;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
@@ -24,13 +25,24 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.instancio.Select.field;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(WeeklyWellnessController.class)
 class WeeklyWellnessControllerTest extends SecurityMockControllerSupport {
@@ -144,6 +156,21 @@ class WeeklyWellnessControllerTest extends SecurityMockControllerSupport {
         verify(athleteService).findById(ATHLETE_ID, COACH_ID);
         verify(wellnessService).findByAthleteIdAndPeriod(ATHLETE_ID, from, to);
         verify(wellnessWebMapper, times(count)).domainToResponse(any(WeeklyWellness.class));
+    }
+
+    @Test
+    void getByPeriod_shouldUseToday_whenToIsAbsent() throws Exception {
+        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
+        LocalDate from = LocalDate.of(2024, 1, 1);
+        when(wellnessService.findByAthleteIdAndPeriod(eq(ATHLETE_ID), eq(from), any(LocalDate.class)))
+            .thenReturn(List.of());
+
+        mvc.perform(get(URL_PREFIX).param("from", from.toString()))
+            .andExpect(status().isOk());
+
+        ArgumentCaptor<LocalDate> toCaptor = ArgumentCaptor.forClass(LocalDate.class);
+        verify(wellnessService).findByAthleteIdAndPeriod(eq(ATHLETE_ID), eq(from), toCaptor.capture());
+        assertThat(toCaptor.getValue()).isEqualTo(LocalDate.now());
     }
 
     @Test
