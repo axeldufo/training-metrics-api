@@ -15,7 +15,10 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import static com.tngtech.archunit.core.domain.properties.CanBeAnnotated.Predicates.annotatedWith;
 import static com.tngtech.archunit.lang.conditions.ArchConditions.beAnnotatedWith;
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.*;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noFields;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noMethods;
 import static com.tngtech.archunit.library.Architectures.layeredArchitecture;
 import static com.tngtech.archunit.library.GeneralCodingRules.THROW_GENERIC_EXCEPTIONS;
 import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices;
@@ -38,14 +41,18 @@ class ArchitectureTests {
                 .layer("Controller").definedBy("..controller..")
                 .layer("DTO").definedBy("..dto..")
                 .layer("Service").definedBy("..service..")
+                .layer("Application").definedBy("..application..")
+                .layer("Infrastructure").definedBy("..infrastructure..")
                 .layer("Repository").definedBy("..repository..")
                 .layer("Domain").definedBy("..domain..")
 
                 .whereLayer("Controller").mayNotBeAccessedByAnyLayer()
                 .whereLayer("DTO").mayOnlyBeAccessedByLayers("Controller")
                 .whereLayer("Service").mayOnlyBeAccessedByLayers("Controller")
-                .whereLayer("Repository").mayOnlyBeAccessedByLayers("Service")
-                .whereLayer("Domain").mayOnlyBeAccessedByLayers("Controller", "Service", "Repository", "DTO")
+                .whereLayer("Application").mayOnlyBeAccessedByLayers("Controller", "Service", "Infrastructure")
+                .whereLayer("Infrastructure").mayNotBeAccessedByAnyLayer()
+                .whereLayer("Repository").mayOnlyBeAccessedByLayers("Service", "Application")
+                .whereLayer("Domain").mayOnlyBeAccessedByLayers("Controller", "Service", "Application", "Repository", "Infrastructure", "DTO")
 
                 .because("Each layer should only depend on its allowed neighbors — " +
                     "enforces separation of concerns and prevents architecture erosion");
@@ -70,7 +77,7 @@ class ArchitectureTests {
             ArchRule rule = noClasses()
                 .that().resideInAPackage("..domain..")
                 .should().dependOnClassesThat()
-                .resideInAnyPackage("..repository..", "..service..", "..dto..", "..controller..")
+                .resideInAnyPackage("..repository..", "..service..", "..dto..", "..controller..", "..application..")
                 .because("Domain should be independent of others layers");
 
             rule.check(allClasses); // test classes as well : tests should respect productions rules
@@ -110,10 +117,26 @@ class ArchitectureTests {
         @Test
         void service_annotations_should_be_in_service() {
             ArchRule rule = classes().that().areAnnotatedWith(Service.class)
-                .should().resideInAPackage("..service..")
+                .should().resideInAnyPackage("..service..", "..application..")
                 .because("Service annotations should be in service layer");
 
             rule.check(allClasses); // test classes as well : tests should respect productions rules
+        }
+
+        @Test
+        void no_spring_imports_in_application_layer() {
+            ArchRule rule = noClasses()
+                .that().resideInAPackage("..application..")
+                .should().dependOnClassesThat()
+                .resideInAnyPackage(
+                    "org.springframework.context..",
+                    "org.springframework.cache..",
+                    "org.springframework.security..",
+                    "jakarta.persistence..")
+                .because("Application layer should be framework-independent — " +
+                    "infrastructure concerns must go through ports");
+
+            rule.check(productionClasses);
         }
 
         @Test

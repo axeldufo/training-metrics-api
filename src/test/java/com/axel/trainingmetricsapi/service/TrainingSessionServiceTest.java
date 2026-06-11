@@ -1,11 +1,9 @@
 package com.axel.trainingmetricsapi.service;
 
+import com.axel.trainingmetricsapi.application.port.out.TrainingSessionEventPort;
 import com.axel.trainingmetricsapi.domain.AthleteRepository;
 import com.axel.trainingmetricsapi.domain.TrainingSession;
 import com.axel.trainingmetricsapi.domain.TrainingSessionRepository;
-import com.axel.trainingmetricsapi.domain.event.TrainingSessionCreatedEvent;
-import com.axel.trainingmetricsapi.domain.event.TrainingSessionDeletedEvent;
-import com.axel.trainingmetricsapi.domain.event.TrainingSessionUpdatedEvent;
 import com.axel.trainingmetricsapi.domain.exception.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.domain.exception.TrainingSessionNotFoundException;
 import org.instancio.Instancio;
@@ -14,7 +12,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.LocalDate;
 import java.time.Month;
@@ -24,7 +21,9 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.instancio.Select.field;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class TrainingSessionServiceTest {
@@ -39,7 +38,7 @@ class TrainingSessionServiceTest {
     private AthleteRepository athleteRepository;
 
     @Mock
-    private ApplicationEventPublisher eventPublisher;
+    private TrainingSessionEventPort trainingSessionEventPort;
 
     @InjectMocks
     private TrainingSessionServiceImpl trainingSessionService;
@@ -56,8 +55,7 @@ class TrainingSessionServiceTest {
 
         verify(athleteRepository).existsById(athleteId);
         verify(trainingSessionRepository).save(trainingSession);
-        verify(eventPublisher).publishEvent(
-            new TrainingSessionCreatedEvent(returnedTrainingSession.getAthleteId(), returnedTrainingSession.getDate()));
+        verify(trainingSessionEventPort).sessionCreated(returnedTrainingSession.getAthleteId(), returnedTrainingSession.getDate());
         assertThat(returnedTrainingSession).isEqualTo(persistedTrainingSession);
         assertThat(returnedTrainingSession.getId()).isEqualTo(persistedTrainingSession.getId()); // id is excluded from TrainingSession.isEqualTo()
     }
@@ -161,8 +159,8 @@ class TrainingSessionServiceTest {
 
         verify(trainingSessionRepository).findById(trainingSessionId);
         verify(trainingSessionRepository).save(trainingSession);
-        verify(eventPublisher).publishEvent(
-            new TrainingSessionUpdatedEvent(returnedTrainingSession.getAthleteId(), returnedTrainingSession.getDate()));
+        verify(trainingSessionEventPort).sessionUpdated(
+            returnedTrainingSession.getAthleteId(), returnedTrainingSession.getDate());
         assertThat(returnedTrainingSession).isEqualTo(persistedTrainingSession);
         assertThat(returnedTrainingSession.getId()).isEqualTo(persistedTrainingSession.getId()); // id is excluded from TrainingSession.isEqualTo()
     }
@@ -213,8 +211,7 @@ class TrainingSessionServiceTest {
 
         verify(trainingSessionRepository).findById(sessionId);
         verify(trainingSessionRepository).deleteById(sessionId);
-        verify(eventPublisher).publishEvent(
-            new TrainingSessionDeletedEvent(athleteId, trainingSessionToFind.getDate()));
+        verify(trainingSessionEventPort).sessionDeleted(athleteId, trainingSessionToFind.getDate());
     }
 
     @Test
