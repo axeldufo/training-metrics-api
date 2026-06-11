@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URI;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 
 @Validated
 @RequestMapping(path = ApiConstants.API_VERSION + "/athletes/{id}/wellness")
@@ -87,7 +88,7 @@ public class WeeklyWellnessController {
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
         athleteService.findById(athleteId, coach.id()); // validates Coach→Athlete ownership
 
-        LocalDate effectiveTo = to != null ? to : LocalDate.now();
+        LocalDate effectiveTo = Objects.requireNonNullElseGet(to, LocalDate::now);
         if (from.isAfter(effectiveTo)) {
             throw new InvalidPeriodException("from must be before or equal to to");
         }

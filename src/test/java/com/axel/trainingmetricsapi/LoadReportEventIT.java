@@ -1,5 +1,6 @@
 package com.axel.trainingmetricsapi;
 
+import com.axel.trainingmetricsapi.application.port.out.TrainingSessionEventPort;
 import com.axel.trainingmetricsapi.domain.Athlete;
 import com.axel.trainingmetricsapi.domain.AthleteRepository;
 import com.axel.trainingmetricsapi.domain.LoadReport;
@@ -8,16 +9,12 @@ import com.axel.trainingmetricsapi.domain.Sport;
 import com.axel.trainingmetricsapi.domain.TargetZone;
 import com.axel.trainingmetricsapi.domain.TrainingSession;
 import com.axel.trainingmetricsapi.domain.TrainingSessionRepository;
-import com.axel.trainingmetricsapi.domain.event.TrainingSessionCreatedEvent;
-import com.axel.trainingmetricsapi.domain.event.TrainingSessionDeletedEvent;
-import com.axel.trainingmetricsapi.domain.event.TrainingSessionUpdatedEvent;
 import com.axel.trainingmetricsapi.repository.CoachJpaEntity;
 import com.axel.trainingmetricsapi.repository.CoachJpaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Import;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,7 +33,7 @@ class LoadReportEventIT {
     private static final LocalDate SESSION_DATE = LocalDate.of(2025, Month.MAY, 21); // Wednesday
 
     @Autowired
-    private ApplicationEventPublisher eventPublisher;
+    private TrainingSessionEventPort trainingSessionEventPort;
 
     @Autowired
     private LoadReportRepository loadReportRepository;
@@ -63,7 +60,7 @@ class LoadReportEventIT {
     void onSessionCreated_shouldPersistLoadReport() {
         TrainingSession session = trainingSessionRepository.save(aSession(athleteId, SESSION_DATE, 5, 60));
 
-        eventPublisher.publishEvent(new TrainingSessionCreatedEvent(athleteId, SESSION_DATE));
+        trainingSessionEventPort.sessionCreated(athleteId, SESSION_DATE);
 
         Optional<LoadReport> report = loadReportRepository.findByAthleteIdAndWeekStartDate(athleteId, MONDAY);
         assertThat(report).isPresent();
@@ -75,13 +72,13 @@ class LoadReportEventIT {
     @Test
     void onSessionUpdated_shouldUpdateLoadReport() {
         TrainingSession session = trainingSessionRepository.save(aSession(athleteId, SESSION_DATE, 5, 60));
-        eventPublisher.publishEvent(new TrainingSessionCreatedEvent(athleteId, SESSION_DATE));
+        trainingSessionEventPort.sessionCreated(athleteId, SESSION_DATE);
 
         TrainingSession updated = new TrainingSession(SESSION_DATE, Sport.ROAD_RUNNING, 8, 90, TargetZone.Z2, athleteId);
         updated.setId(session.getId());
         trainingSessionRepository.save(updated);
 
-        eventPublisher.publishEvent(new TrainingSessionUpdatedEvent(athleteId, SESSION_DATE));
+        trainingSessionEventPort.sessionUpdated(athleteId, SESSION_DATE);
 
         Optional<LoadReport> report = loadReportRepository.findByAthleteIdAndWeekStartDate(athleteId, MONDAY);
         assertThat(report).isPresent();
@@ -92,12 +89,12 @@ class LoadReportEventIT {
     @Test
     void onSessionDeleted_shouldDeleteLoadReport_whenLastSessionRemoved() {
         TrainingSession session = trainingSessionRepository.save(aSession(athleteId, SESSION_DATE, 5, 60));
-        eventPublisher.publishEvent(new TrainingSessionCreatedEvent(athleteId, SESSION_DATE));
+        trainingSessionEventPort.sessionCreated(athleteId, SESSION_DATE);
         assertThat(loadReportRepository.findByAthleteIdAndWeekStartDate(athleteId, MONDAY)).isPresent();
 
         trainingSessionRepository.deleteById(session.getId());
 
-        eventPublisher.publishEvent(new TrainingSessionDeletedEvent(athleteId, SESSION_DATE));
+        trainingSessionEventPort.sessionDeleted(athleteId, SESSION_DATE);
 
         assertThat(loadReportRepository.findByAthleteIdAndWeekStartDate(athleteId, MONDAY)).isEmpty();
     }
