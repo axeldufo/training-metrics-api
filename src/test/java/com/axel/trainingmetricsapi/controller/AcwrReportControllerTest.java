@@ -1,13 +1,12 @@
 package com.axel.trainingmetricsapi.controller;
 
+import com.axel.trainingmetricsapi.application.port.in.GetAcwrReportUseCase;
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoach;
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoachResolver;
 import com.axel.trainingmetricsapi.domain.AcwrAlert;
 import com.axel.trainingmetricsapi.domain.AcwrReport;
 import com.axel.trainingmetricsapi.domain.exception.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.dto.response.AcwrReportResponse;
-import com.axel.trainingmetricsapi.service.AcwrReportService;
-import com.axel.trainingmetricsapi.service.AthleteService;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,10 +33,7 @@ class AcwrReportControllerTest extends SecurityMockControllerSupport {
     private AcwrReportWebMapper acwrReportWebMapper;
 
     @MockitoBean
-    private AcwrReportService acwrReportService;
-
-    @MockitoBean
-    private AthleteService athleteService;
+    private GetAcwrReportUseCase getAcwrReportUseCase;
 
     @MockitoBean
     private AuthenticatedCoachResolver authenticatedCoachResolver;
@@ -49,7 +45,7 @@ class AcwrReportControllerTest extends SecurityMockControllerSupport {
     void getAcwrReport_shouldReturn200_withAllFieldsAsserted() throws Exception {
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
         AcwrReport report = Instancio.create(AcwrReport.class);
-        when(acwrReportService.getAcwrReport(ATHLETE_ID)).thenReturn(report);
+        when(getAcwrReportUseCase.execute(ATHLETE_ID, COACH_ID)).thenReturn(report);
         AcwrReportResponse response = new AcwrReportResponse(
             ATHLETE_ID, LocalDate.of(2024, Month.JANUARY, 28), 120.0, 100.0, 1.2, AcwrAlert.OK, 4, true);
         when(acwrReportWebMapper.domainToResponse(report)).thenReturn(response);
@@ -65,22 +61,20 @@ class AcwrReportControllerTest extends SecurityMockControllerSupport {
             .andExpect(jsonPath("$.weeksOfDataAvailable").value(4))
             .andExpect(jsonPath("$.acwrReliable").value(true));
 
-        verify(athleteService).findById(ATHLETE_ID, COACH_ID);
-        verify(acwrReportService).getAcwrReport(ATHLETE_ID);
+        verify(getAcwrReportUseCase).execute(ATHLETE_ID, COACH_ID);
         verify(acwrReportWebMapper).domainToResponse(report);
     }
 
     @Test
     void getAcwrReport_shouldReturn404_whenAthleteNotFound() throws Exception {
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
-        when(athleteService.findById(ATHLETE_ID, COACH_ID)).thenThrow(new AthleteNotFoundException(ATHLETE_ID));
+        when(getAcwrReportUseCase.execute(ATHLETE_ID, COACH_ID)).thenThrow(new AthleteNotFoundException(ATHLETE_ID));
 
         mvc.perform(get(URL))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$[0].code").value("NOT_FOUND"));
 
-        verify(athleteService).findById(ATHLETE_ID, COACH_ID);
-        verify(acwrReportService, never()).getAcwrReport(anyLong());
+        verify(getAcwrReportUseCase).execute(ATHLETE_ID, COACH_ID);
+        verify(acwrReportWebMapper, never()).domainToResponse(any());
     }
-
 }

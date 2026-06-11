@@ -1,5 +1,10 @@
 package com.axel.trainingmetricsapi.controller;
 
+import com.axel.trainingmetricsapi.application.port.in.CreateWeeklyWellnessUseCase;
+import com.axel.trainingmetricsapi.application.port.in.DeleteWeeklyWellnessUseCase;
+import com.axel.trainingmetricsapi.application.port.in.GetWeeklyWellnessUseCase;
+import com.axel.trainingmetricsapi.application.port.in.GetWeeklyWellnessesByPeriodUseCase;
+import com.axel.trainingmetricsapi.application.port.in.UpdateWeeklyWellnessUseCase;
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoach;
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoachResolver;
 import com.axel.trainingmetricsapi.domain.WeeklyWellness;
@@ -8,8 +13,6 @@ import com.axel.trainingmetricsapi.domain.exception.WeeklyWellnessAlreadyExistsE
 import com.axel.trainingmetricsapi.domain.exception.WeeklyWellnessNotFoundException;
 import com.axel.trainingmetricsapi.dto.request.WeeklyWellnessRequest;
 import com.axel.trainingmetricsapi.dto.response.WeeklyWellnessResponse;
-import com.axel.trainingmetricsapi.service.AthleteService;
-import com.axel.trainingmetricsapi.service.WeeklyWellnessService;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -29,21 +32,10 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.instancio.Select.field;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(WeeklyWellnessController.class)
 class WeeklyWellnessControllerTest extends SecurityMockControllerSupport {
@@ -56,10 +48,19 @@ class WeeklyWellnessControllerTest extends SecurityMockControllerSupport {
     private WeeklyWellnessWebMapper wellnessWebMapper;
 
     @MockitoBean
-    private WeeklyWellnessService wellnessService;
+    private CreateWeeklyWellnessUseCase createWeeklyWellnessUseCase;
 
     @MockitoBean
-    private AthleteService athleteService;
+    private GetWeeklyWellnessUseCase getWeeklyWellnessUseCase;
+
+    @MockitoBean
+    private GetWeeklyWellnessesByPeriodUseCase getWeeklyWellnessesByPeriodUseCase;
+
+    @MockitoBean
+    private UpdateWeeklyWellnessUseCase updateWeeklyWellnessUseCase;
+
+    @MockitoBean
+    private DeleteWeeklyWellnessUseCase deleteWeeklyWellnessUseCase;
 
     @MockitoBean
     private AuthenticatedCoachResolver authenticatedCoachResolver;
@@ -77,21 +78,20 @@ class WeeklyWellnessControllerTest extends SecurityMockControllerSupport {
         WeeklyWellness wellness = aValidWellness();
         when(wellnessWebMapper.requestToDomain(request, ATHLETE_ID)).thenReturn(wellness);
         WeeklyWellness persisted = aValidWellness();
-        when(wellnessService.save(wellness)).thenReturn(persisted);
+        when(createWeeklyWellnessUseCase.execute(wellness, COACH_ID)).thenReturn(persisted);
         WeeklyWellnessResponse response = Instancio.of(WeeklyWellnessResponse.class)
             .set(field(WeeklyWellnessResponse::athleteId), ATHLETE_ID)
             .create();
         when(wellnessWebMapper.domainToResponse(persisted)).thenReturn(response);
 
         ResultActions result = mvc.perform(post(URL_PREFIX).contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+            .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isCreated())
             .andExpect(header().string("Location", URL_PREFIX + "/" + response.id()));
 
         assertJsonMatchesResponse(result, response);
-        verify(athleteService).findById(ATHLETE_ID, COACH_ID);
         verify(wellnessWebMapper).requestToDomain(request, ATHLETE_ID);
-        verify(wellnessService).save(wellness);
+        verify(createWeeklyWellnessUseCase).execute(wellness, COACH_ID);
         verify(wellnessWebMapper).domainToResponse(persisted);
     }
 
@@ -100,7 +100,7 @@ class WeeklyWellnessControllerTest extends SecurityMockControllerSupport {
         WeeklyWellnessRequest invalidRequest = new WeeklyWellnessRequest(LocalDate.now().plusWeeks(1), 0, 6, null);
 
         mvc.perform(post(URL_PREFIX).contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(invalidRequest)))
+            .content(objectMapper.writeValueAsString(invalidRequest)))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$", hasSize(4)));
     }
@@ -108,15 +108,18 @@ class WeeklyWellnessControllerTest extends SecurityMockControllerSupport {
     @Test
     void create_shouldReturn404_whenAthleteNotFound() throws Exception {
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
-        when(athleteService.findById(ATHLETE_ID, COACH_ID)).thenThrow(new AthleteNotFoundException(ATHLETE_ID));
+        WeeklyWellnessRequest request = aValidRequest();
+        WeeklyWellness wellness = aValidWellness();
+        when(wellnessWebMapper.requestToDomain(request, ATHLETE_ID)).thenReturn(wellness);
+        when(createWeeklyWellnessUseCase.execute(wellness, COACH_ID))
+            .thenThrow(new AthleteNotFoundException(ATHLETE_ID));
 
         mvc.perform(post(URL_PREFIX).contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(aValidRequest())))
+            .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$[0].code").value("NOT_FOUND"));
 
-        verify(athleteService).findById(ATHLETE_ID, COACH_ID);
-        verify(wellnessService, never()).save(any());
+        verify(createWeeklyWellnessUseCase).execute(wellness, COACH_ID);
     }
 
     @Test
@@ -125,16 +128,15 @@ class WeeklyWellnessControllerTest extends SecurityMockControllerSupport {
         WeeklyWellnessRequest request = aValidRequest();
         WeeklyWellness wellness = aValidWellness();
         when(wellnessWebMapper.requestToDomain(request, ATHLETE_ID)).thenReturn(wellness);
-        when(wellnessService.save(wellness))
+        when(createWeeklyWellnessUseCase.execute(wellness, COACH_ID))
             .thenThrow(new WeeklyWellnessAlreadyExistsException(ATHLETE_ID, wellness.getWeekStartDate()));
 
         mvc.perform(post(URL_PREFIX).contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+            .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isConflict())
             .andExpect(jsonPath("$[0].code").value("WELLNESS_ALREADY_EXISTS"));
 
-        verify(athleteService).findById(ATHLETE_ID, COACH_ID);
-        verify(wellnessService).save(wellness);
+        verify(createWeeklyWellnessUseCase).execute(wellness, COACH_ID);
     }
 
     @Test
@@ -144,18 +146,17 @@ class WeeklyWellnessControllerTest extends SecurityMockControllerSupport {
         LocalDate to = LocalDate.of(2024, Month.JANUARY, 29);
         int count = 2;
         List<WeeklyWellness> wellnessList = Instancio.ofList(WeeklyWellness.class).size(count).create();
-        when(wellnessService.findByAthleteIdAndPeriod(ATHLETE_ID, from, to)).thenReturn(wellnessList);
+        when(getWeeklyWellnessesByPeriodUseCase.execute(ATHLETE_ID, COACH_ID, from, to)).thenReturn(wellnessList);
         when(wellnessWebMapper.domainToResponse(any(WeeklyWellness.class)))
             .thenReturn(Instancio.create(WeeklyWellnessResponse.class));
 
         mvc.perform(get(URL_PREFIX)
-                .param("from", from.toString())
-                .param("to", to.toString()))
+            .param("from", from.toString())
+            .param("to", to.toString()))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(count)));
 
-        verify(athleteService).findById(ATHLETE_ID, COACH_ID);
-        verify(wellnessService).findByAthleteIdAndPeriod(ATHLETE_ID, from, to);
+        verify(getWeeklyWellnessesByPeriodUseCase).execute(ATHLETE_ID, COACH_ID, from, to);
         verify(wellnessWebMapper, times(count)).domainToResponse(any(WeeklyWellness.class));
     }
 
@@ -163,14 +164,14 @@ class WeeklyWellnessControllerTest extends SecurityMockControllerSupport {
     void getByPeriod_shouldUseToday_whenToIsAbsent() throws Exception {
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
         LocalDate from = LocalDate.of(2024, Month.JANUARY, 1);
-        when(wellnessService.findByAthleteIdAndPeriod(eq(ATHLETE_ID), eq(from), any(LocalDate.class)))
+        when(getWeeklyWellnessesByPeriodUseCase.execute(eq(ATHLETE_ID), eq(COACH_ID), eq(from), any(LocalDate.class)))
             .thenReturn(List.of());
 
         mvc.perform(get(URL_PREFIX).param("from", from.toString()))
             .andExpect(status().isOk());
 
         ArgumentCaptor<LocalDate> toCaptor = ArgumentCaptor.forClass(LocalDate.class);
-        verify(wellnessService).findByAthleteIdAndPeriod(eq(ATHLETE_ID), eq(from), toCaptor.capture());
+        verify(getWeeklyWellnessesByPeriodUseCase).execute(eq(ATHLETE_ID), eq(COACH_ID), eq(from), toCaptor.capture());
         assertThat(toCaptor.getValue()).isEqualTo(LocalDate.now());
     }
 
@@ -181,13 +182,13 @@ class WeeklyWellnessControllerTest extends SecurityMockControllerSupport {
         LocalDate to = LocalDate.of(2024, Month.JANUARY, 13);
 
         mvc.perform(get(URL_PREFIX)
-                .param("from", from.toString())
-                .param("to", to.toString()))
+            .param("from", from.toString())
+            .param("to", to.toString()))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$[0].code").value("HTTP_VALIDATION_ERROR"))
             .andExpect(jsonPath("$[0].field").value("from"));
 
-        verify(wellnessService, never()).findByAthleteIdAndPeriod(anyLong(), any(), any());
+        verify(getWeeklyWellnessesByPeriodUseCase, never()).execute(anyLong(), anyLong(), any(), any());
     }
 
     @Test
@@ -196,21 +197,21 @@ class WeeklyWellnessControllerTest extends SecurityMockControllerSupport {
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$[0].code").value("HTTP_VALIDATION_ERROR"));
 
-        verify(wellnessService, never()).findByAthleteIdAndPeriod(anyLong(), any(), any());
+        verify(getWeeklyWellnessesByPeriodUseCase, never()).execute(anyLong(), anyLong(), any(), any());
     }
 
     @Test
     void getByPeriod_shouldReturn404_whenAthleteNotFound() throws Exception {
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
-        when(athleteService.findById(ATHLETE_ID, COACH_ID)).thenThrow(new AthleteNotFoundException(ATHLETE_ID));
+        when(getWeeklyWellnessesByPeriodUseCase.execute(eq(ATHLETE_ID), eq(COACH_ID), any(), any()))
+            .thenThrow(new AthleteNotFoundException(ATHLETE_ID));
 
         mvc.perform(get(URL_PREFIX)
-                .param("from", "2024-01-01"))
+            .param("from", "2024-01-01"))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$[0].code").value("NOT_FOUND"));
 
-        verify(athleteService).findById(ATHLETE_ID, COACH_ID);
-        verify(wellnessService, never()).findByAthleteIdAndPeriod(anyLong(), any(), any());
+        verify(getWeeklyWellnessesByPeriodUseCase).execute(eq(ATHLETE_ID), eq(COACH_ID), any(), any());
     }
 
     @Test
@@ -218,7 +219,7 @@ class WeeklyWellnessControllerTest extends SecurityMockControllerSupport {
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
         long wellnessId = 8L;
         WeeklyWellness wellness = aValidWellness();
-        when(wellnessService.findById(wellnessId, ATHLETE_ID)).thenReturn(wellness);
+        when(getWeeklyWellnessUseCase.execute(wellnessId, ATHLETE_ID, COACH_ID)).thenReturn(wellness);
         WeeklyWellnessResponse response = Instancio.create(WeeklyWellnessResponse.class);
         when(wellnessWebMapper.domainToResponse(wellness)).thenReturn(response);
 
@@ -226,37 +227,35 @@ class WeeklyWellnessControllerTest extends SecurityMockControllerSupport {
             .andExpect(status().isOk());
 
         assertJsonMatchesResponse(result, response);
-        verify(athleteService).findById(ATHLETE_ID, COACH_ID);
-        verify(wellnessService).findById(wellnessId, ATHLETE_ID);
+        verify(getWeeklyWellnessUseCase).execute(wellnessId, ATHLETE_ID, COACH_ID);
         verify(wellnessWebMapper).domainToResponse(wellness);
     }
 
     @Test
     void getById_shouldReturn404_whenAthleteNotFound() throws Exception {
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
-        when(athleteService.findById(ATHLETE_ID, COACH_ID)).thenThrow(new AthleteNotFoundException(ATHLETE_ID));
+        when(getWeeklyWellnessUseCase.execute(anyLong(), eq(ATHLETE_ID), eq(COACH_ID)))
+            .thenThrow(new AthleteNotFoundException(ATHLETE_ID));
 
         mvc.perform(get(URL_PREFIX + "/8"))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$[0].code").value("NOT_FOUND"));
 
-        verify(athleteService).findById(ATHLETE_ID, COACH_ID);
-        verify(wellnessService, never()).findById(anyLong(), anyLong());
+        verify(getWeeklyWellnessUseCase).execute(anyLong(), eq(ATHLETE_ID), eq(COACH_ID));
     }
 
     @Test
     void getById_shouldReturn404_whenWellnessNotFound() throws Exception {
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
         long wellnessId = 8L;
-        when(wellnessService.findById(wellnessId, ATHLETE_ID))
+        when(getWeeklyWellnessUseCase.execute(wellnessId, ATHLETE_ID, COACH_ID))
             .thenThrow(new WeeklyWellnessNotFoundException(wellnessId));
 
         mvc.perform(get(URL_PREFIX + "/" + wellnessId))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$[0].code").value("NOT_FOUND"));
 
-        verify(athleteService).findById(ATHLETE_ID, COACH_ID);
-        verify(wellnessService).findById(wellnessId, ATHLETE_ID);
+        verify(getWeeklyWellnessUseCase).execute(wellnessId, ATHLETE_ID, COACH_ID);
     }
 
     @Test
@@ -267,19 +266,18 @@ class WeeklyWellnessControllerTest extends SecurityMockControllerSupport {
         WeeklyWellness wellness = aValidWellness();
         when(wellnessWebMapper.requestToDomain(request, ATHLETE_ID)).thenReturn(wellness);
         WeeklyWellness updated = aValidWellness();
-        when(wellnessService.update(wellness)).thenReturn(updated);
+        when(updateWeeklyWellnessUseCase.execute(wellness, COACH_ID)).thenReturn(updated);
         WeeklyWellnessResponse response = Instancio.create(WeeklyWellnessResponse.class);
         when(wellnessWebMapper.domainToResponse(updated)).thenReturn(response);
 
         ResultActions result = mvc.perform(put(URL_PREFIX + "/" + wellnessId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk());
 
         assertJsonMatchesResponse(result, response);
-        verify(athleteService).findById(ATHLETE_ID, COACH_ID);
         verify(wellnessWebMapper).requestToDomain(request, ATHLETE_ID);
-        verify(wellnessService).update(wellness);
+        verify(updateWeeklyWellnessUseCase).execute(wellness, COACH_ID);
         verify(wellnessWebMapper).domainToResponse(updated);
     }
 
@@ -288,7 +286,7 @@ class WeeklyWellnessControllerTest extends SecurityMockControllerSupport {
         WeeklyWellnessRequest invalidRequest = new WeeklyWellnessRequest(null, 0, 6, null);
 
         mvc.perform(put(URL_PREFIX + "/8").contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(invalidRequest)))
+            .content(objectMapper.writeValueAsString(invalidRequest)))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$", hasSize(4)));
     }
@@ -296,15 +294,18 @@ class WeeklyWellnessControllerTest extends SecurityMockControllerSupport {
     @Test
     void updateById_shouldReturn404_whenAthleteNotFound() throws Exception {
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
-        when(athleteService.findById(ATHLETE_ID, COACH_ID)).thenThrow(new AthleteNotFoundException(ATHLETE_ID));
+        WeeklyWellnessRequest request = aValidRequest();
+        WeeklyWellness wellness = aValidWellness();
+        when(wellnessWebMapper.requestToDomain(request, ATHLETE_ID)).thenReturn(wellness);
+        when(updateWeeklyWellnessUseCase.execute(wellness, COACH_ID))
+            .thenThrow(new AthleteNotFoundException(ATHLETE_ID));
 
         mvc.perform(put(URL_PREFIX + "/8").contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(aValidRequest())))
+            .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$[0].code").value("NOT_FOUND"));
 
-        verify(athleteService).findById(ATHLETE_ID, COACH_ID);
-        verify(wellnessService, never()).update(any());
+        verify(updateWeeklyWellnessUseCase).execute(wellness, COACH_ID);
     }
 
     @Test
@@ -314,15 +315,15 @@ class WeeklyWellnessControllerTest extends SecurityMockControllerSupport {
         WeeklyWellnessRequest request = aValidRequest();
         WeeklyWellness wellness = aValidWellness();
         when(wellnessWebMapper.requestToDomain(request, ATHLETE_ID)).thenReturn(wellness);
-        when(wellnessService.update(wellness)).thenThrow(new WeeklyWellnessNotFoundException(wellnessId));
+        when(updateWeeklyWellnessUseCase.execute(wellness, COACH_ID))
+            .thenThrow(new WeeklyWellnessNotFoundException(wellnessId));
 
         mvc.perform(put(URL_PREFIX + "/" + wellnessId).contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+            .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$[0].code").value("NOT_FOUND"));
 
-        verify(athleteService).findById(ATHLETE_ID, COACH_ID);
-        verify(wellnessService).update(wellness);
+        verify(updateWeeklyWellnessUseCase).execute(wellness, COACH_ID);
     }
 
     @Test
@@ -332,16 +333,15 @@ class WeeklyWellnessControllerTest extends SecurityMockControllerSupport {
         WeeklyWellnessRequest request = aValidRequest();
         WeeklyWellness wellness = aValidWellness();
         when(wellnessWebMapper.requestToDomain(request, ATHLETE_ID)).thenReturn(wellness);
-        when(wellnessService.update(wellness))
+        when(updateWeeklyWellnessUseCase.execute(wellness, COACH_ID))
             .thenThrow(new WeeklyWellnessAlreadyExistsException(ATHLETE_ID, wellness.getWeekStartDate()));
 
         mvc.perform(put(URL_PREFIX + "/" + wellnessId).contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+            .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isConflict())
             .andExpect(jsonPath("$[0].code").value("WELLNESS_ALREADY_EXISTS"));
 
-        verify(athleteService).findById(ATHLETE_ID, COACH_ID);
-        verify(wellnessService).update(wellness);
+        verify(updateWeeklyWellnessUseCase).execute(wellness, COACH_ID);
     }
 
     @Test
@@ -352,21 +352,20 @@ class WeeklyWellnessControllerTest extends SecurityMockControllerSupport {
         mvc.perform(delete(URL_PREFIX + "/" + wellnessId))
             .andExpect(status().isNoContent());
 
-        verify(athleteService).findById(ATHLETE_ID, COACH_ID);
-        verify(wellnessService).deleteById(wellnessId, ATHLETE_ID);
+        verify(deleteWeeklyWellnessUseCase).execute(wellnessId, ATHLETE_ID, COACH_ID);
     }
 
     @Test
     void deleteById_shouldReturn404_whenAthleteNotFound() throws Exception {
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
-        when(athleteService.findById(ATHLETE_ID, COACH_ID)).thenThrow(new AthleteNotFoundException(ATHLETE_ID));
+        doThrow(new AthleteNotFoundException(ATHLETE_ID))
+            .when(deleteWeeklyWellnessUseCase).execute(anyLong(), eq(ATHLETE_ID), eq(COACH_ID));
 
         mvc.perform(delete(URL_PREFIX + "/8"))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$[0].code").value("NOT_FOUND"));
 
-        verify(athleteService).findById(ATHLETE_ID, COACH_ID);
-        verify(wellnessService, never()).deleteById(anyLong(), anyLong());
+        verify(deleteWeeklyWellnessUseCase).execute(anyLong(), eq(ATHLETE_ID), eq(COACH_ID));
     }
 
     @Test
@@ -374,14 +373,13 @@ class WeeklyWellnessControllerTest extends SecurityMockControllerSupport {
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
         long wellnessId = 8L;
         doThrow(new WeeklyWellnessNotFoundException(wellnessId))
-            .when(wellnessService).deleteById(wellnessId, ATHLETE_ID);
+            .when(deleteWeeklyWellnessUseCase).execute(wellnessId, ATHLETE_ID, COACH_ID);
 
         mvc.perform(delete(URL_PREFIX + "/" + wellnessId))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$[0].code").value("NOT_FOUND"));
 
-        verify(athleteService).findById(ATHLETE_ID, COACH_ID);
-        verify(wellnessService).deleteById(wellnessId, ATHLETE_ID);
+        verify(deleteWeeklyWellnessUseCase).execute(wellnessId, ATHLETE_ID, COACH_ID);
     }
 
     private WeeklyWellnessRequest aValidRequest() {

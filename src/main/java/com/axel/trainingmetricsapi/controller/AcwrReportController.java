@@ -1,11 +1,10 @@
 package com.axel.trainingmetricsapi.controller;
 
+import com.axel.trainingmetricsapi.application.port.in.GetAcwrReportUseCase;
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoach;
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoachResolver;
 import com.axel.trainingmetricsapi.domain.AcwrReport;
 import com.axel.trainingmetricsapi.dto.response.AcwrReportResponse;
-import com.axel.trainingmetricsapi.service.AcwrReportService;
-import com.axel.trainingmetricsapi.service.AthleteService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -21,18 +20,15 @@ import org.springframework.web.bind.annotation.RestController;
 public class AcwrReportController {
 
     private final AcwrReportWebMapper acwrReportWebMapper;
-    private final AcwrReportService acwrReportService;
+    private final GetAcwrReportUseCase getAcwrReportUseCase;
     private final AuthenticatedCoachResolver authenticatedCoachResolver;
-    private final AthleteService athleteService;
 
     public AcwrReportController(AcwrReportWebMapper acwrReportWebMapper,
-                                AcwrReportService acwrReportService,
-                                AuthenticatedCoachResolver authenticatedCoachResolver,
-                                AthleteService athleteService) {
+                                GetAcwrReportUseCase getAcwrReportUseCase,
+                                AuthenticatedCoachResolver authenticatedCoachResolver) {
         this.acwrReportWebMapper = acwrReportWebMapper;
-        this.acwrReportService = acwrReportService;
+        this.getAcwrReportUseCase = getAcwrReportUseCase;
         this.authenticatedCoachResolver = authenticatedCoachResolver;
-        this.athleteService = athleteService;
     }
 
     @GetMapping("/acwr")
@@ -43,9 +39,8 @@ public class AcwrReportController {
     @ApiResponse(responseCode = "404", description = "Athlete not found")
     public ResponseEntity<AcwrReportResponse> getAcwrReport(@PathVariable("id") long athleteId) {
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
-        athleteService.findById(athleteId, coach.id());
-
-        AcwrReport report = acwrReportService.getAcwrReport(athleteId);
+        long coachId = coach.id();
+        AcwrReport report = getAcwrReportUseCase.execute(athleteId, coachId);
         return ResponseEntity.ok(acwrReportWebMapper.domainToResponse(report));
     }
 }

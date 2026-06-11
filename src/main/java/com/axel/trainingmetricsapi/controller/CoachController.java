@@ -1,12 +1,14 @@
 package com.axel.trainingmetricsapi.controller;
 
+import com.axel.trainingmetricsapi.application.port.in.DeleteCoachUseCase;
+import com.axel.trainingmetricsapi.application.port.in.GetCoachUseCase;
+import com.axel.trainingmetricsapi.application.port.in.UpdateCoachUseCase;
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoach;
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoachResolver;
 import com.axel.trainingmetricsapi.domain.Coach;
 import com.axel.trainingmetricsapi.dto.request.CoachUpdateRequest;
 import com.axel.trainingmetricsapi.dto.response.ApiError;
 import com.axel.trainingmetricsapi.dto.response.CoachResponse;
-import com.axel.trainingmetricsapi.service.CoachService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -21,12 +23,20 @@ import org.springframework.web.bind.annotation.*;
 public class CoachController {
 
     private final CoachWebMapper coachWebMapper;
-    private final CoachService coachService;
+    private final GetCoachUseCase getCoachUseCase;
+    private final UpdateCoachUseCase updateCoachUseCase;
+    private final DeleteCoachUseCase deleteCoachUseCase;
     private final AuthenticatedCoachResolver authenticatedCoachResolver;
 
-    public CoachController(CoachWebMapper coachWebMapper, CoachService coachService, AuthenticatedCoachResolver authenticatedCoachResolver) {
+    public CoachController(CoachWebMapper coachWebMapper,
+                           GetCoachUseCase getCoachUseCase,
+                           UpdateCoachUseCase updateCoachUseCase,
+                           DeleteCoachUseCase deleteCoachUseCase,
+                           AuthenticatedCoachResolver authenticatedCoachResolver) {
         this.coachWebMapper = coachWebMapper;
-        this.coachService = coachService;
+        this.getCoachUseCase = getCoachUseCase;
+        this.updateCoachUseCase = updateCoachUseCase;
+        this.deleteCoachUseCase = deleteCoachUseCase;
         this.authenticatedCoachResolver = authenticatedCoachResolver;
     }
 
@@ -37,11 +47,11 @@ public class CoachController {
     @ApiResponse(responseCode = "401", description = "Missing or invalid JWT token")
     @ApiResponse(responseCode = "404", description = "Coach not found", content = @Content(mediaType =
         "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
-    public ResponseEntity<CoachResponse> getMe(){
+    public ResponseEntity<CoachResponse> getMe() {
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
-        Coach coachFound = coachService.findById(coach.id());
-        CoachResponse coachResponse = coachWebMapper.domainToResponse(coachFound);
-        return ResponseEntity.ok(coachResponse);
+        long coachId = coach.id();
+        Coach coachFound = getCoachUseCase.execute(coachId);
+        return ResponseEntity.ok(coachWebMapper.domainToResponse(coachFound));
     }
 
     @PutMapping()
@@ -55,9 +65,10 @@ public class CoachController {
         "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
     public ResponseEntity<CoachResponse> update(@RequestBody @Valid CoachUpdateRequest coachUpdateRequest) {
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
-        Coach persistedCoach = coachService.updateName(coach.id(), coachUpdateRequest.name());
-        CoachResponse coachResponse = coachWebMapper.domainToResponse(persistedCoach);
-        return ResponseEntity.ok(coachResponse);
+        long coachId = coach.id();
+        updateCoachUseCase.execute(coachId, coachUpdateRequest.name());
+        Coach persistedCoach = getCoachUseCase.execute(coachId);
+        return ResponseEntity.ok(coachWebMapper.domainToResponse(persistedCoach));
     }
 
     @DeleteMapping()
@@ -68,8 +79,8 @@ public class CoachController {
         "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
     public ResponseEntity<Void> delete() {
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
-        coachService.deleteById(coach.id());
+        long coachId = coach.id();
+        deleteCoachUseCase.execute(coachId);
         return ResponseEntity.noContent().build();
     }
-
 }

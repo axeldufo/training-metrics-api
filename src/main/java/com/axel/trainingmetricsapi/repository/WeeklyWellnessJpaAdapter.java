@@ -42,6 +42,18 @@ public class WeeklyWellnessJpaAdapter implements WeeklyWellnessRepository {
     }
 
     @Override
+    public Optional<WeeklyWellness> findByAthleteIdAndWeekStartDate(long athleteId, LocalDate weekStartDate) {
+        return wellnessJpaRepository.findByAthleteIdAndWeekStartDate(athleteId, weekStartDate)
+            .map(persistenceMapper::entityToDomain);
+    }
+
+    @Override
+    public Optional<WeeklyWellness> findLatestByAthleteId(long athleteId) {
+        return wellnessJpaRepository.findTopByAthleteIdOrderByWeekStartDateDesc(athleteId)
+            .map(persistenceMapper::entityToDomain);
+    }
+
+    @Override
     public void deleteById(long id) {
         wellnessJpaRepository.deleteById(id);
     }

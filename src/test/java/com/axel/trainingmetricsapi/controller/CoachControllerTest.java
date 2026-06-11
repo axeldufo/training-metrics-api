@@ -1,12 +1,14 @@
 package com.axel.trainingmetricsapi.controller;
 
+import com.axel.trainingmetricsapi.application.port.in.DeleteCoachUseCase;
+import com.axel.trainingmetricsapi.application.port.in.GetCoachUseCase;
+import com.axel.trainingmetricsapi.application.port.in.UpdateCoachUseCase;
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoach;
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoachResolver;
 import com.axel.trainingmetricsapi.domain.Coach;
 import com.axel.trainingmetricsapi.domain.exception.CoachNotFoundException;
 import com.axel.trainingmetricsapi.dto.request.CoachUpdateRequest;
 import com.axel.trainingmetricsapi.dto.response.CoachResponse;
-import com.axel.trainingmetricsapi.service.CoachService;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,13 +21,14 @@ import tools.jackson.databind.ObjectMapper;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(CoachController.class)
-class CoachControllerTest  extends SecurityMockControllerSupport {
+class CoachControllerTest extends SecurityMockControllerSupport {
 
     static final String URL_PREFIX = ApiConstants.API_VERSION + "/coaches/me";
 
@@ -33,7 +36,13 @@ class CoachControllerTest  extends SecurityMockControllerSupport {
     private CoachWebMapper coachWebMapper;
 
     @MockitoBean
-    private CoachService coachService;
+    private GetCoachUseCase getCoachUseCase;
+
+    @MockitoBean
+    private UpdateCoachUseCase updateCoachUseCase;
+
+    @MockitoBean
+    private DeleteCoachUseCase deleteCoachUseCase;
 
     @MockitoBean
     private AuthenticatedCoachResolver authenticatedCoachResolver;
@@ -49,7 +58,7 @@ class CoachControllerTest  extends SecurityMockControllerSupport {
         long coachId = 4L;
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(coachId));
         Coach persistedCoach = Instancio.create(Coach.class);
-        when(coachService.findById(coachId)).thenReturn(persistedCoach);
+        when(getCoachUseCase.execute(coachId)).thenReturn(persistedCoach);
         CoachResponse coachResponse = Instancio.create(CoachResponse.class);
         when(coachWebMapper.domainToResponse(persistedCoach)).thenReturn(coachResponse);
 
@@ -57,7 +66,7 @@ class CoachControllerTest  extends SecurityMockControllerSupport {
             .andExpect(status().isOk());
 
         assertJsonMatchesCoachResponse(result, coachResponse);
-        verify(coachService).findById(coachId);
+        verify(getCoachUseCase).execute(coachId);
         verify(coachWebMapper).domainToResponse(persistedCoach);
     }
 
@@ -65,13 +74,13 @@ class CoachControllerTest  extends SecurityMockControllerSupport {
     void getMe_shouldReturnNotFound_whenCoachNotFoundException() throws Exception {
         long coachId = 4L;
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(coachId));
-        when(coachService.findById(coachId)).thenThrow(new CoachNotFoundException(coachId));
+        when(getCoachUseCase.execute(coachId)).thenThrow(new CoachNotFoundException(coachId));
 
         mvc.perform(get(URL_PREFIX))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$[0].code").value("NOT_FOUND"));
 
-        verify(coachService).findById(coachId);
+        verify(getCoachUseCase).execute(coachId);
     }
 
     @Test
@@ -81,16 +90,17 @@ class CoachControllerTest  extends SecurityMockControllerSupport {
         CoachUpdateRequest coachUpdateRequest = Instancio.create(CoachUpdateRequest.class);
         String name = coachUpdateRequest.name();
         Coach persistedCoach = Instancio.create(Coach.class);
-        when(coachService.updateName(coachId, name)).thenReturn(persistedCoach);
+        when(getCoachUseCase.execute(coachId)).thenReturn(persistedCoach);
         CoachResponse coachResponse = Instancio.create(CoachResponse.class);
         when(coachWebMapper.domainToResponse(persistedCoach)).thenReturn(coachResponse);
 
         ResultActions result = mvc.perform(put(URL_PREFIX).contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(coachUpdateRequest)))
+            .content(objectMapper.writeValueAsString(coachUpdateRequest)))
             .andExpect(status().isOk());
 
         assertJsonMatchesCoachResponse(result, coachResponse);
-        verify(coachService).updateName(coachId, name);
+        verify(updateCoachUseCase).execute(coachId, name);
+        verify(getCoachUseCase).execute(coachId);
         verify(coachWebMapper).domainToResponse(persistedCoach);
     }
 
@@ -98,14 +108,15 @@ class CoachControllerTest  extends SecurityMockControllerSupport {
     void update_shouldReturnNotFound_whenCoachNotFoundException() throws Exception {
         long coachId = 4L;
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(coachId));
-        when(coachService.updateName(eq(coachId), any())).thenThrow(new CoachNotFoundException(coachId));
+        doThrow(new CoachNotFoundException(coachId)).when(updateCoachUseCase).execute(eq(coachId), any());
 
         mvc.perform(put(URL_PREFIX).contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(Instancio.create(CoachUpdateRequest.class))))
+            .content(objectMapper.writeValueAsString(Instancio.create(CoachUpdateRequest.class))))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$[0].code").value("NOT_FOUND"));
 
-        verify(coachService).updateName(eq(coachId), any());
+        verify(updateCoachUseCase).execute(eq(coachId), any());
+        verify(getCoachUseCase, never()).execute(coachId);
     }
 
     @Test
@@ -113,7 +124,7 @@ class CoachControllerTest  extends SecurityMockControllerSupport {
         CoachUpdateRequest coachUpdateRequest = new CoachUpdateRequest("");
 
         mvc.perform(put(URL_PREFIX).contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(coachUpdateRequest)))
+            .content(objectMapper.writeValueAsString(coachUpdateRequest)))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$", hasSize(1)));
     }
@@ -126,20 +137,20 @@ class CoachControllerTest  extends SecurityMockControllerSupport {
         mvc.perform(delete(URL_PREFIX))
             .andExpect(status().isNoContent());
 
-        verify(coachService).deleteById(coachId);
+        verify(deleteCoachUseCase).execute(coachId);
     }
 
     @Test
     void delete_shouldReturnNotFound_whenCoachNotFoundException() throws Exception {
         long coachId = 4L;
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(coachId));
-        doThrow(new CoachNotFoundException(coachId)).when(coachService).deleteById(coachId);
+        doThrow(new CoachNotFoundException(coachId)).when(deleteCoachUseCase).execute(coachId);
 
         mvc.perform(delete(URL_PREFIX))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$[0].code").value("NOT_FOUND"));
 
-        verify(coachService).deleteById(coachId);
+        verify(deleteCoachUseCase).execute(coachId);
     }
 
     private void assertJsonMatchesCoachResponse(ResultActions result, CoachResponse coachResponse) throws Exception {

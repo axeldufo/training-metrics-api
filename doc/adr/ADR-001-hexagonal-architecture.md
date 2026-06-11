@@ -50,8 +50,10 @@ interfaces/                    ← replaces controller/: primary adapters
 infrastructure/                ← replaces repository/ + config/ + event handler
 ├── persistence/               ← JPA adapters, entities, persistence mappers
 ├── cache/                     ← RedisCacheAdapter (implements AcwrCachePort)
-└── event/                     ← SpringTrainingSessionEventAdapter
-	(implements TrainingSessionEventPort)
+├── event/                     ← SpringTrainingSessionEventAdapter
+│                                (implements TrainingSessionEventPort)
+└── security/                  ← BcryptPasswordEncoderAdapter
+                                 (implements PasswordEncoderPort)
 
 ### Repository interfaces stay in domain/
 Repository interfaces (`AthleteRepository`, `TrainingSessionRepository`, etc.)
@@ -99,14 +101,14 @@ Each Use Case is an interface with a single `execute()` method, implemented
 by a `@Service` class in the same package. Controllers inject the interface.
 
 ### Domain Services
-Pure business logic shared across Use Cases is extracted into Domain Services
-in `domain/service/`. These are plain POJOs instantiated with `new` inside
-Use Cases — no Spring annotations, no framework dependency.
+Pure business logic shared across Use Cases lives in `domain/service/`.
+These are plain POJOs instantiated with `new` inside Use Cases — no Spring
+annotations, no framework dependency.
 
-Initial Domain Service: `LoadReportDomainService` — encapsulates the rule
-"a week with no training sessions produces a zero load report (injury or
-deliberate rest)". This rule belongs to the domain, not to a specific
-application scenario.
+`LoadReportCalculator` (already in `domain/`) covers the on-the-fly load
+report calculation responsibility: given a list of sessions and a week,
+it returns the aggregated `LoadReport`. Use Cases call it directly with
+their fetched sessions — no intermediate Domain Service needed.
 
 ## Consequences
 - `service/` package removed — replaced by `application/`

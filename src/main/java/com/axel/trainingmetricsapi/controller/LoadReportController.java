@@ -1,12 +1,13 @@
 package com.axel.trainingmetricsapi.controller;
 
+import com.axel.trainingmetricsapi.application.port.in.GetLatestLoadReportUseCase;
+import com.axel.trainingmetricsapi.application.port.in.GetLoadReportByWeekUseCase;
+import com.axel.trainingmetricsapi.application.port.in.GetLoadReportsByPeriodUseCase;
 import com.axel.trainingmetricsapi.controller.exception.InvalidPeriodException;
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoach;
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoachResolver;
 import com.axel.trainingmetricsapi.domain.LoadReport;
 import com.axel.trainingmetricsapi.dto.response.LoadReportResponse;
-import com.axel.trainingmetricsapi.service.AthleteService;
-import com.axel.trainingmetricsapi.service.LoadReportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -28,18 +29,21 @@ import java.util.Objects;
 public class LoadReportController {
 
     private final LoadReportWebMapper loadReportWebMapper;
-    private final LoadReportService loadReportService;
+    private final GetLoadReportByWeekUseCase getLoadReportByWeekUseCase;
+    private final GetLatestLoadReportUseCase getLatestLoadReportUseCase;
+    private final GetLoadReportsByPeriodUseCase getLoadReportsByPeriodUseCase;
     private final AuthenticatedCoachResolver authenticatedCoachResolver;
-    private final AthleteService athleteService;
 
     public LoadReportController(LoadReportWebMapper loadReportWebMapper,
-                                LoadReportService loadReportService,
-                                AuthenticatedCoachResolver authenticatedCoachResolver,
-                                AthleteService athleteService) {
+                                GetLoadReportByWeekUseCase getLoadReportByWeekUseCase,
+                                GetLatestLoadReportUseCase getLatestLoadReportUseCase,
+                                GetLoadReportsByPeriodUseCase getLoadReportsByPeriodUseCase,
+                                AuthenticatedCoachResolver authenticatedCoachResolver) {
         this.loadReportWebMapper = loadReportWebMapper;
-        this.loadReportService = loadReportService;
+        this.getLoadReportByWeekUseCase = getLoadReportByWeekUseCase;
+        this.getLatestLoadReportUseCase = getLatestLoadReportUseCase;
+        this.getLoadReportsByPeriodUseCase = getLoadReportsByPeriodUseCase;
         this.authenticatedCoachResolver = authenticatedCoachResolver;
-        this.athleteService = athleteService;
     }
 
     @GetMapping(params = "weekStartDate")
@@ -49,12 +53,11 @@ public class LoadReportController {
     @ApiResponse(responseCode = "400", description = "Invalid or future weekStartDate")
     @ApiResponse(responseCode = "401", description = "Missing or invalid JWT token")
     public ResponseEntity<LoadReportResponse> getByWeekStartDate(
-            @PathVariable("id") long athleteId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @PastOrPresent LocalDate weekStartDate) {
+        @PathVariable("id") long athleteId,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @PastOrPresent LocalDate weekStartDate) {
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
-        athleteService.findById(athleteId, coach.id());
-
-        LoadReport report = loadReportService.findByAthleteIdAndWeekStartDate(athleteId, weekStartDate);
+        long coachId = coach.id();
+        LoadReport report = getLoadReportByWeekUseCase.execute(athleteId, coachId, weekStartDate);
         return ResponseEntity.ok(loadReportWebMapper.domainToResponse(report));
     }
 
@@ -66,9 +69,8 @@ public class LoadReportController {
     @ApiResponse(responseCode = "404", description = "No load report found for this athlete")
     public ResponseEntity<LoadReportResponse> getLatest(@PathVariable("id") long athleteId) {
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
-        athleteService.findById(athleteId, coach.id());
-
-        LoadReport report = loadReportService.findLatestByAthleteId(athleteId);
+        long coachId = coach.id();
+        LoadReport report = getLatestLoadReportUseCase.execute(athleteId, coachId);
         return ResponseEntity.ok(loadReportWebMapper.domainToResponse(report));
     }
 
@@ -79,18 +81,16 @@ public class LoadReportController {
     @ApiResponse(responseCode = "400", description = "Invalid period parameters")
     @ApiResponse(responseCode = "401", description = "Missing or invalid JWT token")
     public ResponseEntity<List<LoadReportResponse>> getByPeriod(
-            @PathVariable("id") long athleteId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @PastOrPresent LocalDate from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @PastOrPresent LocalDate to) {
+        @PathVariable("id") long athleteId,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @PastOrPresent LocalDate from,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @PastOrPresent LocalDate to) {
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
-        athleteService.findById(athleteId, coach.id());
-
+        long coachId = coach.id();
         LocalDate effectiveTo = Objects.requireNonNullElseGet(to, LocalDate::now);
         if (from.isAfter(effectiveTo)) {
             throw new InvalidPeriodException("from must be before or equal to to");
         }
-
-        List<LoadReport> reports = loadReportService.findByAthleteIdAndPeriod(athleteId, from, effectiveTo);
+        List<LoadReport> reports = getLoadReportsByPeriodUseCase.execute(athleteId, coachId, from, effectiveTo);
         List<LoadReportResponse> responses = reports.stream()
             .map(loadReportWebMapper::domainToResponse)
             .toList();

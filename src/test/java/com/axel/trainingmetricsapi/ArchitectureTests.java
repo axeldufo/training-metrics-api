@@ -40,7 +40,6 @@ class ArchitectureTests {
             ArchRule rule = layeredArchitecture().consideringAllDependencies()
                 .layer("Controller").definedBy("..controller..")
                 .layer("DTO").definedBy("..dto..")
-                .layer("Service").definedBy("..service..")
                 .layer("Application").definedBy("..application..")
                 .layer("Infrastructure").definedBy("..infrastructure..")
                 .layer("Repository").definedBy("..repository..")
@@ -48,11 +47,10 @@ class ArchitectureTests {
 
                 .whereLayer("Controller").mayNotBeAccessedByAnyLayer()
                 .whereLayer("DTO").mayOnlyBeAccessedByLayers("Controller")
-                .whereLayer("Service").mayOnlyBeAccessedByLayers("Controller")
-                .whereLayer("Application").mayOnlyBeAccessedByLayers("Controller", "Service", "Infrastructure")
+                .whereLayer("Application").mayOnlyBeAccessedByLayers("Controller", "Infrastructure")
                 .whereLayer("Infrastructure").mayNotBeAccessedByAnyLayer()
-                .whereLayer("Repository").mayOnlyBeAccessedByLayers("Service", "Application")
-                .whereLayer("Domain").mayOnlyBeAccessedByLayers("Controller", "Service", "Application", "Repository", "Infrastructure", "DTO")
+                .whereLayer("Repository").mayOnlyBeAccessedByLayers("Application")
+                .whereLayer("Domain").mayOnlyBeAccessedByLayers("Controller", "Application", "Repository", "Infrastructure", "DTO")
 
                 .because("Each layer should only depend on its allowed neighbors — " +
                     "enforces separation of concerns and prevents architecture erosion");
@@ -77,7 +75,7 @@ class ArchitectureTests {
             ArchRule rule = noClasses()
                 .that().resideInAPackage("..domain..")
                 .should().dependOnClassesThat()
-                .resideInAnyPackage("..repository..", "..service..", "..dto..", "..controller..", "..application..")
+                .resideInAnyPackage("..repository..", "..dto..", "..controller..", "..application..")
                 .because("Domain should be independent of others layers");
 
             rule.check(allClasses); // test classes as well : tests should respect productions rules
@@ -115,10 +113,10 @@ class ArchitectureTests {
         }
 
         @Test
-        void service_annotations_should_be_in_service() {
+        void service_annotations_should_be_in_application() {
             ArchRule rule = classes().that().areAnnotatedWith(Service.class)
-                .should().resideInAnyPackage("..service..", "..application..")
-                .because("Service annotations should be in service layer");
+                .should().resideInAPackage("..application..")
+                .because("Service annotations should be in application layer");
 
             rule.check(allClasses); // test classes as well : tests should respect productions rules
         }

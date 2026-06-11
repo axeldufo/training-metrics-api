@@ -1,5 +1,10 @@
 package com.axel.trainingmetricsapi.controller;
 
+import com.axel.trainingmetricsapi.application.port.in.CreateTrainingSessionUseCase;
+import com.axel.trainingmetricsapi.application.port.in.DeleteTrainingSessionUseCase;
+import com.axel.trainingmetricsapi.application.port.in.GetTrainingSessionUseCase;
+import com.axel.trainingmetricsapi.application.port.in.GetTrainingSessionsByPeriodUseCase;
+import com.axel.trainingmetricsapi.application.port.in.UpdateTrainingSessionUseCase;
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoach;
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoachResolver;
 import com.axel.trainingmetricsapi.domain.TrainingSession;
@@ -7,8 +12,6 @@ import com.axel.trainingmetricsapi.dto.request.TrainingSessionRequest;
 import com.axel.trainingmetricsapi.dto.response.ApiError;
 import com.axel.trainingmetricsapi.dto.response.ErrorCode;
 import com.axel.trainingmetricsapi.dto.response.TrainingSessionResponse;
-import com.axel.trainingmetricsapi.service.AthleteService;
-import com.axel.trainingmetricsapi.service.TrainingSessionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -30,16 +33,27 @@ import java.util.Objects;
 public class TrainingSessionController {
 
     private final TrainingSessionWebMapper trainingSessionWebMapper;
-    private final TrainingSessionService trainingSessionService;
+    private final CreateTrainingSessionUseCase createTrainingSessionUseCase;
+    private final GetTrainingSessionUseCase getTrainingSessionUseCase;
+    private final GetTrainingSessionsByPeriodUseCase getTrainingSessionsByPeriodUseCase;
+    private final UpdateTrainingSessionUseCase updateTrainingSessionUseCase;
+    private final DeleteTrainingSessionUseCase deleteTrainingSessionUseCase;
     private final AuthenticatedCoachResolver authenticatedCoachResolver;
-    private final AthleteService athleteService;
 
     public TrainingSessionController(TrainingSessionWebMapper trainingSessionWebMapper,
-                                     TrainingSessionService trainingSessionService, AuthenticatedCoachResolver authenticatedCoachResolver, AthleteService athleteService) {
+                                     CreateTrainingSessionUseCase createTrainingSessionUseCase,
+                                     GetTrainingSessionUseCase getTrainingSessionUseCase,
+                                     GetTrainingSessionsByPeriodUseCase getTrainingSessionsByPeriodUseCase,
+                                     UpdateTrainingSessionUseCase updateTrainingSessionUseCase,
+                                     DeleteTrainingSessionUseCase deleteTrainingSessionUseCase,
+                                     AuthenticatedCoachResolver authenticatedCoachResolver) {
         this.trainingSessionWebMapper = trainingSessionWebMapper;
-        this.trainingSessionService = trainingSessionService;
+        this.createTrainingSessionUseCase = createTrainingSessionUseCase;
+        this.getTrainingSessionUseCase = getTrainingSessionUseCase;
+        this.getTrainingSessionsByPeriodUseCase = getTrainingSessionsByPeriodUseCase;
+        this.updateTrainingSessionUseCase = updateTrainingSessionUseCase;
+        this.deleteTrainingSessionUseCase = deleteTrainingSessionUseCase;
         this.authenticatedCoachResolver = authenticatedCoachResolver;
-        this.athleteService = athleteService;
     }
 
     @PostMapping
@@ -51,16 +65,14 @@ public class TrainingSessionController {
     @ApiResponse(responseCode = "401", description = "Missing or invalid JWT token")
     @ApiResponse(responseCode = "404", description = "Athlete not found", content = @Content(mediaType =
         "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
-    public ResponseEntity<TrainingSessionResponse> create(@PathVariable("id")  long athleteId,
-        @RequestBody @Valid TrainingSessionRequest trainingSessionRequest) {
+    public ResponseEntity<TrainingSessionResponse> create(@PathVariable("id") long athleteId,
+                                                          @RequestBody @Valid TrainingSessionRequest trainingSessionRequest) {
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
-        athleteService.findById(athleteId, coach.id()); // validates Coach→Athlete ownership
-
+        long coachId = coach.id();
         TrainingSession trainingSession = trainingSessionWebMapper.requestToDomain(trainingSessionRequest, athleteId);
-        TrainingSession persistedTrainingSession = trainingSessionService.save(trainingSession);
+        TrainingSession persistedTrainingSession = createTrainingSessionUseCase.execute(trainingSession, coachId);
         TrainingSessionResponse trainingSessionResponse =
             trainingSessionWebMapper.domainToResponse(persistedTrainingSession);
-
         URI location = URI.create(ApiConstants.API_VERSION + "/athletes/" + trainingSessionResponse.athleteId()
             + "/sessions/" + trainingSessionResponse.id());
         return ResponseEntity.created(location).body(trainingSessionResponse);
@@ -83,15 +95,14 @@ public class TrainingSessionController {
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
 
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
-        athleteService.findById(athleteId, coach.id()); // validates Coach→Athlete ownership
-
+        long coachId = coach.id();
         LocalDate effectiveTo = Objects.requireNonNullElseGet(to, LocalDate::now);
         if (from.isAfter(effectiveTo)) {
             return ResponseEntity.badRequest().body(
                 List.of(new ApiError(ErrorCode.HTTP_VALIDATION_ERROR, "to", "to must be after or equal to from")));
         }
 
-        List<TrainingSession> sessions = trainingSessionService.findByAthleteIdAndPeriod(athleteId, from, effectiveTo);
+        List<TrainingSession> sessions = getTrainingSessionsByPeriodUseCase.execute(athleteId, coachId, from, effectiveTo);
         List<TrainingSessionResponse> responses = sessions.stream()
             .map(trainingSessionWebMapper::domainToResponse)
             .toList();
@@ -105,14 +116,12 @@ public class TrainingSessionController {
     @ApiResponse(responseCode = "401", description = "Missing or invalid JWT token")
     @ApiResponse(responseCode = "404", description = "Training session not found", content = @Content(mediaType =
         "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
-    public ResponseEntity<TrainingSessionResponse> getById(@PathVariable("id")  long athleteId,
-                                                           @PathVariable long sessionId){
+    public ResponseEntity<TrainingSessionResponse> getById(@PathVariable("id") long athleteId,
+                                                           @PathVariable long sessionId) {
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
-        athleteService.findById(athleteId, coach.id()); // validates Coach→Athlete ownership
-
-        TrainingSession trainingSessionFound = trainingSessionService.findById(sessionId, athleteId);
-        TrainingSessionResponse trainingSessionResponse = trainingSessionWebMapper.domainToResponse(trainingSessionFound);
-        return ResponseEntity.ok(trainingSessionResponse);
+        long coachId = coach.id();
+        TrainingSession trainingSessionFound = getTrainingSessionUseCase.execute(sessionId, athleteId, coachId);
+        return ResponseEntity.ok(trainingSessionWebMapper.domainToResponse(trainingSessionFound));
     }
 
     @PutMapping("/{sessionId}")
@@ -124,19 +133,15 @@ public class TrainingSessionController {
     @ApiResponse(responseCode = "401", description = "Missing or invalid JWT token")
     @ApiResponse(responseCode = "404", description = "Training session not found", content = @Content(mediaType =
         "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
-    public ResponseEntity<TrainingSessionResponse> updateById(@PathVariable("id")  long athleteId,
+    public ResponseEntity<TrainingSessionResponse> updateById(@PathVariable("id") long athleteId,
                                                               @PathVariable long sessionId,
                                                               @RequestBody @Valid TrainingSessionRequest trainingSessionRequest) {
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
-        athleteService.findById(athleteId, coach.id()); // validates Coach→Athlete ownership
-
+        long coachId = coach.id();
         TrainingSession trainingSessionToUpdate = trainingSessionWebMapper.requestToDomain(trainingSessionRequest, athleteId);
         trainingSessionToUpdate.setId(sessionId);
-        TrainingSession persistedTrainingSession = trainingSessionService.update(trainingSessionToUpdate);
-        TrainingSessionResponse trainingSessionResponse =
-            trainingSessionWebMapper.domainToResponse(persistedTrainingSession);
-
-        return ResponseEntity.ok(trainingSessionResponse);
+        TrainingSession persistedTrainingSession = updateTrainingSessionUseCase.execute(trainingSessionToUpdate, coachId);
+        return ResponseEntity.ok(trainingSessionWebMapper.domainToResponse(persistedTrainingSession));
     }
 
     @DeleteMapping("/{sessionId}")
@@ -145,13 +150,10 @@ public class TrainingSessionController {
     @ApiResponse(responseCode = "401", description = "Missing or invalid JWT token")
     @ApiResponse(responseCode = "404", description = "Training session not found", content = @Content(mediaType =
         "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
-    public ResponseEntity<Void> deleteById(@PathVariable("id")  long athleteId, @PathVariable long sessionId) {
+    public ResponseEntity<Void> deleteById(@PathVariable("id") long athleteId, @PathVariable long sessionId) {
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
-        athleteService.findById(athleteId, coach.id()); // validates Coach→Athlete ownership
-
-        trainingSessionService.deleteById(sessionId, athleteId);
-
+        long coachId = coach.id();
+        deleteTrainingSessionUseCase.execute(sessionId, athleteId, coachId);
         return ResponseEntity.noContent().build();
     }
-
 }
