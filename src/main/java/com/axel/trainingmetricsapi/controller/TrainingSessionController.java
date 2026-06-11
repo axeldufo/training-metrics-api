@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URI;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 
 @RequestMapping(path = ApiConstants.API_VERSION + "/athletes/{id}/sessions")
 @RestController
@@ -84,7 +85,7 @@ public class TrainingSessionController {
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
         athleteService.findById(athleteId, coach.id()); // validates Coach→Athlete ownership
 
-        LocalDate effectiveTo = to != null ? to : LocalDate.now();
+        LocalDate effectiveTo = Objects.requireNonNullElseGet(to, LocalDate::now);
         if (from.isAfter(effectiveTo)) {
             return ResponseEntity.badRequest().body(
                 List.of(new ApiError(ErrorCode.HTTP_VALIDATION_ERROR, "to", "to must be after or equal to from")));

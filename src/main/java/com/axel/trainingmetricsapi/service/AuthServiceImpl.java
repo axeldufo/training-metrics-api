@@ -1,11 +1,11 @@
 package com.axel.trainingmetricsapi.service;
 
+import com.axel.trainingmetricsapi.application.port.out.PasswordEncoderPort;
 import com.axel.trainingmetricsapi.domain.AuthRepository;
 import com.axel.trainingmetricsapi.domain.CoachAuthData;
 import com.axel.trainingmetricsapi.domain.CoachCredentials;
 import com.axel.trainingmetricsapi.domain.exception.EmailAlreadyExistsException;
 import com.axel.trainingmetricsapi.domain.exception.InvalidCredentialsException;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,9 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthServiceImpl implements AuthService {
 
     private final AuthRepository authRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
+    private final PasswordEncoderPort passwordEncoder;
 
-    public AuthServiceImpl(AuthRepository authRepository, BCryptPasswordEncoder passwordEncoder) {
+    public AuthServiceImpl(AuthRepository authRepository, PasswordEncoderPort passwordEncoder) {
         this.authRepository = authRepository;
         this.passwordEncoder = passwordEncoder;
     }

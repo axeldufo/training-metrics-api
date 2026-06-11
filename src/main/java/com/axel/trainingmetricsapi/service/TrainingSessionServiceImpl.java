@@ -1,14 +1,11 @@
 package com.axel.trainingmetricsapi.service;
 
+import com.axel.trainingmetricsapi.application.port.out.TrainingSessionEventPort;
 import com.axel.trainingmetricsapi.domain.AthleteRepository;
 import com.axel.trainingmetricsapi.domain.TrainingSession;
 import com.axel.trainingmetricsapi.domain.TrainingSessionRepository;
-import com.axel.trainingmetricsapi.domain.event.TrainingSessionCreatedEvent;
-import com.axel.trainingmetricsapi.domain.event.TrainingSessionDeletedEvent;
-import com.axel.trainingmetricsapi.domain.event.TrainingSessionUpdatedEvent;
 import com.axel.trainingmetricsapi.domain.exception.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.domain.exception.TrainingSessionNotFoundException;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,14 +18,14 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
 
     private final TrainingSessionRepository trainingSessionRepository;
     private final AthleteRepository athleteRepository;
-    private final ApplicationEventPublisher eventPublisher;
+    private final TrainingSessionEventPort trainingSessionEventPort;
 
     public TrainingSessionServiceImpl(TrainingSessionRepository trainingSessionRepository,
                                       AthleteRepository athleteRepository,
-                                      ApplicationEventPublisher eventPublisher) {
+                                      TrainingSessionEventPort trainingSessionEventPort) {
         this.trainingSessionRepository = trainingSessionRepository;
         this.athleteRepository = athleteRepository;
-        this.eventPublisher = eventPublisher;
+        this.trainingSessionEventPort = trainingSessionEventPort;
     }
 
     @Override
@@ -39,7 +36,7 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
             throw new AthleteNotFoundException(athleteId);
         }
         TrainingSession saved = trainingSessionRepository.save(trainingSession);
-        eventPublisher.publishEvent(new TrainingSessionCreatedEvent(saved.getAthleteId(), saved.getDate()));
+        trainingSessionEventPort.sessionCreated(saved.getAthleteId(), saved.getDate());
         return saved;
     }
 
@@ -73,7 +70,7 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
             throw new TrainingSessionNotFoundException(id);
         }
         TrainingSession updated = trainingSessionRepository.save(trainingSession);
-        eventPublisher.publishEvent(new TrainingSessionUpdatedEvent(updated.getAthleteId(), updated.getDate()));
+        trainingSessionEventPort.sessionUpdated(updated.getAthleteId(), updated.getDate());
         return updated;
     }
 
@@ -86,7 +83,7 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
             throw new TrainingSessionNotFoundException(id);
         }
         trainingSessionRepository.deleteById(id);
-        eventPublisher.publishEvent(new TrainingSessionDeletedEvent(athleteId, existingTrainingSession.getDate()));
+        trainingSessionEventPort.sessionDeleted(athleteId, existingTrainingSession.getDate());
     }
 
 }

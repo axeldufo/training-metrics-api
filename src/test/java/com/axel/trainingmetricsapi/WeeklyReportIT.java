@@ -1,5 +1,6 @@
 package com.axel.trainingmetricsapi;
 
+import com.axel.trainingmetricsapi.application.port.out.TrainingSessionEventPort;
 import com.axel.trainingmetricsapi.domain.Athlete;
 import com.axel.trainingmetricsapi.domain.AthleteRepository;
 import com.axel.trainingmetricsapi.domain.CorrelationAlert;
@@ -10,7 +11,6 @@ import com.axel.trainingmetricsapi.domain.TrainingSessionRepository;
 import com.axel.trainingmetricsapi.domain.WeeklyReport;
 import com.axel.trainingmetricsapi.domain.WeeklyWellness;
 import com.axel.trainingmetricsapi.domain.WeeklyWellnessRepository;
-import com.axel.trainingmetricsapi.domain.event.TrainingSessionCreatedEvent;
 import com.axel.trainingmetricsapi.domain.exception.WeeklyReportNotFoundException;
 import com.axel.trainingmetricsapi.repository.CoachJpaEntity;
 import com.axel.trainingmetricsapi.repository.CoachJpaRepository;
@@ -19,7 +19,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Import;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,7 +52,7 @@ class WeeklyReportIT {
     private CoachJpaRepository coachJpaRepository;
 
     @Autowired
-    private ApplicationEventPublisher eventPublisher;
+    private TrainingSessionEventPort trainingSessionEventPort;
 
     private long athleteId;
 
@@ -69,7 +68,7 @@ class WeeklyReportIT {
         trainingSessionRepository.save(aSession(athleteId, SESSION_DATE, 6, 60));
         trainingSessionRepository.save(aSession(athleteId, SESSION_DATE, 7, 45));
         trainingSessionRepository.save(aSession(athleteId, SESSION_DATE, 5, 30));
-        eventPublisher.publishEvent(new TrainingSessionCreatedEvent(athleteId, SESSION_DATE));
+        trainingSessionEventPort.sessionCreated(athleteId, SESSION_DATE);
 
         weeklyWellnessRepository.save(new WeeklyWellness(athleteId, MONDAY.minusWeeks(1), 4, 3, 4));
         weeklyWellnessRepository.save(new WeeklyWellness(athleteId, MONDAY, 4, 3, 5));
@@ -107,7 +106,7 @@ class WeeklyReportIT {
     void scenario3_loadOnly_noWellness_returns200WithInsufficientData() {
         trainingSessionRepository.save(aSession(athleteId, SESSION_DATE, 5, 60));
         trainingSessionRepository.save(aSession(athleteId, SESSION_DATE, 6, 45));
-        eventPublisher.publishEvent(new TrainingSessionCreatedEvent(athleteId, SESSION_DATE));
+        trainingSessionEventPort.sessionCreated(athleteId, SESSION_DATE);
 
         WeeklyReport report = weeklyReportService.getWeeklyReport(athleteId, MONDAY);
 
