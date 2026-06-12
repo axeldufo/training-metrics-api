@@ -1,12 +1,13 @@
 package com.axel.trainingmetricsapi.controller;
 
+import com.axel.trainingmetricsapi.application.port.in.LoginUseCase;
+import com.axel.trainingmetricsapi.application.port.in.RegisterCoachUseCase;
 import com.axel.trainingmetricsapi.domain.CoachAuthData;
 import com.axel.trainingmetricsapi.domain.CoachCredentials;
 import com.axel.trainingmetricsapi.dto.request.LoginRequest;
 import com.axel.trainingmetricsapi.dto.request.RegisterRequest;
 import com.axel.trainingmetricsapi.dto.response.ApiError;
 import com.axel.trainingmetricsapi.dto.response.AuthResponse;
-import com.axel.trainingmetricsapi.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -24,11 +25,15 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class AuthController {
 
-    private final AuthService authService;
+    private final RegisterCoachUseCase registerCoachUseCase;
+    private final LoginUseCase loginUseCase;
     private final AuthWebMapper authWebMapper;
 
-    public AuthController(AuthService authService, AuthWebMapper authWebMapper) {
-        this.authService = authService;
+    public AuthController(RegisterCoachUseCase registerCoachUseCase,
+                          LoginUseCase loginUseCase,
+                          AuthWebMapper authWebMapper) {
+        this.registerCoachUseCase = registerCoachUseCase;
+        this.loginUseCase = loginUseCase;
         this.authWebMapper = authWebMapper;
     }
 
@@ -42,7 +47,7 @@ public class AuthController {
         "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
     public ResponseEntity<AuthResponse> register(@RequestBody @Valid RegisterRequest registerRequest) {
         CoachCredentials credentials = authWebMapper.toCredentials(registerRequest);
-        CoachAuthData authData = authService.register(credentials);
+        CoachAuthData authData = registerCoachUseCase.execute(credentials);
         AuthResponse authResponse = authWebMapper.toAuthResponse(authData);
         return ResponseEntity.status(HttpStatus.CREATED).body(authResponse);
     }
@@ -56,9 +61,8 @@ public class AuthController {
     @ApiResponse(responseCode = "401", description = "Invalid credentials", content = @Content(mediaType =
         "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
     public ResponseEntity<AuthResponse> login(@RequestBody @Valid LoginRequest loginRequest) {
-        CoachAuthData authData = authService.login(loginRequest.email(), loginRequest.password());
+        CoachAuthData authData = loginUseCase.execute(loginRequest.email(), loginRequest.password());
         AuthResponse authResponse = authWebMapper.toAuthResponse(authData);
         return ResponseEntity.ok(authResponse);
     }
-
 }

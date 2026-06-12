@@ -1,12 +1,13 @@
 package com.axel.trainingmetricsapi.controller;
 
+import com.axel.trainingmetricsapi.application.port.in.GetLatestWeeklyReportUseCase;
+import com.axel.trainingmetricsapi.application.port.in.GetWeeklyReportByWeekUseCase;
+import com.axel.trainingmetricsapi.application.port.in.GetWeeklyReportsByPeriodUseCase;
 import com.axel.trainingmetricsapi.controller.exception.InvalidPeriodException;
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoach;
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoachResolver;
 import com.axel.trainingmetricsapi.domain.WeeklyReport;
 import com.axel.trainingmetricsapi.dto.response.WeeklyReportResponse;
-import com.axel.trainingmetricsapi.service.AthleteService;
-import com.axel.trainingmetricsapi.service.WeeklyReportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -31,19 +32,22 @@ import java.util.Objects;
 @RestController
 public class WeeklyReportController {
 
-    private final WeeklyReportService weeklyReportService;
+    private final GetWeeklyReportByWeekUseCase getWeeklyReportByWeekUseCase;
+    private final GetLatestWeeklyReportUseCase getLatestWeeklyReportUseCase;
+    private final GetWeeklyReportsByPeriodUseCase getWeeklyReportsByPeriodUseCase;
     private final WeeklyReportWebMapper weeklyReportWebMapper;
     private final AuthenticatedCoachResolver authenticatedCoachResolver;
-    private final AthleteService athleteService;
 
-    public WeeklyReportController(WeeklyReportService weeklyReportService,
+    public WeeklyReportController(GetWeeklyReportByWeekUseCase getWeeklyReportByWeekUseCase,
+                                  GetLatestWeeklyReportUseCase getLatestWeeklyReportUseCase,
+                                  GetWeeklyReportsByPeriodUseCase getWeeklyReportsByPeriodUseCase,
                                   WeeklyReportWebMapper weeklyReportWebMapper,
-                                  AuthenticatedCoachResolver authenticatedCoachResolver,
-                                  AthleteService athleteService) {
-        this.weeklyReportService = weeklyReportService;
+                                  AuthenticatedCoachResolver authenticatedCoachResolver) {
+        this.getWeeklyReportByWeekUseCase = getWeeklyReportByWeekUseCase;
+        this.getLatestWeeklyReportUseCase = getLatestWeeklyReportUseCase;
+        this.getWeeklyReportsByPeriodUseCase = getWeeklyReportsByPeriodUseCase;
         this.weeklyReportWebMapper = weeklyReportWebMapper;
         this.authenticatedCoachResolver = authenticatedCoachResolver;
-        this.athleteService = athleteService;
     }
 
     @GetMapping(params = "weekStartDate")
@@ -57,9 +61,8 @@ public class WeeklyReportController {
         @PathVariable("id") long athleteId,
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @PastOrPresent LocalDate weekStartDate) {
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
-        athleteService.findById(athleteId, coach.id());
-
-        WeeklyReport report = weeklyReportService.getWeeklyReport(athleteId, weekStartDate);
+        long coachId = coach.id();
+        WeeklyReport report = getWeeklyReportByWeekUseCase.execute(athleteId, coachId, weekStartDate);
         return ResponseEntity.ok(weeklyReportWebMapper.domainToResponse(report));
     }
 
@@ -71,9 +74,8 @@ public class WeeklyReportController {
     @ApiResponse(responseCode = "404", description = "No weekly report found for this athlete")
     public ResponseEntity<WeeklyReportResponse> getLatest(@PathVariable("id") long athleteId) {
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
-        athleteService.findById(athleteId, coach.id());
-
-        WeeklyReport report = weeklyReportService.getLatestWeeklyReport(athleteId);
+        long coachId = coach.id();
+        WeeklyReport report = getLatestWeeklyReportUseCase.execute(athleteId, coachId);
         return ResponseEntity.ok(weeklyReportWebMapper.domainToResponse(report));
     }
 
@@ -88,14 +90,12 @@ public class WeeklyReportController {
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @PastOrPresent LocalDate from,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @PastOrPresent LocalDate to) {
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
-        athleteService.findById(athleteId, coach.id());
-
+        long coachId = coach.id();
         LocalDate effectiveTo = Objects.requireNonNullElseGet(to, LocalDate::now);
         if (from.isAfter(effectiveTo)) {
             throw new InvalidPeriodException("from must be before or equal to to");
         }
-
-        List<WeeklyReport> reports = weeklyReportService.getWeeklyReportsByPeriod(athleteId, from, effectiveTo);
+        List<WeeklyReport> reports = getWeeklyReportsByPeriodUseCase.execute(athleteId, coachId, from, effectiveTo);
         List<WeeklyReportResponse> responses = reports.stream()
             .map(weeklyReportWebMapper::domainToResponse)
             .toList();

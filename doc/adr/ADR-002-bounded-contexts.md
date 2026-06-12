@@ -36,36 +36,25 @@ dependency in the current system. `WeeklyReport` (wellness) is computed from
 `LoadReport` data (training). This dependency is expressed in two ways:
 
 **Via domain events (write path):**
-training → TrainingSessionCreatedEvent / UpdatedEvent / DeletedEvent → wellness
+TrainingSession changes are published via `TrainingSessionEventPort`
+(application/port/out/). The current adapter `SpringTrainingSessionEventAdapter`
+(infrastructure/event/) handles cache eviction and load recalculation via
+`TrainingSessionChangedUseCase`. Future Kafka adapter will publish to a topic
+consumed by the wellness context — zero changes to Use Cases.
 
 The wellness context listens to these events to trigger cache eviction and
 report recalculation. It does not hold a direct reference to any training
 class.
 
 **Via a port (read path):**
-`GetWeeklyReportUseCase` (wellness) needs to compute on-the-fly load reports
-for weeks with no training data. Rather than depending directly on
-`LoadReportDomainService` (training), it declares a port:
+`GetWeeklyReportByWeekUseCase` (wellness) needs load data from the training
+context. It calls `LoadReportRepository` (defined in `domain/`) directly —
+Repository interfaces are domain contracts accessible to all Use Cases per
+ADR-001 (Vernon convention). `LoadReportCalculator` is instantiated with
+`new` when on-the-fly calculation is needed.
 
-```java
-// wellness/application/port/out/LoadReportPort.java
-public interface LoadReportPort {
-    LoadReport getOrComputeOnTheFly(long athleteId, LocalDate weekStartDate);
-}
-```
-
-The adapter implementing this port lives in `training/` and delegates to
-`LoadReportDomainService`. The wellness context knows only its own port —
-it has no compile-time dependency on the training module.
-
-### LoadReportDomainService placement
-`LoadReportDomainService` lives in `training/domain/service/`. It encapsulates
-the rule "a week with no training sessions produces a zero load report
-(injury or deliberate rest)" — this is a training domain rule, not a shared
-concern.
-
-The wellness context accesses this logic exclusively through `LoadReportPort`
-(see above). Direct cross-module imports are forbidden.
+No intermediate `LoadReportPort` or `LoadReportDomainService` is introduced —
+`LoadReportCalculator` already encapsulates the calculation rule cleanly.
 
 ### Shared Kernel
 A minimal `shared/` module is retained for true cross-cutting primitives
@@ -121,13 +110,10 @@ coach/
 training/
 ├── application/
 ├── domain/
-│     └── service/     ← LoadReportDomainService
 ├── infrastructure/
 └── interfaces/
 wellness/
 ├── application/
-│     └── port/
-│           └── out/   ← LoadReportPort (implemented by training adapter)
 ├── domain/
 ├── infrastructure/
 └── interfaces/
@@ -149,8 +135,9 @@ moving one package, not hunting classes across four layer-oriented directories.
   refactoring is complete and all tests are green
 - `domain/` stays flat until Spring Modulith is introduced — at that point
   the top-level module structure will be reconsidered
-- `LoadReportDomainService` is owned by the `training` context — wellness
-  accesses it exclusively through `LoadReportPort`
+- `LoadReportCalculator` is instantiated with `new` directly in Use Cases
+  that need on-the-fly load calculation — no intermediate Domain Service or
+  port needed
 - `shared/` is frozen — any addition requires explicit justification
 - Any future cross-context dependency must go through domain events or a
   port, not direct class references

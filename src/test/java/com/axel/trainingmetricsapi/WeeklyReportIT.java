@@ -1,5 +1,6 @@
 package com.axel.trainingmetricsapi;
 
+import com.axel.trainingmetricsapi.application.port.in.GetWeeklyReportByWeekUseCase;
 import com.axel.trainingmetricsapi.application.port.out.TrainingSessionEventPort;
 import com.axel.trainingmetricsapi.domain.Athlete;
 import com.axel.trainingmetricsapi.domain.AthleteRepository;
@@ -14,7 +15,6 @@ import com.axel.trainingmetricsapi.domain.WeeklyWellnessRepository;
 import com.axel.trainingmetricsapi.domain.exception.WeeklyReportNotFoundException;
 import com.axel.trainingmetricsapi.repository.CoachJpaEntity;
 import com.axel.trainingmetricsapi.repository.CoachJpaRepository;
-import com.axel.trainingmetricsapi.service.WeeklyReportService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,10 +34,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class WeeklyReportIT {
 
     private static final LocalDate MONDAY = LocalDate.of(2025, Month.MAY, 19);
-    private static final LocalDate SESSION_DATE = MONDAY.plusDays(2); // Wednesday
+    private static final LocalDate SESSION_DATE = MONDAY.plusDays(2);
 
     @Autowired
-    private WeeklyReportService weeklyReportService;
+    private GetWeeklyReportByWeekUseCase getWeeklyReportByWeekUseCase;
 
     @Autowired
     private TrainingSessionRepository trainingSessionRepository;
@@ -55,11 +55,13 @@ class WeeklyReportIT {
     private TrainingSessionEventPort trainingSessionEventPort;
 
     private long athleteId;
+    private long coachId;
 
     @BeforeEach
     void setUp() {
         CoachJpaEntity coach = coachJpaRepository.save(aCoach());
-        Athlete athlete = athleteRepository.save(anAthlete(coach.getId()));
+        coachId = coach.getId();
+        Athlete athlete = athleteRepository.save(anAthlete(coachId));
         athleteId = athlete.getId();
     }
 
@@ -73,15 +75,14 @@ class WeeklyReportIT {
         weeklyWellnessRepository.save(new WeeklyWellness(athleteId, MONDAY.minusWeeks(1), 4, 3, 4));
         weeklyWellnessRepository.save(new WeeklyWellness(athleteId, MONDAY, 4, 3, 5));
 
-        WeeklyReport report = weeklyReportService.getWeeklyReport(athleteId, MONDAY);
+        WeeklyReport report = getWeeklyReportByWeekUseCase.execute(athleteId, coachId, MONDAY);
 
         assertThat(report.wellnessAvailable()).isTrue();
         assertThat(report.sessionCount()).isEqualTo(3);
         assertThat(report.perceivedDifficulty()).isEqualTo(4);
         assertThat(report.perceivedFatigue()).isEqualTo(3);
         assertThat(report.motivation()).isEqualTo(5);
-        assertThat(report.acwrReliable()).isFalse(); // only 1 week of data
-        assertThat(report.sessionCount()).isEqualTo(3);
+        assertThat(report.acwrReliable()).isFalse();
         assertThat(report.totalFosterLoad()).isGreaterThan(0);
         assertThat(report.correlationAlert()).isNotEqualTo(CorrelationAlert.INSUFFICIENT_DATA);
     }
@@ -91,13 +92,13 @@ class WeeklyReportIT {
         weeklyWellnessRepository.save(new WeeklyWellness(athleteId, MONDAY.minusWeeks(1), 3, 3, 4));
         weeklyWellnessRepository.save(new WeeklyWellness(athleteId, MONDAY, 3, 2, 4));
 
-        WeeklyReport report = weeklyReportService.getWeeklyReport(athleteId, MONDAY);
+        WeeklyReport report = getWeeklyReportByWeekUseCase.execute(athleteId, coachId, MONDAY);
 
         assertThat(report.wellnessAvailable()).isTrue();
         assertThat(report.sessionCount()).isZero();
         assertThat(report.totalFosterLoad()).isZero();
         assertThat(report.perceivedDifficulty()).isEqualTo(3);
-        assertThat(report.acwr()).isEqualTo(0.0); // no load history
+        assertThat(report.acwr()).isEqualTo(0.0);
         assertThat(report.acwrReliable()).isFalse();
         assertThat(report.correlationAlert()).isNotEqualTo(CorrelationAlert.INSUFFICIENT_DATA);
     }
@@ -108,7 +109,7 @@ class WeeklyReportIT {
         trainingSessionRepository.save(aSession(athleteId, SESSION_DATE, 6, 45));
         trainingSessionEventPort.sessionCreated(athleteId, SESSION_DATE);
 
-        WeeklyReport report = weeklyReportService.getWeeklyReport(athleteId, MONDAY);
+        WeeklyReport report = getWeeklyReportByWeekUseCase.execute(athleteId, coachId, MONDAY);
 
         assertThat(report.wellnessAvailable()).isFalse();
         assertThat(report.correlationAlert()).isEqualTo(CorrelationAlert.INSUFFICIENT_DATA);
@@ -119,7 +120,7 @@ class WeeklyReportIT {
 
     @Test
     void scenario4_noDataAtAll_throws404() {
-        assertThatThrownBy(() -> weeklyReportService.getWeeklyReport(athleteId, MONDAY))
+        assertThatThrownBy(() -> getWeeklyReportByWeekUseCase.execute(athleteId, coachId, MONDAY))
             .isInstanceOf(WeeklyReportNotFoundException.class)
             .hasMessageContaining("No weekly report available for athlete " + athleteId)
             .hasMessageContaining("on week " + MONDAY);
@@ -133,8 +134,8 @@ class WeeklyReportIT {
             .build();
     }
 
-    private Athlete anAthlete(long coachId) {
-        return new Athlete("Test", "Athlete", LocalDate.of(1990, Month.JANUARY, 1), Sport.ROAD_RUNNING, coachId, 70.0);
+    private Athlete anAthlete(long forCoachId) {
+        return new Athlete("Test", "Athlete", LocalDate.of(1990, Month.JANUARY, 1), Sport.ROAD_RUNNING, forCoachId, 70.0);
     }
 
     private TrainingSession aSession(long forAthleteId, LocalDate date, int rpe, int durationInMin) {

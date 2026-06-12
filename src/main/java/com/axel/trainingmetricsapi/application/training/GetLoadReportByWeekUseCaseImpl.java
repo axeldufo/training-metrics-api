@@ -1,0 +1,52 @@
+package com.axel.trainingmetricsapi.application.training;
+
+import com.axel.trainingmetricsapi.application.port.in.GetLoadReportByWeekUseCase;
+import com.axel.trainingmetricsapi.domain.Athlete;
+import com.axel.trainingmetricsapi.domain.AthleteRepository;
+import com.axel.trainingmetricsapi.domain.LoadReport;
+import com.axel.trainingmetricsapi.domain.LoadReportCalculator;
+import com.axel.trainingmetricsapi.domain.LoadReportRepository;
+import com.axel.trainingmetricsapi.domain.TrainingSession;
+import com.axel.trainingmetricsapi.domain.TrainingSessionRepository;
+import com.axel.trainingmetricsapi.domain.exception.AthleteNotFoundException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Service
+@Transactional(readOnly = true)
+public class GetLoadReportByWeekUseCaseImpl implements GetLoadReportByWeekUseCase {
+
+    private final AthleteRepository athleteRepository;
+    private final LoadReportRepository loadReportRepository;
+    private final TrainingSessionRepository trainingSessionRepository;
+    private final LoadReportCalculator loadReportCalculator;
+
+    public GetLoadReportByWeekUseCaseImpl(AthleteRepository athleteRepository,
+                                          LoadReportRepository loadReportRepository,
+                                          TrainingSessionRepository trainingSessionRepository) {
+        this.athleteRepository = athleteRepository;
+        this.loadReportRepository = loadReportRepository;
+        this.trainingSessionRepository = trainingSessionRepository;
+        this.loadReportCalculator = new LoadReportCalculator();
+    }
+
+    @Override
+    public LoadReport execute(long athleteId, long coachId, LocalDate weekStartDate) {
+        Athlete athlete = athleteRepository.findById(athleteId)
+            .orElseThrow(() -> new AthleteNotFoundException(athleteId));
+        if (athlete.getCoachId() != coachId) {
+            throw new AthleteNotFoundException(athleteId);
+        }
+        return loadReportRepository.findByAthleteIdAndWeekStartDate(athleteId, weekStartDate)
+            .orElseGet(() -> {
+                List<TrainingSession> sessions = trainingSessionRepository.findByAthleteIdAndPeriod(
+                    athleteId, weekStartDate, weekStartDate.plusDays(6));
+                return loadReportCalculator.calculate(
+                    athleteId, weekStartDate, sessions, sessions.isEmpty() ? null : LocalDateTime.now());
+            });
+    }
+}

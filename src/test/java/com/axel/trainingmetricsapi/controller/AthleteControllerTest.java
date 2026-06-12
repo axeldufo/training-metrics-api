@@ -1,5 +1,10 @@
 package com.axel.trainingmetricsapi.controller;
 
+import com.axel.trainingmetricsapi.application.port.in.CreateAthleteUseCase;
+import com.axel.trainingmetricsapi.application.port.in.DeleteAthleteUseCase;
+import com.axel.trainingmetricsapi.application.port.in.GetAthleteUseCase;
+import com.axel.trainingmetricsapi.application.port.in.GetAthletesByCoachUseCase;
+import com.axel.trainingmetricsapi.application.port.in.UpdateAthleteUseCase;
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoach;
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoachResolver;
 import com.axel.trainingmetricsapi.domain.Athlete;
@@ -7,7 +12,6 @@ import com.axel.trainingmetricsapi.domain.PageResult;
 import com.axel.trainingmetricsapi.domain.exception.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.dto.request.AthleteRequest;
 import com.axel.trainingmetricsapi.dto.response.AthleteResponse;
-import com.axel.trainingmetricsapi.service.AthleteService;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +41,19 @@ class AthleteControllerTest extends SecurityMockControllerSupport {
     private AthleteWebMapper athleteWebMapper;
 
     @MockitoBean
-    private AthleteService athleteService;
+    private GetAthletesByCoachUseCase getAthletesByCoachUseCase;
+
+    @MockitoBean
+    private CreateAthleteUseCase createAthleteUseCase;
+
+    @MockitoBean
+    private GetAthleteUseCase getAthleteUseCase;
+
+    @MockitoBean
+    private UpdateAthleteUseCase updateAthleteUseCase;
+
+    @MockitoBean
+    private DeleteAthleteUseCase deleteAthleteUseCase;
 
     @MockitoBean
     private AuthenticatedCoachResolver authenticatedCoachResolver;
@@ -56,7 +72,7 @@ class AthleteControllerTest extends SecurityMockControllerSupport {
         int nbAthletesFound = 3;
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(coachId));
         List<Athlete> athletes = Instancio.ofList(Athlete.class).size(nbAthletesFound).create();
-        when(athleteService.findAllByCoachId(coachId, pageNumber, pageSize)).thenReturn(
+        when(getAthletesByCoachUseCase.execute(coachId, pageNumber, pageSize)).thenReturn(
             new PageResult<>(athletes, nbAthletesFound, pageNumber, pageSize));
         when(athleteWebMapper.domainToResponse(any(Athlete.class))).thenReturn(Instancio.create(AthleteResponse.class));
 
@@ -67,7 +83,7 @@ class AthleteControllerTest extends SecurityMockControllerSupport {
             .andExpect(jsonPath("$.page", is(pageNumber)))
             .andExpect(jsonPath("$.size", is(pageSize)));
 
-        verify(athleteService).findAllByCoachId(coachId, pageNumber, pageSize);
+        verify(getAthletesByCoachUseCase).execute(coachId, pageNumber, pageSize);
         verify(athleteWebMapper, times(nbAthletesFound)).domainToResponse(any(Athlete.class));
     }
 
@@ -79,7 +95,7 @@ class AthleteControllerTest extends SecurityMockControllerSupport {
         int nbAthletesFound = 3;
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(coachId));
         List<Athlete> athletes = Instancio.ofList(Athlete.class).size(nbAthletesFound).create();
-        when(athleteService.findAllByCoachId(coachId, pageNumber, pageSize)).thenReturn(
+        when(getAthletesByCoachUseCase.execute(coachId, pageNumber, pageSize)).thenReturn(
             new PageResult<>(athletes, nbAthletesFound, pageNumber, pageSize));
         when(athleteWebMapper.domainToResponse(any(Athlete.class))).thenReturn(Instancio.create(AthleteResponse.class));
 
@@ -92,7 +108,7 @@ class AthleteControllerTest extends SecurityMockControllerSupport {
             .andExpect(jsonPath("$.page", is(pageNumber)))
             .andExpect(jsonPath("$.size", is(pageSize)));
 
-        verify(athleteService).findAllByCoachId(coachId, pageNumber, pageSize);
+        verify(getAthletesByCoachUseCase).execute(coachId, pageNumber, pageSize);
         verify(athleteWebMapper, times(nbAthletesFound)).domainToResponse(any(Athlete.class));
     }
 
@@ -104,7 +120,7 @@ class AthleteControllerTest extends SecurityMockControllerSupport {
         Athlete athlete = Instancio.create(Athlete.class);
         when(athleteWebMapper.requestToDomain(athleteRequest, coachId)).thenReturn(athlete);
         Athlete persistedAthlete = Instancio.create(Athlete.class);
-        when(athleteService.save(athlete)).thenReturn(persistedAthlete);
+        when(createAthleteUseCase.execute(athlete)).thenReturn(persistedAthlete);
         AthleteResponse athleteResponse = Instancio.create(AthleteResponse.class);
         when(athleteWebMapper.domainToResponse(persistedAthlete)).thenReturn(athleteResponse);
 
@@ -115,17 +131,16 @@ class AthleteControllerTest extends SecurityMockControllerSupport {
 
         assertJsonMatchesAthleteResponse(result, athleteResponse);
         verify(athleteWebMapper).requestToDomain(athleteRequest, coachId);
-        verify(athleteService).save(athlete);
+        verify(createAthleteUseCase).execute(athlete);
         verify(athleteWebMapper).domainToResponse(persistedAthlete);
     }
 
     @Test
     void create_shouldReturnBadRequest_whenArgumentsNotValid() throws Exception {
-
         AthleteRequest athleteRequest = new AthleteRequest("   ", "", null, null, null);
 
         mvc.perform(post(URL_PREFIX).contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(athleteRequest)))
+            .content(objectMapper.writeValueAsString(athleteRequest)))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$", hasSize(3)));
     }
@@ -136,7 +151,7 @@ class AthleteControllerTest extends SecurityMockControllerSupport {
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(coachId));
         long athleteId = 4L;
         Athlete persistedAthlete = Instancio.create(Athlete.class);
-        when(athleteService.findById(athleteId, coachId)).thenReturn(persistedAthlete);
+        when(getAthleteUseCase.execute(athleteId, coachId)).thenReturn(persistedAthlete);
         AthleteResponse athleteResponse = Instancio.create(AthleteResponse.class);
         when(athleteWebMapper.domainToResponse(persistedAthlete)).thenReturn(athleteResponse);
 
@@ -144,7 +159,7 @@ class AthleteControllerTest extends SecurityMockControllerSupport {
             .andExpect(status().isOk());
 
         assertJsonMatchesAthleteResponse(result, athleteResponse);
-        verify(athleteService).findById(athleteId, coachId);
+        verify(getAthleteUseCase).execute(athleteId, coachId);
         verify(athleteWebMapper).domainToResponse(persistedAthlete);
     }
 
@@ -153,13 +168,13 @@ class AthleteControllerTest extends SecurityMockControllerSupport {
         long coachId = 2L;
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(coachId));
         long athleteId = 4L;
-        when(athleteService.findById(athleteId, coachId)).thenThrow(new AthleteNotFoundException(athleteId));
+        when(getAthleteUseCase.execute(athleteId, coachId)).thenThrow(new AthleteNotFoundException(athleteId));
 
         mvc.perform(get(URL_PREFIX + "/" + athleteId))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$[0].code").value("NOT_FOUND"));
 
-        verify(athleteService).findById(athleteId, coachId);
+        verify(getAthleteUseCase).execute(athleteId, coachId);
     }
 
     @Test
@@ -170,34 +185,35 @@ class AthleteControllerTest extends SecurityMockControllerSupport {
         Athlete athlete = Instancio.create(Athlete.class);
         when(athleteWebMapper.requestToDomain(athleteRequest, coachId)).thenReturn(athlete);
         Athlete persistedAthlete = Instancio.create(Athlete.class);
-        when(athleteService.update(athlete)).thenReturn(persistedAthlete);
+        when(updateAthleteUseCase.execute(athlete, coachId)).thenReturn(persistedAthlete);
         AthleteResponse athleteResponse = Instancio.create(AthleteResponse.class);
         when(athleteWebMapper.domainToResponse(persistedAthlete)).thenReturn(athleteResponse);
 
         ResultActions result = mvc.perform(put(URL_PREFIX + "/" + 4L).contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(athleteRequest)))
+            .content(objectMapper.writeValueAsString(athleteRequest)))
             .andExpect(status().isOk());
 
         assertJsonMatchesAthleteResponse(result, athleteResponse);
         verify(athleteWebMapper).requestToDomain(athleteRequest, coachId);
-        verify(athleteService).update(athlete);
+        verify(updateAthleteUseCase).execute(athlete, coachId);
         verify(athleteWebMapper).domainToResponse(persistedAthlete);
     }
 
     @Test
     void updateById_shouldReturnNotFound_whenAthleteNotFoundException() throws Exception {
         long athleteId = 4L;
+        long coachId = 2L;
         Athlete athlete = Instancio.create(Athlete.class);
-        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(2L));
+        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(coachId));
         when(athleteWebMapper.requestToDomain(any(AthleteRequest.class), anyLong())).thenReturn(athlete);
-        when(athleteService.update(athlete)).thenThrow(new AthleteNotFoundException(athleteId));
+        when(updateAthleteUseCase.execute(athlete, coachId)).thenThrow(new AthleteNotFoundException(athleteId));
 
         mvc.perform(put(URL_PREFIX + "/" + athleteId).contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(Instancio.create(AthleteRequest.class))))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$[0].code").value("NOT_FOUND"));
 
-        verify(athleteService).update(any(Athlete.class));
+        verify(updateAthleteUseCase).execute(any(Athlete.class), eq(coachId));
     }
 
     @Test
@@ -205,7 +221,7 @@ class AthleteControllerTest extends SecurityMockControllerSupport {
         AthleteRequest athleteRequest = new AthleteRequest("   ", "", null, null, null);
 
         mvc.perform(put(URL_PREFIX + "/" + 4L).contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(athleteRequest)))
+            .content(objectMapper.writeValueAsString(athleteRequest)))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$", hasSize(3)));
     }
@@ -219,7 +235,7 @@ class AthleteControllerTest extends SecurityMockControllerSupport {
         mvc.perform(delete(URL_PREFIX + "/" + athleteId))
             .andExpect(status().isNoContent());
 
-        verify(athleteService).deleteById(athleteId, coachId);
+        verify(deleteAthleteUseCase).execute(athleteId, coachId);
     }
 
     @Test
@@ -227,17 +243,17 @@ class AthleteControllerTest extends SecurityMockControllerSupport {
         long athleteId = 4L;
         long coachId = 2L;
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(coachId));
-        doThrow(new AthleteNotFoundException(athleteId)).when(athleteService).deleteById(athleteId, coachId);
+        doThrow(new AthleteNotFoundException(athleteId)).when(deleteAthleteUseCase).execute(athleteId, coachId);
 
         mvc.perform(delete(URL_PREFIX + "/" + athleteId))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$[0].code").value("NOT_FOUND"));
 
-        verify(athleteService).deleteById(athleteId, coachId);
+        verify(deleteAthleteUseCase).execute(athleteId, coachId);
     }
 
     private void assertJsonMatchesAthleteResponse(ResultActions result, AthleteResponse athleteResponse) throws Exception {
-            result.andExpect(jsonPath("$.id").value(athleteResponse.id()))
+        result.andExpect(jsonPath("$.id").value(athleteResponse.id()))
             .andExpect(jsonPath("$.firstName").value(athleteResponse.firstName()))
             .andExpect(jsonPath("$.lastName").value(athleteResponse.lastName()))
             .andExpect(jsonPath("$.birthDate").value(athleteResponse.birthDate().toString()))

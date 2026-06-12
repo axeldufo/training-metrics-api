@@ -1,5 +1,10 @@
 package com.axel.trainingmetricsapi.controller;
 
+import com.axel.trainingmetricsapi.application.port.in.CreateAthleteUseCase;
+import com.axel.trainingmetricsapi.application.port.in.DeleteAthleteUseCase;
+import com.axel.trainingmetricsapi.application.port.in.GetAthleteUseCase;
+import com.axel.trainingmetricsapi.application.port.in.GetAthletesByCoachUseCase;
+import com.axel.trainingmetricsapi.application.port.in.UpdateAthleteUseCase;
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoach;
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoachResolver;
 import com.axel.trainingmetricsapi.domain.Athlete;
@@ -8,7 +13,6 @@ import com.axel.trainingmetricsapi.dto.request.AthleteRequest;
 import com.axel.trainingmetricsapi.dto.response.ApiError;
 import com.axel.trainingmetricsapi.dto.response.AthleteResponse;
 import com.axel.trainingmetricsapi.dto.response.PagedResponse;
-import com.axel.trainingmetricsapi.service.AthleteService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -28,12 +32,26 @@ import static com.axel.trainingmetricsapi.controller.ApiConstants.DEFAULT_SIZE;
 public class AthleteController {
 
     private final AthleteWebMapper athleteWebMapper;
-    private final AthleteService athleteService;
+    private final GetAthletesByCoachUseCase getAthletesByCoachUseCase;
+    private final CreateAthleteUseCase createAthleteUseCase;
+    private final GetAthleteUseCase getAthleteUseCase;
+    private final UpdateAthleteUseCase updateAthleteUseCase;
+    private final DeleteAthleteUseCase deleteAthleteUseCase;
     private final AuthenticatedCoachResolver authenticatedCoachResolver;
 
-    public AthleteController(AthleteWebMapper athleteWebMapper, AthleteService athleteService, AuthenticatedCoachResolver authenticatedCoachResolver) {
+    public AthleteController(AthleteWebMapper athleteWebMapper,
+                              GetAthletesByCoachUseCase getAthletesByCoachUseCase,
+                              CreateAthleteUseCase createAthleteUseCase,
+                              GetAthleteUseCase getAthleteUseCase,
+                              UpdateAthleteUseCase updateAthleteUseCase,
+                              DeleteAthleteUseCase deleteAthleteUseCase,
+                              AuthenticatedCoachResolver authenticatedCoachResolver) {
         this.athleteWebMapper = athleteWebMapper;
-        this.athleteService = athleteService;
+        this.getAthletesByCoachUseCase = getAthletesByCoachUseCase;
+        this.createAthleteUseCase = createAthleteUseCase;
+        this.getAthleteUseCase = getAthleteUseCase;
+        this.updateAthleteUseCase = updateAthleteUseCase;
+        this.deleteAthleteUseCase = deleteAthleteUseCase;
         this.authenticatedCoachResolver = authenticatedCoachResolver;
     }
 
@@ -46,7 +64,8 @@ public class AthleteController {
     public ResponseEntity<PagedResponse<AthleteResponse>> getAll(@RequestParam(defaultValue = DEFAULT_PAGE) int page,
                                                                  @RequestParam(defaultValue = DEFAULT_SIZE) int size) {
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
-        PageResult<Athlete> pageResult = athleteService.findAllByCoachId(coach.id(), page, size);
+        long coachId = coach.id();
+        PageResult<Athlete> pageResult = getAthletesByCoachUseCase.execute(coachId, page, size);
 
         return ResponseEntity.ok(new PagedResponse<>(
             pageResult.content().stream().map(athleteWebMapper::domainToResponse).toList(),
@@ -64,8 +83,9 @@ public class AthleteController {
     @ApiResponse(responseCode = "401", description = "Missing or invalid JWT token")
     public ResponseEntity<AthleteResponse> create(@RequestBody @Valid AthleteRequest athleteRequest) {
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
-        Athlete athlete = athleteWebMapper.requestToDomain(athleteRequest, coach.id());
-        Athlete persistedAthlete = athleteService.save(athlete);
+        long coachId = coach.id();
+        Athlete athlete = athleteWebMapper.requestToDomain(athleteRequest, coachId);
+        Athlete persistedAthlete = createAthleteUseCase.execute(athlete);
         AthleteResponse athleteResponse = athleteWebMapper.domainToResponse(persistedAthlete);
         URI location = URI.create(ApiConstants.API_VERSION + "/athletes/" + athleteResponse.id());
         return ResponseEntity.created(location).body(athleteResponse);
@@ -80,9 +100,9 @@ public class AthleteController {
         content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
     public ResponseEntity<AthleteResponse> getById(@PathVariable long id) {
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
-        Athlete athleteFound = athleteService.findById(id, coach.id());
-        AthleteResponse athleteResponse = athleteWebMapper.domainToResponse(athleteFound);
-        return ResponseEntity.ok(athleteResponse);
+        long coachId = coach.id();
+        Athlete athleteFound = getAthleteUseCase.execute(id, coachId);
+        return ResponseEntity.ok(athleteWebMapper.domainToResponse(athleteFound));
     }
 
     @PutMapping("/{id}")
@@ -97,11 +117,11 @@ public class AthleteController {
     public ResponseEntity<AthleteResponse> updateById(@PathVariable long id,
                                                       @RequestBody @Valid AthleteRequest athleteRequest) {
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
-        Athlete athleteToUpdate = athleteWebMapper.requestToDomain(athleteRequest, coach.id());
+        long coachId = coach.id();
+        Athlete athleteToUpdate = athleteWebMapper.requestToDomain(athleteRequest, coachId);
         athleteToUpdate.setId(id);
-        Athlete persistedAthlete = athleteService.update(athleteToUpdate);
-        AthleteResponse athleteResponse = athleteWebMapper.domainToResponse(persistedAthlete);
-        return ResponseEntity.ok(athleteResponse);
+        Athlete persistedAthlete = updateAthleteUseCase.execute(athleteToUpdate, coachId);
+        return ResponseEntity.ok(athleteWebMapper.domainToResponse(persistedAthlete));
     }
 
     @DeleteMapping("/{id}")
@@ -112,7 +132,8 @@ public class AthleteController {
         content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
     public ResponseEntity<Void> deleteById(@PathVariable long id) {
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
-        athleteService.deleteById(id, coach.id());
+        long coachId = coach.id();
+        deleteAthleteUseCase.execute(id, coachId);
         return ResponseEntity.noContent().build();
     }
 }

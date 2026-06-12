@@ -1,5 +1,7 @@
 package com.axel.trainingmetricsapi.controller;
 
+import com.axel.trainingmetricsapi.application.port.in.LoginUseCase;
+import com.axel.trainingmetricsapi.application.port.in.RegisterCoachUseCase;
 import com.axel.trainingmetricsapi.controller.security.JwtUtils;
 import com.axel.trainingmetricsapi.domain.CoachAuthData;
 import com.axel.trainingmetricsapi.domain.CoachCredentials;
@@ -8,7 +10,6 @@ import com.axel.trainingmetricsapi.domain.exception.InvalidCredentialsException;
 import com.axel.trainingmetricsapi.dto.request.LoginRequest;
 import com.axel.trainingmetricsapi.dto.request.RegisterRequest;
 import com.axel.trainingmetricsapi.dto.response.AuthResponse;
-import com.axel.trainingmetricsapi.service.AuthService;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +35,10 @@ class AuthControllerTest {
     private AuthWebMapper authWebMapper;
 
     @MockitoBean
-    private AuthService authService;
+    private RegisterCoachUseCase registerCoachUseCase;
+
+    @MockitoBean
+    private LoginUseCase loginUseCase;
 
     @MockitoBean                 // Required by @WebMvcTest context — JwtAuthenticationFilter depends on JwtUtils
     protected JwtUtils jwtUtils; // Not used in assertions — auth endpoints are public
@@ -51,7 +55,7 @@ class AuthControllerTest {
         CoachCredentials credentials = Instancio.create(CoachCredentials.class);
         when(authWebMapper.toCredentials(registerRequest)).thenReturn(credentials);
         CoachAuthData authData = Instancio.create(CoachAuthData.class);
-        when(authService.register(credentials)).thenReturn(authData);
+        when(registerCoachUseCase.execute(credentials)).thenReturn(authData);
         AuthResponse authResponse = Instancio.create(AuthResponse.class);
         when(authWebMapper.toAuthResponse(authData)).thenReturn(authResponse);
 
@@ -61,7 +65,7 @@ class AuthControllerTest {
             .andExpect(jsonPath("$.token").value(authResponse.token()));
 
         verify(authWebMapper).toCredentials(registerRequest);
-        verify(authService).register(credentials);
+        verify(registerCoachUseCase).execute(credentials);
         verify(authWebMapper).toAuthResponse(authData);
     }
 
@@ -70,8 +74,7 @@ class AuthControllerTest {
         RegisterRequest registerRequest = aValidRegisterRequest();
         CoachCredentials credentials = Instancio.create(CoachCredentials.class);
         when(authWebMapper.toCredentials(registerRequest)).thenReturn(credentials);
-
-        when(authService.register(credentials)).thenThrow(new EmailAlreadyExistsException(credentials.email()));
+        when(registerCoachUseCase.execute(credentials)).thenThrow(new EmailAlreadyExistsException(credentials.email()));
 
         mvc.perform(post(URL_PREFIX + "/register").contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(registerRequest)))
@@ -79,7 +82,7 @@ class AuthControllerTest {
             .andExpect(jsonPath("$[0].code").value("EMAIL_ALREADY_EXISTS"));
 
         verify(authWebMapper).toCredentials(registerRequest);
-        verify(authService).register(credentials);
+        verify(registerCoachUseCase).execute(credentials);
     }
 
     @Test
@@ -96,31 +99,31 @@ class AuthControllerTest {
     void login_shouldReturnAuthResponse_whenAuthenticationIsValid() throws Exception {
         LoginRequest loginRequest = aValidLoginRequest();
         CoachAuthData authData = Instancio.create(CoachAuthData.class);
-        when(authService.login(loginRequest.email(), loginRequest.password())).thenReturn(authData);
+        when(loginUseCase.execute(loginRequest.email(), loginRequest.password())).thenReturn(authData);
         AuthResponse authResponse = Instancio.create(AuthResponse.class);
         when(authWebMapper.toAuthResponse(authData)).thenReturn(authResponse);
 
         mvc.perform(post(URL_PREFIX + "/login").contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(loginRequest)))
+            .content(objectMapper.writeValueAsString(loginRequest)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.token").value(authResponse.token()));
 
-        verify(authService).login(loginRequest.email(), loginRequest.password());
+        verify(loginUseCase).execute(loginRequest.email(), loginRequest.password());
         verify(authWebMapper).toAuthResponse(authData);
     }
 
     @Test
     void login_shouldReturnUnauthorized_whenCredentialsAreNotValid() throws Exception {
         LoginRequest loginRequest = aValidLoginRequest();
-        when(authService.login(loginRequest.email(), loginRequest.password()))
+        when(loginUseCase.execute(loginRequest.email(), loginRequest.password()))
             .thenThrow(new InvalidCredentialsException());
 
         mvc.perform(post(URL_PREFIX + "/login").contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(loginRequest)))
+            .content(objectMapper.writeValueAsString(loginRequest)))
             .andExpect(status().isUnauthorized())
             .andExpect(jsonPath("$[0].code").value("INVALID_CREDENTIALS"));
 
-        verify(authService).login(loginRequest.email(), loginRequest.password());
+        verify(loginUseCase).execute(loginRequest.email(), loginRequest.password());
     }
 
     @Test
@@ -128,7 +131,7 @@ class AuthControllerTest {
         LoginRequest loginRequest = new LoginRequest("coach.com", "123");
 
         mvc.perform(post(URL_PREFIX + "/login").contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(loginRequest)))
+            .content(objectMapper.writeValueAsString(loginRequest)))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$", hasSize(1)));
     }
@@ -145,5 +148,4 @@ class AuthControllerTest {
             .generate(field(LoginRequest::email), gen -> gen.net().email())
             .create();
     }
-
 }

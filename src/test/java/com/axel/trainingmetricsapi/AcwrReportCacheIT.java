@@ -1,14 +1,19 @@
 package com.axel.trainingmetricsapi;
 
+import com.axel.trainingmetricsapi.application.port.in.GetAcwrReportUseCase;
 import com.axel.trainingmetricsapi.application.port.out.TrainingSessionEventPort;
 import com.axel.trainingmetricsapi.config.CacheConfig;
 import com.axel.trainingmetricsapi.domain.AcwrReport;
+import com.axel.trainingmetricsapi.domain.Athlete;
+import com.axel.trainingmetricsapi.domain.AthleteRepository;
+import com.axel.trainingmetricsapi.domain.Sport;
 import com.axel.trainingmetricsapi.domain.TrainingSessionRepository;
-import com.axel.trainingmetricsapi.service.AcwrReportService;
+import com.axel.trainingmetricsapi.repository.CoachJpaEntity;
+import com.axel.trainingmetricsapi.repository.CoachJpaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cache.Cache;
@@ -17,8 +22,9 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.Objects;
-import java.util.stream.Stream;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -33,10 +39,14 @@ import static org.mockito.Mockito.verify;
 @Import(TestContainersConfiguration.class)
 class AcwrReportCacheIT {
 
-    private static final long ATHLETE_ID = 999L;
+    @Autowired
+    private GetAcwrReportUseCase getAcwrReportUseCase;
 
     @Autowired
-    private AcwrReportService acwrReportService;
+    private CoachJpaRepository coachJpaRepository;
+
+    @Autowired
+    private AthleteRepository athleteRepository;
 
     @MockitoSpyBean
     private TrainingSessionRepository trainingSessionRepository;
@@ -47,39 +57,50 @@ class AcwrReportCacheIT {
     @Autowired
     private CacheManager cacheManager;
 
+    private long athleteId;
+    private long coachId;
+    private long otherAthleteId;
+    private long otherCoachId;
+
     @BeforeEach
     void setUp() {
         Objects.requireNonNull(cacheManager.getCache(CacheConfig.ACWR_REPORT_CACHE)).clear();
         clearInvocations(trainingSessionRepository);
+
+        CoachJpaEntity coach = coachJpaRepository.save(aCoach());
+        coachId = coach.getId();
+        athleteId = athleteRepository.save(anAthlete(coachId)).getId();
+
+        CoachJpaEntity otherCoach = coachJpaRepository.save(aCoach());
+        otherCoachId = otherCoach.getId();
+        otherAthleteId = athleteRepository.save(anAthlete(otherCoachId)).getId();
     }
 
     @Test
     void getAcwrReport_shouldHitCacheOnSecondCall() {
-        AcwrReport firstReport = acwrReportService.getAcwrReport(ATHLETE_ID);
+        AcwrReport firstReport = getAcwrReportUseCase.execute(athleteId, coachId);
 
-        assertThat(Objects.requireNonNull(cacheManager.getCache(CacheConfig.ACWR_REPORT_CACHE)).get(ATHLETE_ID)).isNotNull();
-        verify(trainingSessionRepository, times(1)).findByAthleteIdAndPeriod(eq(ATHLETE_ID), any(), any());
+        assertThat(Objects.requireNonNull(cacheManager.getCache(CacheConfig.ACWR_REPORT_CACHE)).get(athleteId)).isNotNull();
+        verify(trainingSessionRepository, times(1)).findByAthleteIdAndPeriod(eq(athleteId), any(), any());
         clearInvocations(trainingSessionRepository);
 
-        AcwrReport secondReport = acwrReportService.getAcwrReport(ATHLETE_ID);
+        AcwrReport secondReport = getAcwrReportUseCase.execute(athleteId, coachId);
         assertThat(secondReport).isEqualTo(firstReport);
-        verify(trainingSessionRepository, never()).findByAthleteIdAndPeriod(eq(ATHLETE_ID), any(), any());
+        verify(trainingSessionRepository, never()).findByAthleteIdAndPeriod(eq(athleteId), any(), any());
     }
 
     @ParameterizedTest
-    @MethodSource("sessionEventPublishers")
-    void onTrainingSessionEvent_shouldEvictAndRefreshCache(
-        java.util.function.Consumer<TrainingSessionEventPort> publishEvent) {
-        acwrReportService.getAcwrReport(ATHLETE_ID);
+    @EnumSource(SessionEvent.class)
+    void onTrainingSessionEvent_shouldEvictAndRefreshCache(SessionEvent eventType) {
+        getAcwrReportUseCase.execute(athleteId, coachId);
         clearInvocations(trainingSessionRepository);
 
         LocalDate beforeEvent = LocalDate.now();
-        publishEvent.accept(trainingSessionEventPort);
+        fireEvent(eventType, athleteId);
 
-        verify(trainingSessionRepository, times(1)).findByAthleteIdAndPeriod(eq(ATHLETE_ID), any(), any());
-        // Cache containing a new report (first one has been evicted)
+        verify(trainingSessionRepository, times(1)).findByAthleteIdAndPeriod(eq(athleteId), any(), any());
         Cache.ValueWrapper cached = Objects.requireNonNull(
-            cacheManager.getCache(CacheConfig.ACWR_REPORT_CACHE)).get(ATHLETE_ID);
+            cacheManager.getCache(CacheConfig.ACWR_REPORT_CACHE)).get(athleteId);
         assertThat(cached).isNotNull();
         assertThat(((AcwrReport) Objects.requireNonNull(cached.get())).calculatedAt())
             .isAfterOrEqualTo(beforeEvent)
@@ -87,13 +108,12 @@ class AcwrReportCacheIT {
     }
 
     @ParameterizedTest
-    @MethodSource("sessionEventPublishers")
-    void onTrainingSessionEvent_subsequentGetShouldHitCache(
-        java.util.function.Consumer<TrainingSessionEventPort> publishEvent) {
-        publishEvent.accept(trainingSessionEventPort);
+    @EnumSource(SessionEvent.class)
+    void onTrainingSessionEvent_subsequentGetShouldHitCache(SessionEvent eventType) {
+        fireEvent(eventType, athleteId);
         clearInvocations(trainingSessionRepository);
 
-        AcwrReport report = acwrReportService.getAcwrReport(ATHLETE_ID);
+        AcwrReport report = getAcwrReportUseCase.execute(athleteId, coachId);
 
         assertThat(report).isNotNull();
         verify(trainingSessionRepository, never()).findByAthleteIdAndPeriod(anyLong(), any(), any());
@@ -101,26 +121,37 @@ class AcwrReportCacheIT {
 
     @Test
     void publishTrainingSessionCreatedEvent_shouldOnlyEvictCacheForAffectedAthlete() {
-        long otherAthleteId = 998L;
-        acwrReportService.getAcwrReport(ATHLETE_ID);
-        acwrReportService.getAcwrReport(otherAthleteId);
+        getAcwrReportUseCase.execute(athleteId, coachId);
+        getAcwrReportUseCase.execute(otherAthleteId, otherCoachId);
         clearInvocations(trainingSessionRepository);
 
-        trainingSessionEventPort.sessionCreated(ATHLETE_ID, LocalDate.now());
+        trainingSessionEventPort.sessionCreated(athleteId, LocalDate.now());
 
-        // otherAthlete cache untouched — no repository call
         verify(trainingSessionRepository, never()).findByAthleteIdAndPeriod(eq(otherAthleteId), any(), any());
-        // ATHLETE_ID cache refreshed — one repository call
-        verify(trainingSessionRepository, times(1)).findByAthleteIdAndPeriod(eq(ATHLETE_ID), any(), any());
+        verify(trainingSessionRepository, times(1)).findByAthleteIdAndPeriod(eq(athleteId), any(), any());
     }
 
-    static Stream<java.util.function.Consumer<TrainingSessionEventPort>> sessionEventPublishers() {
-        LocalDate date = LocalDate.now();
-        return Stream.of(
-            port -> port.sessionCreated(ATHLETE_ID, date),
-            port -> port.sessionUpdated(ATHLETE_ID, date),
-            port -> port.sessionDeleted(ATHLETE_ID, date)
-        );
+    private void fireEvent(SessionEvent eventType, long forAthleteId) {
+        LocalDate date = LocalDate.of(2025, Month.MAY, 19);
+        switch (eventType) {
+            case CREATED -> trainingSessionEventPort.sessionCreated(forAthleteId, date);
+            case UPDATED -> trainingSessionEventPort.sessionUpdated(forAthleteId, date);
+            case DELETED -> trainingSessionEventPort.sessionDeleted(forAthleteId, date);
+        }
     }
 
+    private CoachJpaEntity aCoach() {
+        return CoachJpaEntity.builder()
+            .name("IT Coach")
+            .email("coach-" + UUID.randomUUID() + "@test.com")
+            .hashedPassword("hashed")
+            .build();
+    }
+
+    private Athlete anAthlete(long forCoachId) {
+        return new Athlete("Test", "Athlete",
+            LocalDate.of(1990, Month.JANUARY, 1), Sport.ROAD_RUNNING, forCoachId, 70.0);
+    }
+
+    enum SessionEvent { CREATED, UPDATED, DELETED }
 }

@@ -1,5 +1,10 @@
 package com.axel.trainingmetricsapi.controller;
 
+import com.axel.trainingmetricsapi.application.port.in.CreateWeeklyWellnessUseCase;
+import com.axel.trainingmetricsapi.application.port.in.DeleteWeeklyWellnessUseCase;
+import com.axel.trainingmetricsapi.application.port.in.GetWeeklyWellnessUseCase;
+import com.axel.trainingmetricsapi.application.port.in.GetWeeklyWellnessesByPeriodUseCase;
+import com.axel.trainingmetricsapi.application.port.in.UpdateWeeklyWellnessUseCase;
 import com.axel.trainingmetricsapi.controller.exception.InvalidPeriodException;
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoach;
 import com.axel.trainingmetricsapi.controller.security.AuthenticatedCoachResolver;
@@ -7,8 +12,6 @@ import com.axel.trainingmetricsapi.domain.WeeklyWellness;
 import com.axel.trainingmetricsapi.dto.request.WeeklyWellnessRequest;
 import com.axel.trainingmetricsapi.dto.response.ApiError;
 import com.axel.trainingmetricsapi.dto.response.WeeklyWellnessResponse;
-import com.axel.trainingmetricsapi.service.AthleteService;
-import com.axel.trainingmetricsapi.service.WeeklyWellnessService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -32,18 +35,27 @@ import java.util.Objects;
 public class WeeklyWellnessController {
 
     private final WeeklyWellnessWebMapper wellnessWebMapper;
-    private final WeeklyWellnessService wellnessService;
+    private final CreateWeeklyWellnessUseCase createWeeklyWellnessUseCase;
+    private final GetWeeklyWellnessUseCase getWeeklyWellnessUseCase;
+    private final GetWeeklyWellnessesByPeriodUseCase getWeeklyWellnessesByPeriodUseCase;
+    private final UpdateWeeklyWellnessUseCase updateWeeklyWellnessUseCase;
+    private final DeleteWeeklyWellnessUseCase deleteWeeklyWellnessUseCase;
     private final AuthenticatedCoachResolver authenticatedCoachResolver;
-    private final AthleteService athleteService;
 
     public WeeklyWellnessController(WeeklyWellnessWebMapper wellnessWebMapper,
-                                    WeeklyWellnessService wellnessService,
-                                    AuthenticatedCoachResolver authenticatedCoachResolver,
-                                    AthleteService athleteService) {
+                                    CreateWeeklyWellnessUseCase createWeeklyWellnessUseCase,
+                                    GetWeeklyWellnessUseCase getWeeklyWellnessUseCase,
+                                    GetWeeklyWellnessesByPeriodUseCase getWeeklyWellnessesByPeriodUseCase,
+                                    UpdateWeeklyWellnessUseCase updateWeeklyWellnessUseCase,
+                                    DeleteWeeklyWellnessUseCase deleteWeeklyWellnessUseCase,
+                                    AuthenticatedCoachResolver authenticatedCoachResolver) {
         this.wellnessWebMapper = wellnessWebMapper;
-        this.wellnessService = wellnessService;
+        this.createWeeklyWellnessUseCase = createWeeklyWellnessUseCase;
+        this.getWeeklyWellnessUseCase = getWeeklyWellnessUseCase;
+        this.getWeeklyWellnessesByPeriodUseCase = getWeeklyWellnessesByPeriodUseCase;
+        this.updateWeeklyWellnessUseCase = updateWeeklyWellnessUseCase;
+        this.deleteWeeklyWellnessUseCase = deleteWeeklyWellnessUseCase;
         this.authenticatedCoachResolver = authenticatedCoachResolver;
-        this.athleteService = athleteService;
     }
 
     @PostMapping
@@ -60,12 +72,10 @@ public class WeeklyWellnessController {
     public ResponseEntity<WeeklyWellnessResponse> create(@PathVariable("id") long athleteId,
                                                          @RequestBody @Valid WeeklyWellnessRequest request) {
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
-        athleteService.findById(athleteId, coach.id()); // validates Coach→Athlete ownership
-
+        long coachId = coach.id();
         WeeklyWellness wellness = wellnessWebMapper.requestToDomain(request, athleteId);
-        WeeklyWellness persisted = wellnessService.save(wellness);
+        WeeklyWellness persisted = createWeeklyWellnessUseCase.execute(wellness, coachId);
         WeeklyWellnessResponse response = wellnessWebMapper.domainToResponse(persisted);
-
         URI location = URI.create(ApiConstants.API_VERSION + "/athletes/" + response.athleteId()
             + "/wellness/" + response.id());
         return ResponseEntity.created(location).body(response);
@@ -80,20 +90,19 @@ public class WeeklyWellnessController {
     @ApiResponse(responseCode = "401", description = "Missing or invalid JWT token")
     @ApiResponse(responseCode = "404", description = "Athlete not found", content = @Content(mediaType =
         "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
-    public ResponseEntity<List<WeeklyWellnessResponse>> getByPeriod(@PathVariable("id") long athleteId,
-                                                                @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-                                                    @PastOrPresent LocalDate from,
-                                                                @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-                                                   @PastOrPresent LocalDate to) {
-        AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
-        athleteService.findById(athleteId, coach.id()); // validates Coach→Athlete ownership
+    public ResponseEntity<List<WeeklyWellnessResponse>> getByPeriod(
+        @PathVariable("id") long athleteId,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @PastOrPresent LocalDate from,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @PastOrPresent LocalDate to) {
 
+        AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
+        long coachId = coach.id();
         LocalDate effectiveTo = Objects.requireNonNullElseGet(to, LocalDate::now);
         if (from.isAfter(effectiveTo)) {
             throw new InvalidPeriodException("from must be before or equal to to");
         }
 
-        List<WeeklyWellness> wellnessList = wellnessService.findByAthleteIdAndPeriod(athleteId, from, effectiveTo);
+        List<WeeklyWellness> wellnessList = getWeeklyWellnessesByPeriodUseCase.execute(athleteId, coachId, from, effectiveTo);
         List<WeeklyWellnessResponse> responses = wellnessList.stream()
             .map(wellnessWebMapper::domainToResponse)
             .toList();
@@ -110,9 +119,8 @@ public class WeeklyWellnessController {
     public ResponseEntity<WeeklyWellnessResponse> getById(@PathVariable("id") long athleteId,
                                                           @PathVariable long wellnessId) {
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
-        athleteService.findById(athleteId, coach.id()); // validates Coach→Athlete ownership
-
-        WeeklyWellness wellness = wellnessService.findById(wellnessId, athleteId);
+        long coachId = coach.id();
+        WeeklyWellness wellness = getWeeklyWellnessUseCase.execute(wellnessId, athleteId, coachId);
         return ResponseEntity.ok(wellnessWebMapper.domainToResponse(wellness));
     }
 
@@ -131,11 +139,10 @@ public class WeeklyWellnessController {
                                                              @PathVariable long wellnessId,
                                                              @RequestBody @Valid WeeklyWellnessRequest request) {
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
-        athleteService.findById(athleteId, coach.id()); // validates Coach→Athlete ownership
-
+        long coachId = coach.id();
         WeeklyWellness wellnessToUpdate = wellnessWebMapper.requestToDomain(request, athleteId);
         wellnessToUpdate.setId(wellnessId);
-        WeeklyWellness updated = wellnessService.update(wellnessToUpdate);
+        WeeklyWellness updated = updateWeeklyWellnessUseCase.execute(wellnessToUpdate, coachId);
         return ResponseEntity.ok(wellnessWebMapper.domainToResponse(updated));
     }
 
@@ -147,9 +154,8 @@ public class WeeklyWellnessController {
         "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
     public ResponseEntity<Void> deleteById(@PathVariable("id") long athleteId, @PathVariable long wellnessId) {
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
-        athleteService.findById(athleteId, coach.id()); // validates Coach→Athlete ownership
-
-        wellnessService.deleteById(wellnessId, athleteId);
+        long coachId = coach.id();
+        deleteWeeklyWellnessUseCase.execute(wellnessId, athleteId, coachId);
         return ResponseEntity.noContent().build();
     }
 }

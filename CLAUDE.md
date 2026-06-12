@@ -28,33 +28,41 @@ docker compose up -d
 
 Spring Boot 4.0.6 / Java 21 REST API for tracking endurance training sessions (athletes, coaches, training sessions). PostgreSQL with Flyway migrations.
 
-Layered monolith intentionally designed to evolve toward hexagonal architecture in phase 2. Core principle: **domain classes have zero Spring/JPA dependencies**.
+Hexagonal monolith (Ports & Adapters). Core principle: **domain and application layers have zero Spring/JPA dependencies**.
 
 ## Architecture
 
 ### Layer Overview
 
 ```
-controller/     — @RestController, @RestControllerAdvice, WebMapper (DTO ↔ Domain)
-service/        — interfaces + implementations, @Transactional coordination
-repository/     — JPA adapters (implements domain interfaces), PersistenceMapper, Spring Data repos
-domain/         — pure POJOs (Athlete, TrainingSession, Coach), enums, exceptions
-dto/            — request/response objects
+domain/              — pure POJOs, enums, exceptions, Repository port interfaces
+application/         — Use Cases (port/in/ interfaces + {feature}/ implementations)
+                       outbound ports (port/out/: TrainingSessionEventPort,
+                       AcwrCachePort, PasswordEncoderPort)
+infrastructure/      — JPA adapters (persistence/), Redis cache adapter (cache/),
+                       event adapter (event/), password encoder adapter (security/)
+interfaces/web/      — @RestController, @RestControllerAdvice, WebMapper (DTO ↔ Domain)
+                       dto/ (request/response objects)
+interfaces/web/security/ — JWT filter, SecurityConfig, AuthenticatedCoach,
+                           AuthenticatedCoachResolver
+service/             — empty package kept as placeholder (ticket #119 will delete it)
 ```
 
 ### Data Flow
 
 ```
-HTTP → Controller → WebMapper (request→domain) → Service → JPA Adapter → PersistenceMapper (domain↔entity) → DB
+HTTP → interfaces/web/ → WebMapper (request→domain) → application/ (Use Case)
+     → domain/ (Repository port) → infrastructure/persistence/ (JPA Adapter)
+     → PersistenceMapper (domain↔entity) → DB
 ```
 
 ### Key Patterns
 
-**Repository pattern with dependency inversion:** Domain interfaces (e.g., `AthleteRepository`) live in `domain/` and are implemented by JPA adapters (e.g., `AthleteJpaAdapter`) in `repository/`. Spring Data interfaces are internal implementation details of the adapters.
+**Repository pattern with dependency inversion:** Domain interfaces (e.g., `AthleteRepository`) live in `domain/` and are implemented by JPA adapters (e.g., `AthleteJpaAdapter`) in `infrastructure/persistence/`. Spring Data interfaces are internal implementation details of the adapters.
 
 **Two mapper types:**
-- `WebMapper` in `controller/`: DTO ↔ Domain (`requestToDomain()`, `domainToResponse()`)
-- `PersistenceMapper` in `repository/`: Domain ↔ JPA Entity (`entityToDomain()`, `domainToEntity()`)
+- `WebMapper` in `interfaces/web/`: DTO ↔ Domain (`requestToDomain()`, `domainToResponse()`)
+- `PersistenceMapper` in `infrastructure/persistence/`: Domain ↔ JPA Entity (`entityToDomain()`, `domainToEntity()`)
 
 **Domain entities:**
 - Pure POJOs with manual constructors enforcing invariants. Immutable with final fields
@@ -66,7 +74,7 @@ HTTP → Controller → WebMapper (request→domain) → Service → JPA Adapter
 
 **API versioning:** All endpoints prefixed with `ApiConstants.API_VERSION` (`/v1`).
 
-**Architecture enforcement:** `ArchitectureTests.java` uses ArchUnit — it is the source of truth for architectural constraints and design rules (e.g., no Spring in domain, correct dependency directions). Update it explicitly if the architecture evolves.
+**Architecture enforcement:** `ArchitectureTests.java` uses ArchUnit — it is the source of truth for architectural constraints and design rules (e.g., no Spring in domain/ or application/, correct dependency directions between domain/, application/, infrastructure/, interfaces/web/). Update it explicitly if the architecture evolves.
 
 **Authenticated coach resolution:** Controllers inject `AuthenticatedCoachResolver` (not `@AuthenticationPrincipal`) 
 to resolve the current coach id from the security context.
@@ -75,19 +83,35 @@ to resolve the current coach id from the security context.
 
 **Period filter endpoints:** `from` (required) + `to` (optional, defaults to `LocalDate.now()`). Validate `from <= to` at controller level → 400. Port always receives two `LocalDate` parameters.
 
-**Cache pattern:** `@Cacheable` for read path (declarative, Spring-managed).
-`RedisTemplate` for manual eviction (explicit control).
+**Cache pattern:** Cache managed via `AcwrCachePort` (application/port/out/).
+Read path: `acwrCachePort.get(athleteId)` → compute if absent → `acwrCachePort.put()`.
+Eviction: `acwrCachePort.evict(athleteId)`.
 Cache names as public constants in `CacheConfig` (config/).
 Always use `Jackson2JsonRedisSerializer` — human-readable entries, no Java serialization.
+No `@Cacheable` in application or domain layer — infrastructure concern belongs in adapter only.
 
-**Domain Events:** Records in `domain/event/`. Published via `ApplicationEventPublisher`
-in service layer after successful persistence. Handled by `*EventHandler` classes in `service/`.
-Synchronous in phase 2 layered — will become `@Async` in hexagonal phase.
+**Domain Events:** Published via `TrainingSessionEventPort` (application/port/out/)
+after successful persistence in service/Use Case layer.
+Current adapter: `SpringTrainingSessionEventAdapter` (infrastructure/event/) —
+delegates to `TrainingSessionChangedUseCase`.
+Synchronous in phase 2 — will become async via Spring Modulith in phase 3 (ticket #115).
+
+**Use Cases:** Each Use Case is an interface in `application/port/in/` with a single
+`execute()` method, implemented by a `@Service` class in `application/{feature}/`.
+Controllers inject the interface, not the implementation.
+Ownership checks (Coach→Athlete, Athlete→Session, Athlete→Wellness) live inside
+the Use Case — never in the controller.
+Controllers resolve coachId once per method:
+AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
+long coachId = coach.id();
+then pass it as explicit parameter to execute().
+Calculators (LoadReportCalculator, AcwrCalculator, WeeklyReportCalculator)
+instantiated with new in Use Case constructor — never injected as Spring beans.
 
 ## Development Rules
 
 **TDD is mandatory.** Always Red → Green → Refactor. Write the test first.
-Outside-in: start from controller test, then service, then repository.
+Outside-in: start from interfaces/web/ controller test, then application/ Use Case test, then infrastructure/persistence/ adapter test.
 
 **No new dependencies** without explicit request. Never modify pom.xml autonomously.
 

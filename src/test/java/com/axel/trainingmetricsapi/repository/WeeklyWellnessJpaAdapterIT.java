@@ -15,6 +15,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.List;
@@ -82,11 +83,14 @@ class WeeklyWellnessJpaAdapterIT {
     @Test
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     void save_shouldThrowException_whenDuplicateAthleteAndWeekStartDate() {
-        wellnessRepository.save(aWellness(athleteId, WEEK_1));
+        WeeklyWellness firstWellness = wellnessRepository.save(aWellness(athleteId, WEEK_1));
 
-        WeeklyWellness wellness = aWellness(athleteId, WEEK_1);
-        assertThatThrownBy(() -> wellnessRepository.save(wellness))
+        WeeklyWellness newWellness = aWellness(athleteId, WEEK_1);
+        assertThatThrownBy(() -> wellnessRepository.save(newWellness))
             .isInstanceOf(DataIntegrityViolationException.class);
+
+        // cleanup — NOT_SUPPORTED bypasses class-level @Transactional rollback
+        wellnessRepository.deleteById(firstWellness.getId());
     }
 
     @Test
@@ -134,6 +138,30 @@ class WeeklyWellnessJpaAdapterIT {
     }
 
     @Test
+    void findByAthleteIdAndWeekStartDate_shouldReturnWellness_whenExists() {
+        LocalDate monday = LocalDate.now().with(DayOfWeek.MONDAY);
+        wellnessRepository.save(aWellness(athleteId, monday));
+
+        Optional<WeeklyWellness> result = wellnessRepository.findByAthleteIdAndWeekStartDate(athleteId, monday);
+
+        assertThat(result).isPresent();
+        assertThat(result.get().getWeekStartDate()).isEqualTo(monday);
+    }
+
+    @Test
+    void findLatestByAthleteId_shouldReturnMostRecentWellness() {
+        LocalDate monday1 = LocalDate.of(2025, Month.MAY, 19);
+        LocalDate monday2 = LocalDate.of(2025, Month.MAY, 26);
+        wellnessRepository.save(aWellness(athleteId, monday1));
+        wellnessRepository.save(aWellness(athleteId, monday2));
+
+        Optional<WeeklyWellness> result = wellnessRepository.findLatestByAthleteId(athleteId);
+
+        assertThat(result).isPresent();
+        assertThat(result.get().getWeekStartDate()).isEqualTo(monday2);
+    }
+
+    @Test
     void deleteById_shouldRemoveFromDatabase() {
         WeeklyWellness saved = wellnessRepository.save(aWellness(athleteId, WEEK_1));
 
@@ -167,9 +195,11 @@ class WeeklyWellnessJpaAdapterIT {
     }
 
     private CoachJpaEntity aCoach() {
+        // Unique email required — NOT_SUPPORTED tests bypass class-level @Transactional rollback,
+        // leaving the coach in DB across test method executions
         return CoachJpaEntity.builder()
             .name("Wellness Coach")
-            .email("wellness-coach@test.com")
+            .email("wellness-coach-" + System.nanoTime() + "@test.com")
             .hashedPassword("hashed")
             .build();
     }
