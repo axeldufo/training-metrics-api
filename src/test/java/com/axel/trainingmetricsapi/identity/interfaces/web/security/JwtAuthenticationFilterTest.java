@@ -1,8 +1,5 @@
 package com.axel.trainingmetricsapi.identity.interfaces.web.security;
 
-import com.axel.trainingmetricsapi.identity.interfaces.web.security.AuthenticatedCoach;
-import com.axel.trainingmetricsapi.identity.interfaces.web.security.JwtAuthenticationFilter;
-import com.axel.trainingmetricsapi.identity.interfaces.web.security.JwtUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,7 +18,9 @@ import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class JwtAuthenticationFilterTest {

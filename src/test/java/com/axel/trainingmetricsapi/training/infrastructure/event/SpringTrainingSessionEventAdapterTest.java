@@ -1,7 +1,6 @@
 package com.axel.trainingmetricsapi.training.infrastructure.event;
 
 import com.axel.trainingmetricsapi.training.application.port.in.TrainingSessionChangedUseCase;
-import com.axel.trainingmetricsapi.training.infrastructure.event.SpringTrainingSessionEventAdapter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

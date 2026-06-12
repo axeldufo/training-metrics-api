@@ -1,6 +1,5 @@
 package com.axel.trainingmetricsapi.identity.infrastructure.security;
 
-import com.axel.trainingmetricsapi.identity.infrastructure.security.BcryptPasswordEncoderAdapter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

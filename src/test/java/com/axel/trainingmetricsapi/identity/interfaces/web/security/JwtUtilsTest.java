@@ -1,6 +1,5 @@
 package com.axel.trainingmetricsapi.identity.interfaces.web.security;
 
-import com.axel.trainingmetricsapi.identity.interfaces.web.security.JwtUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;

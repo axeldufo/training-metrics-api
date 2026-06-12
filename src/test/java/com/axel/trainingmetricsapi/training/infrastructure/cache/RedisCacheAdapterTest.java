@@ -1,8 +1,6 @@
 package com.axel.trainingmetricsapi.training.infrastructure.cache;
 
 import com.axel.trainingmetricsapi.training.domain.AcwrReport;
-import com.axel.trainingmetricsapi.training.infrastructure.cache.CacheConfig;
-import com.axel.trainingmetricsapi.training.infrastructure.cache.RedisCacheAdapter;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
