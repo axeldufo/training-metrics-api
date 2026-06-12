@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 
@@ -76,8 +75,7 @@ public class GetWeeklyReportByWeekUseCaseImpl implements GetWeeklyReportByWeekUs
 
             List<TrainingSession> sessions = trainingSessionRepository.findByAthleteIdAndPeriod(
                 athleteId, weekStartDate, weekStartDate.plusDays(6));
-            LoadReport onTheFlyReport = loadReportCalculator.calculate(
-                athleteId, weekStartDate, sessions, sessions.isEmpty() ? null : LocalDateTime.now());
+            LoadReport onTheFlyReport = loadReportCalculator.calculate(athleteId, weekStartDate, sessions, null);
             loadReports = List.of(onTheFlyReport);
         }
 

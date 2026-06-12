@@ -1,7 +1,11 @@
 package com.axel.trainingmetricsapi.repository;
 
 import com.axel.trainingmetricsapi.TestContainersConfiguration;
-import com.axel.trainingmetricsapi.domain.*;
+import com.axel.trainingmetricsapi.domain.Athlete;
+import com.axel.trainingmetricsapi.domain.AthleteRepository;
+import com.axel.trainingmetricsapi.domain.LoadReport;
+import com.axel.trainingmetricsapi.domain.LoadReportRepository;
+import com.axel.trainingmetricsapi.domain.Sport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -160,6 +164,8 @@ class LoadReportJpaAdapterIT {
     }
 
     private CoachJpaEntity aCoach() {
+        // Unique email required — NOT_SUPPORTED tests bypass class-level @Transactional rollback,
+        // leaving the coach in DB across test method executions
         return CoachJpaEntity.builder()
             .name("Load Coach")
             .email("load-coach-" + System.nanoTime() + "@test.com")

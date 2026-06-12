@@ -17,10 +17,15 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.instancio.Select.field;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class WeeklyWellnessJpaAdapterTest {
+
+    private static final long ATHLETE_ID = 4L;
 
     @Mock
     private WeeklyWellnessJpaRepository wellnessJpaRepository;
@@ -84,36 +89,78 @@ class WeeklyWellnessJpaAdapterTest {
 
     @Test
     void findByAthleteIdAndPeriod_shouldMapAll() {
-        long athleteId = 4L;
         LocalDate from = LocalDate.of(2024, Month.JANUARY, 1);
         LocalDate to = LocalDate.of(2024, Month.JANUARY, 29);
         int size = 3;
         List<WeeklyWellnessJpaEntity> entities = Instancio.ofList(WeeklyWellnessJpaEntity.class).size(size).create();
-        when(wellnessJpaRepository.findAllByAthleteIdAndWeekStartDateBetween(athleteId, from, to))
+        when(wellnessJpaRepository.findAllByAthleteIdAndWeekStartDateBetween(ATHLETE_ID, from, to))
             .thenReturn(entities);
         when(persistenceMapper.entityToDomain(any(WeeklyWellnessJpaEntity.class)))
             .thenReturn(Instancio.create(WeeklyWellness.class));
 
-        List<WeeklyWellness> result = adapter.findByAthleteIdAndPeriod(athleteId, from, to);
+        List<WeeklyWellness> result = adapter.findByAthleteIdAndPeriod(ATHLETE_ID, from, to);
 
-        verify(wellnessJpaRepository).findAllByAthleteIdAndWeekStartDateBetween(athleteId, from, to);
+        verify(wellnessJpaRepository).findAllByAthleteIdAndWeekStartDateBetween(ATHLETE_ID, from, to);
         verify(persistenceMapper, times(size)).entityToDomain(any(WeeklyWellnessJpaEntity.class));
         assertThat(result).hasSize(size);
     }
 
     @Test
     void findByAthleteIdAndPeriod_shouldReturnEmpty_whenNone() {
-        long athleteId = 4L;
         LocalDate from = LocalDate.of(2024, Month.JANUARY, 1);
         LocalDate to = LocalDate.of(2024, Month.JANUARY, 29);
-        when(wellnessJpaRepository.findAllByAthleteIdAndWeekStartDateBetween(athleteId, from, to))
+        when(wellnessJpaRepository.findAllByAthleteIdAndWeekStartDateBetween(ATHLETE_ID, from, to))
             .thenReturn(List.of());
 
-        List<WeeklyWellness> result = adapter.findByAthleteIdAndPeriod(athleteId, from, to);
+        List<WeeklyWellness> result = adapter.findByAthleteIdAndPeriod(ATHLETE_ID, from, to);
 
-        verify(wellnessJpaRepository).findAllByAthleteIdAndWeekStartDateBetween(athleteId, from, to);
+        verify(wellnessJpaRepository).findAllByAthleteIdAndWeekStartDateBetween(ATHLETE_ID, from, to);
         verify(persistenceMapper, never()).entityToDomain(any());
         assertThat(result).isEmpty();
+    }
+
+    @Test
+    void findByAthleteIdAndWeekStartDate_shouldReturnWellness_whenFound() {
+        LocalDate weekStartDate = LocalDate.now().with(DayOfWeek.MONDAY);
+        WeeklyWellnessJpaEntity entity = Instancio.create(WeeklyWellnessJpaEntity.class);
+        WeeklyWellness expected = Instancio.create(WeeklyWellness.class);
+        when(wellnessJpaRepository.findByAthleteIdAndWeekStartDate(ATHLETE_ID, weekStartDate))
+            .thenReturn(Optional.of(entity));
+        when(persistenceMapper.entityToDomain(entity)).thenReturn(expected);
+
+        Optional<WeeklyWellness> result = adapter.findByAthleteIdAndWeekStartDate(ATHLETE_ID, weekStartDate);
+
+        assertThat(result).contains(expected);
+    }
+
+    @Test
+    void findByAthleteIdAndWeekStartDate_shouldReturnEmpty_whenNotFound() {
+        LocalDate weekStartDate = LocalDate.now().with(DayOfWeek.MONDAY);
+        when(wellnessJpaRepository.findByAthleteIdAndWeekStartDate(ATHLETE_ID, weekStartDate))
+            .thenReturn(Optional.empty());
+
+        assertThat(adapter.findByAthleteIdAndWeekStartDate(ATHLETE_ID, weekStartDate)).isEmpty();
+    }
+
+    @Test
+    void findLatestByAthleteId_shouldReturnLatestWellness_whenFound() {
+        WeeklyWellnessJpaEntity entity = Instancio.create(WeeklyWellnessJpaEntity.class);
+        WeeklyWellness expected = Instancio.create(WeeklyWellness.class);
+        when(wellnessJpaRepository.findTopByAthleteIdOrderByWeekStartDateDesc(ATHLETE_ID))
+            .thenReturn(Optional.of(entity));
+        when(persistenceMapper.entityToDomain(entity)).thenReturn(expected);
+
+        Optional<WeeklyWellness> result = adapter.findLatestByAthleteId(ATHLETE_ID);
+
+        assertThat(result).contains(expected);
+    }
+
+    @Test
+    void findLatestByAthleteId_shouldReturnEmpty_whenNotFound() {
+        when(wellnessJpaRepository.findTopByAthleteIdOrderByWeekStartDateDesc(ATHLETE_ID))
+            .thenReturn(Optional.empty());
+
+        assertThat(adapter.findLatestByAthleteId(ATHLETE_ID)).isEmpty();
     }
 
     @Test
