@@ -46,12 +46,13 @@ The wellness context listens to these events to trigger cache eviction and
 report recalculation. It does not hold a direct reference to any training
 class.
 
-**Via a port (read path):**
-`GetWeeklyReportByWeekUseCase` (wellness) needs load data from the training
-context. It calls `LoadReportRepository` (defined in `domain/`) directly —
-Repository interfaces are domain contracts accessible to all Use Cases per
-ADR-001 (Vernon convention). `LoadReportCalculator` is instantiated with
-`new` when on-the-fly calculation is needed.
+**Via a port (read path) — planned:**
+`GetWeeklyReportByWeekUseCase` (wellness) currently calls `LoadReportRepository`
+and `LoadReportCalculator` from training directly — temporary coupling documented
+as technical debt. An Anti-Corruption Layer (ACL) will be introduced (dedicated
+ticket): wellness will define its own `WeeklyLoadPort` and `LoadData` record,
+training will provide the adapter. Direct cross-module import will be eliminated
+before Spring Modulith introduction (ticket #115).
 
 No intermediate `LoadReportPort` or `LoadReportDomainService` is introduced —
 `LoadReportCalculator` already encapsulates the calculation rule cleanly.
@@ -97,12 +98,7 @@ athlete/
 ├── domain/            ← POJOs, ports, exceptions specific to athlete
 ├── infrastructure/    ← JPA adapter, entity, persistence mapper
 └── interfaces/        ← controller, web mapper, DTOs
-auth/
-├── application/
-├── domain/
-├── infrastructure/
-└── interfaces/
-coach/
+identity/
 ├── application/
 ├── domain/
 ├── infrastructure/
