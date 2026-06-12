@@ -1,7 +1,6 @@
 package com.axel.trainingmetricsapi.infrastructure.cache;
 
 import com.axel.trainingmetricsapi.application.port.out.AcwrCachePort;
-import com.axel.trainingmetricsapi.config.CacheConfig;
 import com.axel.trainingmetricsapi.domain.AcwrReport;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;

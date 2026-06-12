@@ -1,6 +1,5 @@
 package com.axel.trainingmetricsapi.infrastructure.cache;
 
-import com.axel.trainingmetricsapi.config.CacheConfig;
 import com.axel.trainingmetricsapi.domain.AcwrReport;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.BeforeEach;

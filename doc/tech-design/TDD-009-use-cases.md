@@ -571,8 +571,7 @@ WeeklyReport execute(long athleteId, long coachId, LocalDate weekStartDate);
    - else → compute on-the-fly: fetch sessions via
      `trainingSessionRepository.findByAthleteIdAndPeriod(
      athleteId, weekStartDate, weekStartDate.plusDays(6))`
-     → `loadReportCalculator.calculate(athleteId, weekStartDate, sessions,
-     sessions.isEmpty() ? null : LocalDateTime.now())`
+     → `loadReportCalculator.calculate(athleteId, weekStartDate, sessions, null)`
      → loadReports = List.of(onTheFlyReport)
 6. `weeklyReportCalculator.calculate(athleteId, weekStartDate, loadReports, wellness)`
 
