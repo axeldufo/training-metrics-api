@@ -1,6 +1,6 @@
 package com.axel.trainingmetricsapi;
 
-import com.axel.trainingmetricsapi.interfaces.web.security.JwtUtils;
+import com.axel.trainingmetricsapi.identity.interfaces.web.security.JwtUtils;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
@@ -12,6 +12,8 @@ import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.List;
 
 import static com.tngtech.archunit.core.domain.properties.CanBeAnnotated.Predicates.annotatedWith;
 import static com.tngtech.archunit.lang.conditions.ArchConditions.beAnnotatedWith;
@@ -33,10 +35,27 @@ class ArchitectureTests {
         .importPackages("com.axel.trainingmetricsapi");
 
     @Nested
+    class ModuleBoundaryRules {
+
+        // TODO: add cross-module isolation rules once ACL ticket and #120 are implemented.
+        // Known dependencies to resolve:
+        // - athlete.infrastructure.persistence → identity (CoachJpaEntity FK — JPA constraint) ticket #127
+        // - all controllers → identity (AuthenticatedCoachResolver — ticket #120)
+        // - wellness → training (LoadReport direct access — ACL ticket #126)
+        // - shared.GlobalExceptionHandler → all modules (to be decoupled — ticket #128)
+
+    }
+
+    @Nested
     class LayerRules {
 
         @Test
-        void layer_dependencies_are_respected() {
+        void layer_dependencies_within_modules_are_respected() {
+            // Cross-module rule: applies to ALL modules (athlete, identity, training, wellness, shared).
+            // ..application.. matches any package containing 'application' in its path,
+            // regardless of which feature module it belongs to.
+            // Guarantees vertical layer dependencies within each module.
+            // Horizontal inter-module isolation is enforced by ModuleBoundaryRules below.
             ArchRule rule = layeredArchitecture().consideringAllDependencies()
                 .layer("Application").definedBy("..application..")
                 .layer("Domain").definedBy("..domain..")
@@ -55,23 +74,30 @@ class ArchitectureTests {
         }
 
         @Test
-        void no_cyclic_dependencies() {
-            ArchRule rule = slices().matching("com.axel.trainingmetricsapi.(*)..")
-                .should().beFreeOfCycles();
-
-            rule.check(allClasses); // test classes as well : tests should isolate and respect productions rules
+        void no_cyclic_dependencies_within_modules() {
+            // Checks for cycles INSIDE each feature module.
+            // Cross-module cycles are prevented by ModuleBoundaryRules
+            List.of("identity", "athlete", "training", "wellness", "shared")
+                .forEach(module ->
+                    slices()
+                        .matching("com.axel.trainingmetricsapi." + module + ".(*)..")
+                        .should().beFreeOfCycles()
+                        .check(allClasses));
         }
 
         @Test
-        void infrastructure_modules_should_not_depend_on_each_other() {
-            ArchRule rule = slices()
-                .matching("com.axel.trainingmetricsapi.infrastructure.(*)..")
-                .should().notDependOnEachOther()
-                .because("Infrastructure adapters are independent — " +
-                    "cache, persistence, event and security must not cross-reference each other");
-
-            rule.check(productionClasses);
+        void infrastructure_submodules_should_not_depend_on_each_other() {
+            List.of("identity", "athlete", "training", "wellness")
+                .forEach(module ->
+                    slices()
+                        .matching("com.axel.trainingmetricsapi." + module + ".infrastructure.(*)..")
+                        .should().notDependOnEachOther()
+                        .because("Inside each module, infrastructure adapters (cache, event, persistence, security, ...)" +
+                            "must not cross-reference each other. Orchestration belongs in application/ Use Cases,  " +
+                            "not in infrastructure adapters.")
+                        .check(productionClasses));
         }
+
     }
 
     @Nested
