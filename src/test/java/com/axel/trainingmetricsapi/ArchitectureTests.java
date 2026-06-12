@@ -1,6 +1,6 @@
 package com.axel.trainingmetricsapi;
 
-import com.axel.trainingmetricsapi.controller.security.JwtUtils;
+import com.axel.trainingmetricsapi.interfaces.web.security.JwtUtils;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
@@ -38,19 +38,15 @@ class ArchitectureTests {
         @Test
         void layer_dependencies_are_respected() {
             ArchRule rule = layeredArchitecture().consideringAllDependencies()
-                .layer("Controller").definedBy("..controller..")
-                .layer("DTO").definedBy("..dto..")
                 .layer("Application").definedBy("..application..")
-                .layer("Infrastructure").definedBy("..infrastructure..")
-                .layer("Repository").definedBy("..repository..")
                 .layer("Domain").definedBy("..domain..")
+                .layer("Infrastructure").definedBy("..infrastructure..")
+                .layer("Interfaces").definedBy("..interfaces..")
 
-                .whereLayer("Controller").mayNotBeAccessedByAnyLayer()
-                .whereLayer("DTO").mayOnlyBeAccessedByLayers("Controller")
-                .whereLayer("Application").mayOnlyBeAccessedByLayers("Controller", "Infrastructure")
+                .whereLayer("Application").mayOnlyBeAccessedByLayers("Infrastructure", "Interfaces")
+                .whereLayer("Domain").mayOnlyBeAccessedByLayers("Application", "Infrastructure", "Interfaces")
                 .whereLayer("Infrastructure").mayNotBeAccessedByAnyLayer()
-                .whereLayer("Repository").mayOnlyBeAccessedByLayers("Application")
-                .whereLayer("Domain").mayOnlyBeAccessedByLayers("Controller", "Application", "Repository", "Infrastructure", "DTO")
+                .whereLayer("Interfaces").mayNotBeAccessedByAnyLayer()
 
                 .because("Each layer should only depend on its allowed neighbors — " +
                     "enforces separation of concerns and prevents architecture erosion");
@@ -65,6 +61,17 @@ class ArchitectureTests {
 
             rule.check(allClasses); // test classes as well : tests should isolate and respect productions rules
         }
+
+        @Test
+        void infrastructure_modules_should_not_depend_on_each_other() {
+            ArchRule rule = slices()
+                .matching("com.axel.trainingmetricsapi.infrastructure.(*)..")
+                .should().notDependOnEachOther()
+                .because("Infrastructure adapters are independent — " +
+                    "cache, persistence, event and security must not cross-reference each other");
+
+            rule.check(productionClasses);
+        }
     }
 
     @Nested
@@ -75,7 +82,7 @@ class ArchitectureTests {
             ArchRule rule = noClasses()
                 .that().resideInAPackage("..domain..")
                 .should().dependOnClassesThat()
-                .resideInAnyPackage("..repository..", "..dto..", "..controller..", "..application..")
+                .resideInAnyPackage("..application..", "..infrastructure..", "..interfaces..")
                 .because("Domain should be independent of others layers");
 
             rule.check(allClasses); // test classes as well : tests should respect productions rules
@@ -102,18 +109,18 @@ class ArchitectureTests {
     class SpringRules {
 
         @Test
-        void rest_annotations_should_be_in_controller() {
+        void rest_annotations_should_be_in_web_layer() {
             ArchRule rule = classes().that()
                 .areAnnotatedWith(RestController.class)
                 .or().areAnnotatedWith(RestControllerAdvice.class)
-                .should().resideInAPackage("..controller..")
+                .should().resideInAPackage("..interfaces.web..")
                 .because("REST annotations should be in web layer");
 
             rule.check(allClasses); // test classes as well : tests should respect productions rules
         }
 
         @Test
-        void service_annotations_should_be_in_application() {
+        void service_annotations_should_be_in_application_layer() {
             ArchRule rule = classes().that().areAnnotatedWith(Service.class)
                 .should().resideInAPackage("..application..")
                 .because("Service annotations should be in application layer");
@@ -138,12 +145,12 @@ class ArchitectureTests {
         }
 
         @Test
-        void entity_and_repository_annotations_should_be_in_repository() {
+        void entity_and_repository_annotations_should_be_in_infrastructure_persistence_layer() {
             ArchRule rule = classes().that()
                 .areAnnotatedWith(Entity.class)
                 .or().areAnnotatedWith(Repository.class)
-                .should().resideInAPackage("..repository..")
-                .because("Persistence annotations should be in repository layer");
+                .should().resideInAPackage("..infrastructure.persistence..")
+                .because("Persistence annotations should be in infrastructure persistence layer");
 
             rule.check(allClasses); // test classes as well : tests should respect productions rules
         }
@@ -202,11 +209,11 @@ class ArchitectureTests {
     class JpaRules {
 
         @Test
-        void no_jpa_dependency_outside_repository() {
+        void no_jpa_dependency_outside_infrastructure_persistence_layer() {
             ArchRule rule = noClasses()
-                .that().resideOutsideOfPackage("..repository..")
+                .that().resideOutsideOfPackage("..infrastructure.persistence..")
                 .should().dependOnClassesThat().resideInAnyPackage("jakarta.persistence..")
-                .because("JPA dependency should be confined to the repository layer");
+                .because("JPA dependency should be confined to the infrastructure persistence layer");
 
             rule.check(productionClasses); // production only : this test references jakarta.persistence to define the rule
         }
@@ -214,7 +221,7 @@ class ArchitectureTests {
         @Test
         void controllers_should_not_return_entities() {
             ArchRule rule = noMethods()
-                .that().areDeclaredInClassesThat().resideInAPackage("..controller..")
+                .that().areDeclaredInClassesThat().resideInAPackage("..interfaces.web..")
                 .should().haveRawReturnType(annotatedWith(Entity.class))
                 .because("Controllers should return DTOs, not JPA entities");
 
@@ -226,13 +233,13 @@ class ArchitectureTests {
     class ApiRules {
 
         @Test
-        void openapi_models_should_stay_in_controller() {
+        void openapi_models_should_stay_in_web_layer() {
             ArchRule rule = noClasses()
-                .that().resideOutsideOfPackage("..controller..")
+                .that().resideOutsideOfPackage("..interfaces.web..")
                 .should().dependOnClassesThat()
                 .resideInAnyPackage("io.swagger..")
-                .because("OpenAPI annotations should be confined to the controller layer — " +
-                    "API documentation concerns should not leak into domain or service layers");
+                .because("OpenAPI annotations should be confined to the web layer — " +
+                    "API documentation concerns should not leak into domain or application layers");
 
             rule.check(allClasses); // test classes as well : tests should respect productions rules
         }

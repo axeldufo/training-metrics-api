@@ -2,14 +2,14 @@ package com.axel.trainingmetricsapi;
 
 import com.axel.trainingmetricsapi.application.port.in.GetAcwrReportUseCase;
 import com.axel.trainingmetricsapi.application.port.out.TrainingSessionEventPort;
-import com.axel.trainingmetricsapi.config.CacheConfig;
+import com.axel.trainingmetricsapi.infrastructure.cache.CacheConfig;
 import com.axel.trainingmetricsapi.domain.AcwrReport;
 import com.axel.trainingmetricsapi.domain.Athlete;
 import com.axel.trainingmetricsapi.domain.AthleteRepository;
 import com.axel.trainingmetricsapi.domain.Sport;
 import com.axel.trainingmetricsapi.domain.TrainingSessionRepository;
-import com.axel.trainingmetricsapi.repository.CoachJpaEntity;
-import com.axel.trainingmetricsapi.repository.CoachJpaRepository;
+import com.axel.trainingmetricsapi.infrastructure.persistence.CoachJpaEntity;
+import com.axel.trainingmetricsapi.infrastructure.persistence.CoachJpaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

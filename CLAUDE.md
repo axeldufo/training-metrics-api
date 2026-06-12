@@ -45,7 +45,6 @@ interfaces/web/      — @RestController, @RestControllerAdvice, WebMapper (DTO 
                        dto/ (request/response objects)
 interfaces/web/security/ — JWT filter, SecurityConfig, AuthenticatedCoach,
                            AuthenticatedCoachResolver
-service/             — empty package kept as placeholder (ticket #119 will delete it)
 ```
 
 ### Data Flow
