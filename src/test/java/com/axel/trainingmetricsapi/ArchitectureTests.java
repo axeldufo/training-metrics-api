@@ -39,10 +39,8 @@ class ArchitectureTests {
 
         // TODO: add cross-module isolation rules once ACL ticket and #120 are implemented.
         // Known dependencies to resolve:
-        // - athlete.infrastructure.persistence → identity (CoachJpaEntity FK — JPA constraint) ticket #127
-        // - all controllers → identity (AuthenticatedCoachResolver — ticket #120)
+        // - all controllers → identity (AuthenticatedCoachResolver — ticket #122)
         // - wellness → training (LoadReport direct access — ACL ticket #126)
-        // - shared.GlobalExceptionHandler → all modules (to be decoupled — ticket #128)
 
     }
 
