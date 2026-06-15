@@ -1,9 +1,18 @@
 package com.axel.trainingmetricsapi.athlete.infrastructure.persistence;
 
 import com.axel.trainingmetricsapi.shared.domain.Sport;
-import com.axel.trainingmetricsapi.identity.infrastructure.persistence.CoachJpaEntity;
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDate;
 
@@ -32,9 +41,8 @@ public class AthleteJpaEntity {
     @Column(name = "sport", nullable = false)
     private Sport sport;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "coach_id", nullable = false)
-    private CoachJpaEntity coach;
+    @Column(name = "coach_id", nullable = false)
+    private Long coachId;
 
     @Column(name = "weight_in_kg")
     private Double weightInKg;

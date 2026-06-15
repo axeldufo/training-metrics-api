@@ -31,7 +31,7 @@ class WeeklyWellnessPersistenceMapperTest {
         assertThat(entity.getPerceivedDifficulty()).isEqualTo(wellness.getPerceivedDifficulty());
         assertThat(entity.getPerceivedFatigue()).isEqualTo(wellness.getPerceivedFatigue());
         assertThat(entity.getMotivation()).isEqualTo(wellness.getMotivation());
-        assertThat(entity.getAthlete().getId()).isEqualTo(wellness.getAthleteId());
+        assertThat(entity.getAthleteId()).isEqualTo(wellness.getAthleteId());
     }
 
     @Test
@@ -47,7 +47,7 @@ class WeeklyWellnessPersistenceMapperTest {
         WeeklyWellness wellness = mapper.entityToDomain(entity);
 
         assertThat(wellness.getId()).isEqualTo(88L);
-        assertThat(wellness.getAthleteId()).isEqualTo(entity.getAthlete().getId());
+        assertThat(wellness.getAthleteId()).isEqualTo(entity.getAthleteId());
         assertThat(wellness.getWeekStartDate()).isEqualTo(entity.getWeekStartDate());
         assertThat(wellness.getPerceivedDifficulty()).isEqualTo(entity.getPerceivedDifficulty());
         assertThat(wellness.getPerceivedFatigue()).isEqualTo(entity.getPerceivedFatigue());

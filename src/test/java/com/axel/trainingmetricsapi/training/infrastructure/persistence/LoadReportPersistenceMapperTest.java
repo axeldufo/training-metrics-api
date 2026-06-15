@@ -1,6 +1,5 @@
 package com.axel.trainingmetricsapi.training.infrastructure.persistence;
 
-import com.axel.trainingmetricsapi.athlete.infrastructure.persistence.AthleteJpaEntity;
 import com.axel.trainingmetricsapi.training.domain.LoadReport;
 import org.junit.jupiter.api.Test;
 
@@ -23,7 +22,7 @@ class LoadReportPersistenceMapperTest {
         LoadReportJpaEntity entity = mapper.domainToEntity(report);
 
         assertThat(entity.getId()).isNull();
-        assertThat(entity.getAthlete().getId()).isEqualTo(42L);
+        assertThat(entity.getAthleteId()).isEqualTo(42L);
         assertThat(entity.getWeekStartDate()).isEqualTo(MONDAY);
         assertThat(entity.getTotalFosterLoad()).isEqualTo(250);
         assertThat(entity.getSessionCount()).isEqualTo(3);
@@ -33,9 +32,7 @@ class LoadReportPersistenceMapperTest {
     @Test
     void entityToDomain_shouldMapAllFields() {
         LocalDateTime updatedAt = LocalDateTime.now();
-        AthleteJpaEntity athlete = new AthleteJpaEntity();
-        athlete.setId(42L);
-        LoadReportJpaEntity entity = new LoadReportJpaEntity(99L, athlete, MONDAY, 250, 3, updatedAt);
+        LoadReportJpaEntity entity = new LoadReportJpaEntity(99L, 42L, MONDAY, 250, 3, updatedAt);
 
         LoadReport report = mapper.entityToDomain(entity);
 
@@ -48,9 +45,7 @@ class LoadReportPersistenceMapperTest {
 
     @Test
     void entityToDomain_shouldMapNullUpdatedAt() {
-        AthleteJpaEntity athlete = new AthleteJpaEntity();
-        athlete.setId(1L);
-        LoadReportJpaEntity entity = new LoadReportJpaEntity(1L, athlete, MONDAY, 0, 0, null);
+        LoadReportJpaEntity entity = new LoadReportJpaEntity(1L, 1L, MONDAY, 0, 0, null);
 
         LoadReport report = mapper.entityToDomain(entity);
 

@@ -24,7 +24,7 @@ class TrainingSessionPersistenceMapperTest {
             trainingSessionPersistenceMapper.domainToEntity(trainingSession);
 
         assertTrainingSessionScalarFieldsMap(trainingSession, trainingSessionEntity);
-        assertThat(trainingSession.getAthleteId()).isEqualTo(trainingSessionEntity.getAthlete().getId());
+        assertThat(trainingSession.getAthleteId()).isEqualTo(trainingSessionEntity.getAthleteId());
         assertThat(trainingSessionEntity.getId()).isNull();
     }
 
@@ -39,7 +39,7 @@ class TrainingSessionPersistenceMapperTest {
         TrainingSession trainingSession = trainingSessionPersistenceMapper.entityToDomain(trainingSessionEntity);
 
         assertTrainingSessionScalarFieldsMap(trainingSession, trainingSessionEntity);
-        assertThat(trainingSession.getAthleteId()).isEqualTo(trainingSessionEntity.getAthlete().getId());
+        assertThat(trainingSession.getAthleteId()).isEqualTo(trainingSessionEntity.getAthleteId());
         assertThat(trainingSession.getId()).isNotNull();
     }
 

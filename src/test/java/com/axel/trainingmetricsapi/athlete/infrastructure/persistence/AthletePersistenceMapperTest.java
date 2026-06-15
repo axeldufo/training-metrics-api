@@ -2,7 +2,6 @@ package com.axel.trainingmetricsapi.athlete.infrastructure.persistence;
 
 import com.axel.trainingmetricsapi.athlete.domain.Athlete;
 import com.axel.trainingmetricsapi.shared.domain.Sport;
-import com.axel.trainingmetricsapi.identity.infrastructure.persistence.CoachJpaEntity;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
 
@@ -20,7 +19,7 @@ class AthletePersistenceMapperTest {
         AthleteJpaEntity athleteEntity = athletePersistenceMapper.domainToEntity(athlete);
 
         assertAthleteScalarFieldsMap(athlete, athleteEntity);
-        assertThat(athlete.getCoachId()).isEqualTo(athleteEntity.getCoach().getId());
+        assertThat(athlete.getCoachId()).isEqualTo(athleteEntity.getCoachId());
         assertThat(athleteEntity.getId()).isNull();
     }
 
@@ -42,14 +41,13 @@ class AthletePersistenceMapperTest {
         Athlete athlete = athletePersistenceMapper.entityToDomain(athleteEntity);
 
         assertAthleteScalarFieldsMap(athlete, athleteEntity);
-        assertThat(athlete.getCoachId()).isEqualTo(athleteEntity.getCoach().getId());
+        assertThat(athlete.getCoachId()).isEqualTo(athleteEntity.getCoachId());
         assertThat(athlete.getId()).isNotNull();
     }
 
     @Test
     void entityToDomain_shouldHandleNullableFields() {
-        AthleteJpaEntity athleteEntity = new AthleteJpaEntity(2L, "Jean", "Dupont", null, Sport.TRIATHLON,
-            Instancio.create(CoachJpaEntity.class), null);
+        AthleteJpaEntity athleteEntity = new AthleteJpaEntity(2L, "Jean", "Dupont", null, Sport.TRIATHLON, 5L, null);
 
         Athlete athlete = athletePersistenceMapper.entityToDomain(athleteEntity);
 

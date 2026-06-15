@@ -1,6 +1,5 @@
 package com.axel.trainingmetricsapi.training.infrastructure.persistence;
 
-import com.axel.trainingmetricsapi.athlete.infrastructure.persistence.AthleteJpaEntity;
 import com.axel.trainingmetricsapi.training.domain.TrainingSession;
 import org.springframework.stereotype.Component;
 
@@ -8,8 +7,6 @@ import org.springframework.stereotype.Component;
 public class TrainingSessionPersistenceMapper {
 
     public TrainingSessionJpaEntity domainToEntity(TrainingSession trainingSession) {
-        AthleteJpaEntity athleteEntity = new AthleteJpaEntity(); // Phantom entity
-        athleteEntity.setId(trainingSession.getAthleteId());     // Hibernate only needs the id to persist the FK
         return new TrainingSessionJpaEntity(
             trainingSession.getId(),
             trainingSession.getDate(),
@@ -17,7 +14,7 @@ public class TrainingSessionPersistenceMapper {
             trainingSession.getRpe(),
             trainingSession.getDurationInMin(),
             trainingSession.getTargetZone(),
-            athleteEntity
+            trainingSession.getAthleteId()
         );
     }
 
@@ -28,7 +25,7 @@ public class TrainingSessionPersistenceMapper {
             trainingSessionJpaEntity.getRpe(),
             trainingSessionJpaEntity.getDurationInMin(),
             trainingSessionJpaEntity.getTargetZone(),
-            trainingSessionJpaEntity.getAthlete().getId()   // Athlete not nullable in TrainingSessionEntity
+            trainingSessionJpaEntity.getAthleteId()
         );
         trainingSession.setId(trainingSessionJpaEntity.getId());
         return trainingSession;
