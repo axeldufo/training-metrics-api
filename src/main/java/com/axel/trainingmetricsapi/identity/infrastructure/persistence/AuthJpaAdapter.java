@@ -3,6 +3,8 @@ package com.axel.trainingmetricsapi.identity.infrastructure.persistence;
 import com.axel.trainingmetricsapi.identity.domain.AuthRepository;
 import com.axel.trainingmetricsapi.identity.domain.CoachAuthData;
 import com.axel.trainingmetricsapi.identity.domain.CoachCredentials;
+import com.axel.trainingmetricsapi.identity.domain.exception.EmailAlreadyExistsException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -28,8 +30,12 @@ public class AuthJpaAdapter implements AuthRepository {
             .email(credentials.email())
             .hashedPassword(hashedPassword)
             .build();
-        CoachJpaEntity entityPersisted = coachJpaRepository.save(entityToPersist);
-        return new CoachAuthData(entityPersisted.getId(), entityPersisted.getHashedPassword());
+        try {
+            CoachJpaEntity entityPersisted = coachJpaRepository.save(entityToPersist);
+            return new CoachAuthData(entityPersisted.getId(), entityPersisted.getHashedPassword());
+        } catch (DataIntegrityViolationException e) {
+            throw new EmailAlreadyExistsException(credentials.email());
+        }
     }
 
     @Override

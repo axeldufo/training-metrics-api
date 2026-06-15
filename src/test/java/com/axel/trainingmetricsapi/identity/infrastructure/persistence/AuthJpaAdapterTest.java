@@ -2,6 +2,7 @@ package com.axel.trainingmetricsapi.identity.infrastructure.persistence;
 
 import com.axel.trainingmetricsapi.identity.domain.CoachAuthData;
 import com.axel.trainingmetricsapi.identity.domain.CoachCredentials;
+import com.axel.trainingmetricsapi.identity.domain.exception.EmailAlreadyExistsException;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -70,12 +71,12 @@ class AuthJpaAdapterTest {
     }
 
     @Test
-    void register_shouldThrowException_whenEmailAlreadyExists() {
+    void register_shouldThrowEmailAlreadyExistsException_whenEmailAlreadyExists() {
         CoachCredentials credentials = new CoachCredentials("Alice Martin", "alice@test.com", "rawPassword");
         when(coachJpaRepository.save(any())).thenThrow(DataIntegrityViolationException.class);
 
         assertThatThrownBy(() -> authJpaAdapter.register(credentials, "hashedPassword"))
-            .isInstanceOf(DataIntegrityViolationException.class);
+            .isInstanceOf(EmailAlreadyExistsException.class);
     }
 
     @Test
