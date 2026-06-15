@@ -126,4 +126,24 @@ class AthleteJpaAdapterTest {
 
         verify(athleteJpaRepository).existsById(athleteId);
     }
+
+    @Test
+    void existsByCoachId_shouldReturnTrue_whenExists() {
+        long coachId = 4L;
+        when(athleteJpaRepository.existsByCoachId(coachId)).thenReturn(true);
+
+        assertThat(athleteJpaAdapter.existsByCoachId(coachId)).isTrue();
+
+        verify(athleteJpaRepository).existsByCoachId(coachId);
+    }
+
+    @Test
+    void existsByCoachId_shouldReturnFalse_whenDoesntExist() {
+        long coachId = 4L;
+        when(athleteJpaRepository.existsByCoachId(coachId)).thenReturn(false);
+
+        assertThat(athleteJpaAdapter.existsByCoachId(coachId)).isFalse();
+
+        verify(athleteJpaRepository).existsByCoachId(coachId);
+    }
 }

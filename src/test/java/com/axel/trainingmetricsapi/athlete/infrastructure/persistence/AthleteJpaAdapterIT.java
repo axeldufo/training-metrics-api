@@ -138,6 +138,18 @@ class AthleteJpaAdapterIT {
         assertThat(athleteRepository.existsById(9999L)).isFalse();
     }
 
+    @Test
+    void existsByCoachId_shouldReturnTrue_whenAthleteReferencesCoach() {
+        Athlete saved = athleteRepository.save(anAthlete());
+
+        assertThat(athleteRepository.existsByCoachId(saved.getCoachId())).isTrue();
+    }
+
+    @Test
+    void existsByCoachId_shouldReturnFalse_whenNoAthleteReferencesCoach() {
+        assertThat(athleteRepository.existsByCoachId(9999L)).isFalse();
+    }
+
     private Athlete anAthlete() {
         CoachJpaEntity requestingCoach = coachJpaRepository.save(
             aCoach("Coach Requesting", "coach@test.com"));

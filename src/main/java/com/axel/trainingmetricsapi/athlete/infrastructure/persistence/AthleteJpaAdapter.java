@@ -59,4 +59,9 @@ public class AthleteJpaAdapter implements AthleteRepository {
     public boolean existsById(long id) {
         return athleteJpaRepository.existsById(id);
     }
+
+    @Override
+    public boolean existsByCoachId(long coachId) {
+        return athleteJpaRepository.existsByCoachId(coachId);
+    }
 }

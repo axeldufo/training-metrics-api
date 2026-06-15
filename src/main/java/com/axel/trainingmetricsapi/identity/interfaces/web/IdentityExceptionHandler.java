@@ -1,5 +1,6 @@
 package com.axel.trainingmetricsapi.identity.interfaces.web;
 
+import com.axel.trainingmetricsapi.identity.domain.exception.CoachHasAthletesException;
 import com.axel.trainingmetricsapi.identity.domain.exception.EmailAlreadyExistsException;
 import com.axel.trainingmetricsapi.identity.domain.exception.InvalidCredentialsException;
 import com.axel.trainingmetricsapi.shared.interfaces.web.dto.ApiError;
@@ -13,6 +14,12 @@ import java.util.List;
 
 @RestControllerAdvice
 public class IdentityExceptionHandler {
+
+    @ExceptionHandler(CoachHasAthletesException.class)
+    public ResponseEntity<List<ApiError>> handleCoachHasAthletes(CoachHasAthletesException exception) {
+        ApiError apiError = new ApiError(ErrorCode.COACH_HAS_ATHLETES, null, exception.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(List.of(apiError));
+    }
 
     @ExceptionHandler(EmailAlreadyExistsException.class)
     public ResponseEntity<List<ApiError>> handleEmailAlreadyExists(EmailAlreadyExistsException exception) {

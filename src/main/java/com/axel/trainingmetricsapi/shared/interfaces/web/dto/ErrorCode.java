@@ -6,5 +6,6 @@ public enum ErrorCode {
     NOT_FOUND,               // resource not found
     EMAIL_ALREADY_EXISTS,    // coach email must be unique across all accounts
     INVALID_CREDENTIALS,     // wrong email or password
-    WELLNESS_ALREADY_EXISTS  // one wellness entry per athlete per week
+    WELLNESS_ALREADY_EXISTS, // one wellness entry per athlete per week
+    COACH_HAS_ATHLETES       // coach cannot be deleted while athletes reference them
 }

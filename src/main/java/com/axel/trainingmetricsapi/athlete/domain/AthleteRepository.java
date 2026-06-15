@@ -10,4 +10,5 @@ public interface AthleteRepository {
     PageResult<Athlete> findAllByCoachId(long coachId, int pageNumber, int pageSize);
     void deleteById(long id);
     boolean existsById(long id);
+    boolean existsByCoachId(long coachId);
 }
