@@ -2,10 +2,7 @@ package com.axel.trainingmetricsapi.shared.interfaces.web;
 
 import com.axel.trainingmetricsapi.shared.interfaces.web.exception.InvalidPeriodException;
 import com.axel.trainingmetricsapi.shared.domain.exception.DomainValidationException;
-import com.axel.trainingmetricsapi.identity.domain.exception.EmailAlreadyExistsException;
-import com.axel.trainingmetricsapi.identity.domain.exception.InvalidCredentialsException;
 import com.axel.trainingmetricsapi.shared.domain.exception.ResourceNotFoundException;
-import com.axel.trainingmetricsapi.wellness.domain.exception.WeeklyWellnessAlreadyExistsException;
 import com.axel.trainingmetricsapi.shared.interfaces.web.dto.ApiError;
 import com.axel.trainingmetricsapi.shared.interfaces.web.dto.ErrorCode;
 import jakarta.validation.ConstraintViolationException;
@@ -32,24 +29,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<List<ApiError>> handleDomainValidationErrors(DomainValidationException exception) {
         ApiError apiError = new ApiError(ErrorCode.DOMAIN_VALIDATION_ERROR, null, exception.getMessage());
         return ResponseEntity.badRequest().body(List.of(apiError));
-    }
-
-    @ExceptionHandler(EmailAlreadyExistsException.class)
-    public ResponseEntity<List<ApiError>> handleEmailAlreadyExists(EmailAlreadyExistsException exception) {
-        ApiError apiError = new ApiError(ErrorCode.EMAIL_ALREADY_EXISTS, null, exception.getMessage());
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(List.of(apiError));
-    }
-
-    @ExceptionHandler(InvalidCredentialsException.class)
-    public ResponseEntity<List<ApiError>> handleInvalidCredentialsException(InvalidCredentialsException exception) {
-        ApiError apiError = new ApiError(ErrorCode.INVALID_CREDENTIALS, null, exception.getMessage());
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(List.of(apiError));
-    }
-
-    @ExceptionHandler(WeeklyWellnessAlreadyExistsException.class)
-    public ResponseEntity<List<ApiError>> handleWeeklyWellnessAlreadyExists(WeeklyWellnessAlreadyExistsException exception) {
-        ApiError apiError = new ApiError(ErrorCode.WELLNESS_ALREADY_EXISTS, null, exception.getMessage());
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(List.of(apiError));
     }
 
     @ExceptionHandler(InvalidPeriodException.class)
