@@ -16,7 +16,7 @@ public record LoadReport(
     public LoadReport {
         if (weekStartDate == null)
             throw new DomainValidationException("LoadReport weekStartDate is required");
-        if (weekStartDate.getDayOfWeek() != DayOfWeek.MONDAY)
+        if (!weekStartDate.getDayOfWeek().equals(DayOfWeek.MONDAY))
             throw new DomainValidationException("LoadReport weekStartDate must be a Monday");
         if (totalFosterLoad < 0)
             throw new DomainValidationException("LoadReport totalFosterLoad must be >= 0");
