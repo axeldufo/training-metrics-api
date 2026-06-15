@@ -1,7 +1,11 @@
 package com.axel.trainingmetricsapi.wellness.infrastructure.persistence;
 
-import com.axel.trainingmetricsapi.athlete.infrastructure.persistence.AthleteJpaEntity;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -33,7 +37,6 @@ public class WeeklyWellnessJpaEntity {
     @Column(name = "motivation", nullable = false)
     private int motivation;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "athlete_id", nullable = false)
-    private AthleteJpaEntity athlete;
+    @Column(name = "athlete_id", nullable = false)
+    private Long athleteId;
 }

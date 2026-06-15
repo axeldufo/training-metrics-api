@@ -21,7 +21,7 @@ public class WeeklyWellness {
                           Integer perceivedFatigue, Integer motivation) {
         if (athleteId == null) throw new DomainValidationException("WeeklyWellness must be linked to an athlete");
         if (weekStartDate == null) throw new DomainValidationException("WeeklyWellness weekStartDate is required");
-        if (weekStartDate.getDayOfWeek() != DayOfWeek.MONDAY)
+        if (!weekStartDate.getDayOfWeek().equals(DayOfWeek.MONDAY))
             throw new DomainValidationException("WeeklyWellness weekStartDate must be a Monday");
         if (perceivedDifficulty == null) throw new DomainValidationException("WeeklyWellness perceivedDifficulty is required");
         if (perceivedDifficulty < 1 || perceivedDifficulty > 5)

@@ -1,7 +1,11 @@
 package com.axel.trainingmetricsapi.training.infrastructure.persistence;
 
-import com.axel.trainingmetricsapi.athlete.infrastructure.persistence.AthleteJpaEntity;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,9 +27,8 @@ public class LoadReportJpaEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "athlete_id", nullable = false)
-    private AthleteJpaEntity athlete;
+    @Column(name = "athlete_id", nullable = false)
+    private Long athleteId;
 
     @Column(name = "week_start_date", nullable = false)
     private LocalDate weekStartDate;
