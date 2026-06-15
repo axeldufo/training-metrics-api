@@ -6,6 +6,7 @@ import com.axel.trainingmetricsapi.identity.application.port.in.UpdateCoachUseCa
 import com.axel.trainingmetricsapi.identity.interfaces.web.security.AuthenticatedCoach;
 import com.axel.trainingmetricsapi.identity.interfaces.web.security.AuthenticatedCoachResolver;
 import com.axel.trainingmetricsapi.identity.domain.Coach;
+import com.axel.trainingmetricsapi.identity.domain.exception.CoachHasAthletesException;
 import com.axel.trainingmetricsapi.identity.domain.exception.CoachNotFoundException;
 import com.axel.trainingmetricsapi.identity.interfaces.web.dto.CoachUpdateRequest;
 import com.axel.trainingmetricsapi.identity.interfaces.web.dto.CoachResponse;
@@ -151,6 +152,19 @@ class CoachControllerTest extends SecurityMockControllerSupport {
         mvc.perform(delete(URL_PREFIX))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$[0].code").value("NOT_FOUND"));
+
+        verify(deleteCoachUseCase).execute(coachId);
+    }
+
+    @Test
+    void delete_shouldReturnConflict_whenCoachHasAthletes() throws Exception {
+        long coachId = 4L;
+        when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(coachId));
+        doThrow(new CoachHasAthletesException(coachId)).when(deleteCoachUseCase).execute(coachId);
+
+        mvc.perform(delete(URL_PREFIX))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$[0].code").value("COACH_HAS_ATHLETES"));
 
         verify(deleteCoachUseCase).execute(coachId);
     }
