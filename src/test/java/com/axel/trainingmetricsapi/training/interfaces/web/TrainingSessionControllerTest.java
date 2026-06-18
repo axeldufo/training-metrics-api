@@ -172,7 +172,7 @@ class TrainingSessionControllerTest extends ControllerTestSupport {
             .param("to", to.toString()))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$[0].code").value("HTTP_VALIDATION_ERROR"))
-            .andExpect(jsonPath("$[0].field").value("from"));;
+            .andExpect(jsonPath("$[0].field").value("from"));
 
         verify(getTrainingSessionsByPeriodUseCase, never()).execute(anyLong(), anyLong(), any(), any());
     }

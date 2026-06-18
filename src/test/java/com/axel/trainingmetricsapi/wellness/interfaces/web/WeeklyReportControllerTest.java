@@ -245,12 +245,14 @@ class WeeklyReportControllerTest extends ControllerTestSupport {
     }
 
     @Test
-    void getByPeriod_400_fromAfterTo() throws Exception {
+    void getByPeriod_400_whenFromIsAfterTo() throws Exception {
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
+        LocalDate from = LocalDate.of(2024, Month.JANUARY, 20);
+        LocalDate to = LocalDate.of(2024, Month.JANUARY, 13);
 
         mvc.perform(get(URL_PREFIX)
-            .param("from", "2025-05-12")
-            .param("to", "2025-04-28"))
+            .param("from", from.toString())
+            .param("to", to.toString()))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$[0].code").value("HTTP_VALIDATION_ERROR"))
             .andExpect(jsonPath("$[0].field").value("from"));;

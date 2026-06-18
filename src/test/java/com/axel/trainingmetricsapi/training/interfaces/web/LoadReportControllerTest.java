@@ -172,10 +172,11 @@ class LoadReportControllerTest extends ControllerTestSupport {
         LocalDate futureToMonday = LocalDate.of(2099, Month.JANUARY, 12); // known futur Monday
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
 
-        mvc.perform(get(BASE_URL).param("from", futureFromMonday.toString()).param("to", futureToMonday.toString()))
+        mvc.perform(get(BASE_URL)
+            .param("from", futureFromMonday.toString())
+            .param("to", futureToMonday.toString()))
             .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$[0].code").value("HTTP_VALIDATION_ERROR"))
-            .andExpect(jsonPath("$[0].field").value("from"));;
+            .andExpect(jsonPath("$[0].code").value("HTTP_VALIDATION_ERROR"));
 
         verify(getLoadReportsByPeriodUseCase, never()).execute(anyLong(), anyLong(), any(), any());
     }
@@ -183,10 +184,15 @@ class LoadReportControllerTest extends ControllerTestSupport {
     @Test
     void getByPeriod_shouldReturn400_whenFromIsAfterTo() throws Exception {
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
+        LocalDate from = LocalDate.of(2024, Month.JANUARY, 20);
+        LocalDate to = LocalDate.of(2024, Month.JANUARY, 13);
 
-        mvc.perform(get(BASE_URL).param("from", "2025-05-26").param("to", "2025-04-01"))
+        mvc.perform(get(BASE_URL)
+                .param("from", from.toString())
+                .param("to", to.toString()))
             .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$[0].code").value("HTTP_VALIDATION_ERROR"));
+            .andExpect(jsonPath("$[0].code").value("HTTP_VALIDATION_ERROR"))
+            .andExpect(jsonPath("$[0].field").value("from"));
 
         verify(getLoadReportsByPeriodUseCase, never()).execute(anyLong(), anyLong(), any(), any());
     }
