@@ -1,18 +1,18 @@
 package com.axel.trainingmetricsapi.training.interfaces.web;
 
+import com.axel.trainingmetricsapi.identity.interfaces.web.security.AuthenticatedCoach;
+import com.axel.trainingmetricsapi.identity.interfaces.web.security.AuthenticatedCoachResolver;
+import com.axel.trainingmetricsapi.shared.interfaces.web.ApiConstants;
+import com.axel.trainingmetricsapi.shared.interfaces.web.dto.ApiError;
+import com.axel.trainingmetricsapi.shared.interfaces.web.exception.InvalidPeriodException;
 import com.axel.trainingmetricsapi.training.application.port.in.CreateTrainingSessionUseCase;
 import com.axel.trainingmetricsapi.training.application.port.in.DeleteTrainingSessionUseCase;
 import com.axel.trainingmetricsapi.training.application.port.in.GetTrainingSessionUseCase;
 import com.axel.trainingmetricsapi.training.application.port.in.GetTrainingSessionsByPeriodUseCase;
 import com.axel.trainingmetricsapi.training.application.port.in.UpdateTrainingSessionUseCase;
-import com.axel.trainingmetricsapi.identity.interfaces.web.security.AuthenticatedCoach;
-import com.axel.trainingmetricsapi.identity.interfaces.web.security.AuthenticatedCoachResolver;
 import com.axel.trainingmetricsapi.training.domain.TrainingSession;
 import com.axel.trainingmetricsapi.training.interfaces.web.dto.TrainingSessionRequest;
-import com.axel.trainingmetricsapi.shared.interfaces.web.dto.ApiError;
-import com.axel.trainingmetricsapi.shared.interfaces.web.dto.ErrorCode;
 import com.axel.trainingmetricsapi.training.interfaces.web.dto.TrainingSessionResponse;
-import com.axel.trainingmetricsapi.shared.interfaces.web.ApiConstants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -22,7 +22,15 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
 import java.time.Clock;
@@ -91,7 +99,7 @@ public class TrainingSessionController {
     @ApiResponse(responseCode = "401", description = "Missing or invalid JWT token")
     @ApiResponse(responseCode = "404", description = "Athlete not found", content = @Content(mediaType =
         "application/json", array = @ArraySchema(schema = @Schema(implementation = ApiError.class))))
-    public ResponseEntity<List<?>> getByPeriod(
+    public ResponseEntity<List<TrainingSessionResponse>> getByPeriod(
         @PathVariable("id") long athleteId,
         @Parameter(description = "Start date (inclusive), format YYYY-MM-DD", required = true)
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
@@ -102,8 +110,7 @@ public class TrainingSessionController {
         long coachId = coach.id();
         LocalDate effectiveTo = Objects.requireNonNullElseGet(to, () -> LocalDate.now(clock));
         if (from.isAfter(effectiveTo)) {
-            return ResponseEntity.badRequest().body(
-                List.of(new ApiError(ErrorCode.HTTP_VALIDATION_ERROR, "to", "to must be after or equal to from")));
+            throw new InvalidPeriodException("from must be before or equal to to");
         }
 
         List<TrainingSession> sessions = getTrainingSessionsByPeriodUseCase.execute(athleteId, coachId, from, effectiveTo);

@@ -148,7 +148,7 @@ class LoadReportControllerTest extends ControllerTestSupport {
         LocalDate monday1 = LocalDate.of(2025, Month.APRIL, 7);
         LocalDate monday2 = LocalDate.of(2025, Month.APRIL, 14);
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
-        LocalDateTime updatedAt = LocalDateTime.of(2024, 1, 12, 10, 0);
+        LocalDateTime updatedAt = LocalDateTime.of(2025, Month.JANUARY, 12, 10, 0);
         List<LoadReport> reports = List.of(
             new LoadReport(ATHLETE_ID, monday1, 150, 1, updatedAt),
             new LoadReport(ATHLETE_ID, monday2, 300, 2, updatedAt)
