@@ -113,7 +113,7 @@ class TrainingSessionControllerTest extends ControllerTestSupport {
     @Test
     void create_shouldReturnBadRequest_whenArgumentsNotValid() throws Exception {
         TrainingSessionRequest trainingSessionRequest = new TrainingSessionRequest(
-            LocalDate.now(clock).plusDays(1), null, 11, -1, null);
+            LocalDate.of(2099, Month.JANUARY, 5), null, 11, -1, null);
 
         mvc.perform(post(URL_PREFIX).contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(trainingSessionRequest)))

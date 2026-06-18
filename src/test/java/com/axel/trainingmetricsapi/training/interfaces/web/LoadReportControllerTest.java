@@ -17,7 +17,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Clock;
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
@@ -100,7 +99,7 @@ class LoadReportControllerTest extends ControllerTestSupport {
 
     @Test
     void getByWeekStartDate_shouldReturn400_whenWeekStartDateIsInFuture() throws Exception {
-        LocalDate futureMonday = LocalDate.now(clock).plusWeeks(2).with(DayOfWeek.MONDAY);
+        LocalDate futureMonday = LocalDate.of(2099, Month.JANUARY, 5); // known futur Monday
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
 
         mvc.perform(get(BASE_URL).param("weekStartDate", futureMonday.toString()))
@@ -169,8 +168,8 @@ class LoadReportControllerTest extends ControllerTestSupport {
 
     @Test
     void getByPeriod_shouldReturn400_whenFromIsInFuture() throws Exception {
-        LocalDate futureFromMonday = LocalDate.now(clock).plusWeeks(2).with(DayOfWeek.MONDAY);
-        LocalDate futureToMonday = LocalDate.now(clock).plusWeeks(3).with(DayOfWeek.MONDAY);
+        LocalDate futureFromMonday = LocalDate.of(2099, Month.JANUARY, 5); // known futur Monday
+        LocalDate futureToMonday = LocalDate.of(2099, Month.JANUARY, 12); // known futur Monday
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
 
         mvc.perform(get(BASE_URL).param("from", futureFromMonday.toString()).param("to", futureToMonday.toString()))

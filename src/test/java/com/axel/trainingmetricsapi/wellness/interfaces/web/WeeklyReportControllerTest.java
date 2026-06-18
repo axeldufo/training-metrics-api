@@ -20,7 +20,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Clock;
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.List;
@@ -131,7 +130,7 @@ class WeeklyReportControllerTest extends ControllerTestSupport {
 
     @Test
     void getByWeekStartDate_400_futureWeekStartDate() throws Exception {
-        LocalDate futureMonday = LocalDate.now(clock).plusWeeks(2).with(DayOfWeek.MONDAY);
+        LocalDate futureMonday = LocalDate.of(2099, Month.JANUARY, 5); // known futur Monday
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
 
         mvc.perform(get(URL_PREFIX).param("weekStartDate", futureMonday.toString()))

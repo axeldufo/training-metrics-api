@@ -114,7 +114,7 @@ class WeeklyWellnessControllerTest extends ControllerTestSupport {
     @Test
     void create_shouldReturn400_whenRequestIsInvalid() throws Exception {
         WeeklyWellnessRequest invalidRequest = new WeeklyWellnessRequest(
-            LocalDate.now(clock).plusWeeks(1), 0, 6, null);
+            LocalDate.of(2099, Month.JANUARY, 5), 0, 6, null);
 
         mvc.perform(post(URL_PREFIX).contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(invalidRequest)))
