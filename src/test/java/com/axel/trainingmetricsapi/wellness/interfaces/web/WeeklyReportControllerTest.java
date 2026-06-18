@@ -252,7 +252,8 @@ class WeeklyReportControllerTest extends ControllerTestSupport {
             .param("from", "2025-05-12")
             .param("to", "2025-04-28"))
             .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$[0].code").value("HTTP_VALIDATION_ERROR"));
+            .andExpect(jsonPath("$[0].code").value("HTTP_VALIDATION_ERROR"))
+            .andExpect(jsonPath("$[0].field").value("from"));;
 
         verifyNoInteractions(getWeeklyReportsByPeriodUseCase);
         verifyNoInteractions(weeklyReportWebMapper);

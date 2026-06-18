@@ -174,7 +174,8 @@ class LoadReportControllerTest extends ControllerTestSupport {
 
         mvc.perform(get(BASE_URL).param("from", futureFromMonday.toString()).param("to", futureToMonday.toString()))
             .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$[0].code").value("HTTP_VALIDATION_ERROR"));
+            .andExpect(jsonPath("$[0].code").value("HTTP_VALIDATION_ERROR"))
+            .andExpect(jsonPath("$[0].field").value("from"));;
 
         verify(getLoadReportsByPeriodUseCase, never()).execute(anyLong(), anyLong(), any(), any());
     }
