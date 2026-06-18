@@ -25,6 +25,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
@@ -40,6 +41,7 @@ public class TrainingSessionController {
     private final UpdateTrainingSessionUseCase updateTrainingSessionUseCase;
     private final DeleteTrainingSessionUseCase deleteTrainingSessionUseCase;
     private final AuthenticatedCoachResolver authenticatedCoachResolver;
+    private final Clock clock;
 
     public TrainingSessionController(TrainingSessionWebMapper trainingSessionWebMapper,
                                      CreateTrainingSessionUseCase createTrainingSessionUseCase,
@@ -47,7 +49,7 @@ public class TrainingSessionController {
                                      GetTrainingSessionsByPeriodUseCase getTrainingSessionsByPeriodUseCase,
                                      UpdateTrainingSessionUseCase updateTrainingSessionUseCase,
                                      DeleteTrainingSessionUseCase deleteTrainingSessionUseCase,
-                                     AuthenticatedCoachResolver authenticatedCoachResolver) {
+                                     AuthenticatedCoachResolver authenticatedCoachResolver, Clock clock) {
         this.trainingSessionWebMapper = trainingSessionWebMapper;
         this.createTrainingSessionUseCase = createTrainingSessionUseCase;
         this.getTrainingSessionUseCase = getTrainingSessionUseCase;
@@ -55,6 +57,7 @@ public class TrainingSessionController {
         this.updateTrainingSessionUseCase = updateTrainingSessionUseCase;
         this.deleteTrainingSessionUseCase = deleteTrainingSessionUseCase;
         this.authenticatedCoachResolver = authenticatedCoachResolver;
+        this.clock = clock;
     }
 
     @PostMapping
@@ -97,7 +100,7 @@ public class TrainingSessionController {
 
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
         long coachId = coach.id();
-        LocalDate effectiveTo = Objects.requireNonNullElseGet(to, LocalDate::now);
+        LocalDate effectiveTo = Objects.requireNonNullElseGet(to, () -> LocalDate.now(clock));
         if (from.isAfter(effectiveTo)) {
             return ResponseEntity.badRequest().body(
                 List.of(new ApiError(ErrorCode.HTTP_VALIDATION_ERROR, "to", "to must be after or equal to from")));

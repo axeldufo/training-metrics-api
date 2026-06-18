@@ -2,9 +2,9 @@ package com.axel.trainingmetricsapi.training.application;
 
 import com.axel.trainingmetricsapi.athlete.domain.Athlete;
 import com.axel.trainingmetricsapi.athlete.domain.AthleteRepository;
+import com.axel.trainingmetricsapi.athlete.domain.exception.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.training.domain.LoadReport;
 import com.axel.trainingmetricsapi.training.domain.LoadReportRepository;
-import com.axel.trainingmetricsapi.athlete.domain.exception.AthleteNotFoundException;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,7 +21,9 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.instancio.Select.field;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class GetLoadReportsByPeriodUseCaseImplTest {
@@ -45,7 +47,8 @@ class GetLoadReportsByPeriodUseCaseImplTest {
         Athlete athlete = anAthleteOwnedByCoach();
         when(athleteRepository.findById(ATHLETE_ID)).thenReturn(Optional.of(athlete));
         LocalDate monday = LocalDate.of(2025, Month.MAY, 19);
-        List<LoadReport> reports = List.of(new LoadReport(ATHLETE_ID, monday, 200, 2, LocalDateTime.now()));
+        List<LoadReport> reports = List.of(new LoadReport(ATHLETE_ID, monday, 200, 2,
+            LocalDateTime.of(2026, Month.JANUARY, 12, 10, 0)));
         when(loadReportRepository.findByAthleteIdAndWeekStartDateBetween(ATHLETE_ID, from, to))
             .thenReturn(reports);
 

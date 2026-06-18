@@ -41,7 +41,7 @@ class AcwrReportWebMapperTest {
 
     @Test
     void domainToResponse_shouldMapAcwrReliableFalse() {
-        AcwrReport report = new AcwrReport(1L, LocalDate.now(), 0.0, 0.0, 0.0,
+        AcwrReport report = new AcwrReport(1L, LocalDate.of(2026, Month.JANUARY, 15), 0.0, 0.0, 0.0,
             AcwrAlert.NO_DATA, 0, false);
         assertThat(mapper.domainToResponse(report).acwrReliable()).isFalse();
     }

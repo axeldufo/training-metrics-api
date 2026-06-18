@@ -408,7 +408,7 @@ class WeeklyReportCalculatorTest {
 
     private LoadReport aLoad(LocalDate weekStart, int totalFosterLoad, int sessionCount) {
         return new LoadReport(ATHLETE_ID, weekStart, totalFosterLoad, sessionCount,
-            sessionCount > 0 ? LocalDateTime.now() : null);
+            sessionCount > 0 ? LocalDateTime.of(2026, Month.JANUARY, 12, 10, 0) : null);
     }
 
     private WeeklyWellness aWellness(LocalDate weekStart, int difficulty, int fatigue, int motivation) {

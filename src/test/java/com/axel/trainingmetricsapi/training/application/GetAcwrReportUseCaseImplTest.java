@@ -1,11 +1,11 @@
 package com.axel.trainingmetricsapi.training.application;
 
-import com.axel.trainingmetricsapi.training.application.port.out.AcwrCachePort;
-import com.axel.trainingmetricsapi.training.domain.AcwrReport;
 import com.axel.trainingmetricsapi.athlete.domain.Athlete;
 import com.axel.trainingmetricsapi.athlete.domain.AthleteRepository;
-import com.axel.trainingmetricsapi.training.domain.TrainingSessionRepository;
 import com.axel.trainingmetricsapi.athlete.domain.exception.AthleteNotFoundException;
+import com.axel.trainingmetricsapi.training.application.port.out.AcwrCachePort;
+import com.axel.trainingmetricsapi.training.domain.AcwrReport;
+import com.axel.trainingmetricsapi.training.domain.TrainingSessionRepository;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,15 +14,23 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.instancio.Select.field;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class GetAcwrReportUseCaseImplTest {
@@ -38,6 +46,9 @@ class GetAcwrReportUseCaseImplTest {
 
     @Mock
     private AcwrCachePort acwrCachePort;
+
+    @Mock
+    private Clock clock;
 
     @InjectMocks
     private GetAcwrReportUseCaseImpl useCase;
@@ -61,7 +72,9 @@ class GetAcwrReportUseCaseImplTest {
         Athlete athlete = anAthleteOwnedByCoach();
         when(athleteRepository.findById(ATHLETE_ID)).thenReturn(Optional.of(athlete));
         when(acwrCachePort.get(ATHLETE_ID)).thenReturn(Optional.empty());
-        LocalDate today = LocalDate.now();
+        when(clock.instant()).thenReturn(Instant.parse("2026-01-12T00:00:00Z"));
+        when(clock.getZone()).thenReturn(ZoneOffset.UTC);
+        LocalDate today = LocalDate.now(clock);
         when(trainingSessionRepository.findByAthleteIdAndPeriod(eq(ATHLETE_ID), any(), any()))
             .thenReturn(List.of());
 

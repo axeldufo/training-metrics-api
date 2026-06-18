@@ -1,7 +1,7 @@
 package com.axel.trainingmetricsapi.athlete.domain;
 
-import com.axel.trainingmetricsapi.shared.domain.exception.DomainValidationException;
 import com.axel.trainingmetricsapi.shared.domain.Sport;
+import com.axel.trainingmetricsapi.shared.domain.exception.DomainValidationException;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -14,7 +14,7 @@ class AthleteTest {
     @Nested
     class Invariants {
 
-        private final LocalDate birthDate = LocalDate.now();
+        private final LocalDate birthDate = LocalDate.of(1990, 6, 15);
 
         @Test
         void constructor_shouldThrow_whenFirstNameIsNull() {

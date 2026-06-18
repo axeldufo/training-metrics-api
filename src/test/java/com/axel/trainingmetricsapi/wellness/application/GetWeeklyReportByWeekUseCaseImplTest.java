@@ -2,17 +2,17 @@ package com.axel.trainingmetricsapi.wellness.application;
 
 import com.axel.trainingmetricsapi.athlete.domain.Athlete;
 import com.axel.trainingmetricsapi.athlete.domain.AthleteRepository;
-import com.axel.trainingmetricsapi.wellness.domain.CorrelationAlert;
+import com.axel.trainingmetricsapi.athlete.domain.exception.AthleteNotFoundException;
+import com.axel.trainingmetricsapi.shared.domain.Sport;
 import com.axel.trainingmetricsapi.training.domain.LoadReport;
 import com.axel.trainingmetricsapi.training.domain.LoadReportRepository;
-import com.axel.trainingmetricsapi.shared.domain.Sport;
 import com.axel.trainingmetricsapi.training.domain.TargetZone;
 import com.axel.trainingmetricsapi.training.domain.TrainingSession;
 import com.axel.trainingmetricsapi.training.domain.TrainingSessionRepository;
+import com.axel.trainingmetricsapi.wellness.domain.CorrelationAlert;
 import com.axel.trainingmetricsapi.wellness.domain.WeeklyReport;
 import com.axel.trainingmetricsapi.wellness.domain.WeeklyWellness;
 import com.axel.trainingmetricsapi.wellness.domain.WeeklyWellnessRepository;
-import com.axel.trainingmetricsapi.athlete.domain.exception.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.wellness.domain.exception.WeeklyReportNotFoundException;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
@@ -30,7 +30,9 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.instancio.Select.field;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class GetWeeklyReportByWeekUseCaseImplTest {
@@ -168,7 +170,8 @@ class GetWeeklyReportByWeekUseCaseImplTest {
     }
 
     private LoadReport aLoad(LocalDate weekStart, int totalFosterLoad, int sessionCount) {
-        return new LoadReport(ATHLETE_ID, weekStart, totalFosterLoad, sessionCount, LocalDateTime.now());
+        return new LoadReport(ATHLETE_ID, weekStart, totalFosterLoad, sessionCount,
+            LocalDateTime.of(2026, Month.JANUARY, 12, 10, 0));
     }
 
     private WeeklyWellness aWellness(LocalDate weekStart, int difficulty, int fatigue, int motivation) {

@@ -16,12 +16,15 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class LoadReportJpaAdapterTest {
 
     private static final LocalDate MONDAY = LocalDate.of(2025, Month.MAY, 19);
+    private static final LocalDateTime UPDATED_AT = LocalDateTime.of(2026, Month.JANUARY, 12, 10, 0);
     private static final long ATHLETE_ID = 1L;
 
     @Mock
@@ -35,12 +38,12 @@ class LoadReportJpaAdapterTest {
 
     @Test
     void save_shouldSetExistingId_andSave_whenEntityAlreadyExists() {
-        LoadReport report = new LoadReport(ATHLETE_ID, MONDAY, 200, 2, LocalDateTime.now());
+        LoadReport report = new LoadReport(ATHLETE_ID, MONDAY, 200, 2, UPDATED_AT);
         LoadReportJpaEntity entityToSave = new LoadReportJpaEntity();
         LoadReportJpaEntity existingEntity = new LoadReportJpaEntity();
         existingEntity.setId(5L);
         LoadReportJpaEntity savedEntity = Instancio.create(LoadReportJpaEntity.class);
-        LoadReport expected = new LoadReport(ATHLETE_ID, MONDAY, 200, 2, LocalDateTime.now());
+        LoadReport expected = new LoadReport(ATHLETE_ID, MONDAY, 200, 2, UPDATED_AT);
 
         when(loadReportJpaRepository.findByAthleteIdAndWeekStartDate(ATHLETE_ID, MONDAY))
             .thenReturn(Optional.of(existingEntity));
@@ -57,10 +60,10 @@ class LoadReportJpaAdapterTest {
 
     @Test
     void save_shouldInsertWithNullId_whenNoExistingEntity() {
-        LoadReport report = new LoadReport(ATHLETE_ID, MONDAY, 200, 2, LocalDateTime.now());
+        LoadReport report = new LoadReport(ATHLETE_ID, MONDAY, 200, 2, UPDATED_AT);
         LoadReportJpaEntity entityToSave = new LoadReportJpaEntity();
         LoadReportJpaEntity savedEntity = Instancio.create(LoadReportJpaEntity.class);
-        LoadReport expected = new LoadReport(ATHLETE_ID, MONDAY, 200, 2, LocalDateTime.now());
+        LoadReport expected = new LoadReport(ATHLETE_ID, MONDAY, 200, 2, UPDATED_AT);
 
         when(loadReportJpaRepository.findByAthleteIdAndWeekStartDate(ATHLETE_ID, MONDAY))
             .thenReturn(Optional.empty());
@@ -78,7 +81,7 @@ class LoadReportJpaAdapterTest {
     @Test
     void findByAthleteIdAndWeekStartDate_shouldReturnMapped_whenFound() {
         LoadReportJpaEntity entity = Instancio.create(LoadReportJpaEntity.class);
-        LoadReport expected = new LoadReport(ATHLETE_ID, MONDAY, 100, 1, LocalDateTime.now());
+        LoadReport expected = new LoadReport(ATHLETE_ID, MONDAY, 100, 1, UPDATED_AT);
 
         when(loadReportJpaRepository.findByAthleteIdAndWeekStartDate(ATHLETE_ID, MONDAY))
             .thenReturn(Optional.of(entity));
@@ -103,7 +106,7 @@ class LoadReportJpaAdapterTest {
     @Test
     void findLatestByAthleteId_shouldReturnMapped_whenFound() {
         LoadReportJpaEntity entity = Instancio.create(LoadReportJpaEntity.class);
-        LoadReport expected = new LoadReport(ATHLETE_ID, MONDAY, 100, 1, LocalDateTime.now());
+        LoadReport expected = new LoadReport(ATHLETE_ID, MONDAY, 100, 1, UPDATED_AT);
 
         when(loadReportJpaRepository.findFirstByAthleteIdOrderByWeekStartDateDesc(ATHLETE_ID))
             .thenReturn(Optional.of(entity));
@@ -132,7 +135,7 @@ class LoadReportJpaAdapterTest {
         List<LoadReportJpaEntity> entities = Instancio.ofList(LoadReportJpaEntity.class).size(size).create();
         when(loadReportJpaRepository.findAllByAthleteIdAndWeekStartDateBetween(ATHLETE_ID, from, to))
             .thenReturn(entities);
-        LoadReport dummyReport = new LoadReport(ATHLETE_ID, MONDAY, 100, 1, LocalDateTime.now());
+        LoadReport dummyReport = new LoadReport(ATHLETE_ID, MONDAY, 100, 1, UPDATED_AT);
         when(persistenceMapper.entityToDomain(any(LoadReportJpaEntity.class))).thenReturn(dummyReport);
 
         List<LoadReport> result = adapter.findByAthleteIdAndWeekStartDateBetween(ATHLETE_ID, from, to);

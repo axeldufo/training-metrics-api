@@ -2,13 +2,13 @@ package com.axel.trainingmetricsapi.training.application;
 
 import com.axel.trainingmetricsapi.athlete.domain.Athlete;
 import com.axel.trainingmetricsapi.athlete.domain.AthleteRepository;
+import com.axel.trainingmetricsapi.athlete.domain.exception.AthleteNotFoundException;
+import com.axel.trainingmetricsapi.shared.domain.Sport;
 import com.axel.trainingmetricsapi.training.domain.LoadReport;
 import com.axel.trainingmetricsapi.training.domain.LoadReportRepository;
-import com.axel.trainingmetricsapi.shared.domain.Sport;
 import com.axel.trainingmetricsapi.training.domain.TargetZone;
 import com.axel.trainingmetricsapi.training.domain.TrainingSession;
 import com.axel.trainingmetricsapi.training.domain.TrainingSessionRepository;
-import com.axel.trainingmetricsapi.athlete.domain.exception.AthleteNotFoundException;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,7 +25,9 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.instancio.Select.field;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class GetLoadReportByWeekUseCaseImplTest {
@@ -50,7 +52,7 @@ class GetLoadReportByWeekUseCaseImplTest {
     void execute_shouldReturnPersistedReport_whenFoundInDB() {
         Athlete athlete = anAthleteOwnedByCoach();
         when(athleteRepository.findById(ATHLETE_ID)).thenReturn(Optional.of(athlete));
-        LocalDateTime updatedAt = LocalDateTime.now();
+        LocalDateTime updatedAt = LocalDateTime.of(2026, Month.JANUARY, 12, 10, 0);
         LoadReport persisted = new LoadReport(ATHLETE_ID, MONDAY, 200, 2, updatedAt);
         when(loadReportRepository.findByAthleteIdAndWeekStartDate(ATHLETE_ID, MONDAY))
             .thenReturn(Optional.of(persisted));
@@ -79,7 +81,7 @@ class GetLoadReportByWeekUseCaseImplTest {
         assertThat(result.weekStartDate()).isEqualTo(MONDAY);
         assertThat(result.totalFosterLoad()).isEqualTo(660);
         assertThat(result.sessionCount()).isEqualTo(2);
-        assertThat(result.updatedAt()).isNotNull();
+        assertThat(result.updatedAt()).isNull();
     }
 
     @Test

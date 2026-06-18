@@ -6,8 +6,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.Month;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class WeeklyWellnessTest {
 
-    private static final LocalDate MONDAY = LocalDate.now().with(DayOfWeek.MONDAY);
+    private static final LocalDate MONDAY = LocalDate.of(2026, Month.JANUARY, 12); // 12/01/26 is a Monday
 
     @Nested
     class Invariants {

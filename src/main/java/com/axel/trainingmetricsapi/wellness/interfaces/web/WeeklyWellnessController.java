@@ -26,6 +26,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
@@ -42,6 +43,7 @@ public class WeeklyWellnessController {
     private final UpdateWeeklyWellnessUseCase updateWeeklyWellnessUseCase;
     private final DeleteWeeklyWellnessUseCase deleteWeeklyWellnessUseCase;
     private final AuthenticatedCoachResolver authenticatedCoachResolver;
+    private final Clock clock;
 
     public WeeklyWellnessController(WeeklyWellnessWebMapper wellnessWebMapper,
                                     CreateWeeklyWellnessUseCase createWeeklyWellnessUseCase,
@@ -49,7 +51,7 @@ public class WeeklyWellnessController {
                                     GetWeeklyWellnessesByPeriodUseCase getWeeklyWellnessesByPeriodUseCase,
                                     UpdateWeeklyWellnessUseCase updateWeeklyWellnessUseCase,
                                     DeleteWeeklyWellnessUseCase deleteWeeklyWellnessUseCase,
-                                    AuthenticatedCoachResolver authenticatedCoachResolver) {
+                                    AuthenticatedCoachResolver authenticatedCoachResolver, Clock clock) {
         this.wellnessWebMapper = wellnessWebMapper;
         this.createWeeklyWellnessUseCase = createWeeklyWellnessUseCase;
         this.getWeeklyWellnessUseCase = getWeeklyWellnessUseCase;
@@ -57,6 +59,7 @@ public class WeeklyWellnessController {
         this.updateWeeklyWellnessUseCase = updateWeeklyWellnessUseCase;
         this.deleteWeeklyWellnessUseCase = deleteWeeklyWellnessUseCase;
         this.authenticatedCoachResolver = authenticatedCoachResolver;
+        this.clock = clock;
     }
 
     @PostMapping
@@ -98,7 +101,7 @@ public class WeeklyWellnessController {
 
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
         long coachId = coach.id();
-        LocalDate effectiveTo = Objects.requireNonNullElseGet(to, LocalDate::now);
+        LocalDate effectiveTo = Objects.requireNonNullElseGet(to, () -> LocalDate.now(clock));
         if (from.isAfter(effectiveTo)) {
             throw new InvalidPeriodException("from must be before or equal to to");
         }

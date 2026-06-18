@@ -1,6 +1,6 @@
 package com.axel.trainingmetricsapi.training.interfaces.web;
 
-import com.axel.trainingmetricsapi.identity.interfaces.web.security.SecurityMockControllerSupport;
+import com.axel.trainingmetricsapi.shared.interfaces.web.ControllerTestSupport;
 import com.axel.trainingmetricsapi.training.application.port.in.GetAcwrReportUseCase;
 import com.axel.trainingmetricsapi.identity.interfaces.web.security.AuthenticatedCoach;
 import com.axel.trainingmetricsapi.identity.interfaces.web.security.AuthenticatedCoachResolver;
@@ -25,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(AcwrReportController.class)
-class AcwrReportControllerTest extends SecurityMockControllerSupport {
+class AcwrReportControllerTest extends ControllerTestSupport {
 
     private static final long ATHLETE_ID = 4L;
     private static final long COACH_ID = 2L;

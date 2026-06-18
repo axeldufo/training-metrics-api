@@ -1,15 +1,15 @@
 package com.axel.trainingmetricsapi.wellness.application;
 
-import com.axel.trainingmetricsapi.wellness.application.port.in.GetWeeklyReportByWeekUseCase;
 import com.axel.trainingmetricsapi.athlete.domain.Athlete;
 import com.axel.trainingmetricsapi.athlete.domain.AthleteRepository;
-import com.axel.trainingmetricsapi.wellness.domain.CorrelationAlert;
+import com.axel.trainingmetricsapi.athlete.domain.exception.AthleteNotFoundException;
+import com.axel.trainingmetricsapi.training.domain.AcwrAlert;
 import com.axel.trainingmetricsapi.training.domain.LoadReport;
 import com.axel.trainingmetricsapi.training.domain.LoadReportRepository;
+import com.axel.trainingmetricsapi.wellness.application.port.in.GetWeeklyReportByWeekUseCase;
+import com.axel.trainingmetricsapi.wellness.domain.CorrelationAlert;
 import com.axel.trainingmetricsapi.wellness.domain.WeeklyReport;
-import com.axel.trainingmetricsapi.athlete.domain.exception.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.wellness.domain.exception.WeeklyReportNotFoundException;
-import com.axel.trainingmetricsapi.training.domain.AcwrAlert;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,7 +26,9 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.instancio.Select.field;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class GetLatestWeeklyReportUseCaseImplTest {
@@ -51,7 +53,7 @@ class GetLatestWeeklyReportUseCaseImplTest {
     void execute_loadReportFound_delegatesToGetWeeklyReportByWeek() {
         Athlete athlete = anAthleteOwnedByCoach();
         when(athleteRepository.findById(ATHLETE_ID)).thenReturn(Optional.of(athlete));
-        LoadReport latest = new LoadReport(ATHLETE_ID, MONDAY, 150, 2, LocalDateTime.now());
+        LoadReport latest = new LoadReport(ATHLETE_ID, MONDAY, 150, 2, LocalDateTime.of(2026, Month.JANUARY, 12, 10, 0));
         when(loadReportRepository.findLatestByAthleteId(ATHLETE_ID)).thenReturn(Optional.of(latest));
         WeeklyReport weeklyReport = aReport(MONDAY);
         when(getWeeklyReportByWeekUseCase.execute(ATHLETE_ID, COACH_ID, MONDAY)).thenReturn(weeklyReport);

@@ -6,9 +6,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Month;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class LoadReportTest {
 
     private static final long ATHLETE_ID = 1L;
-    private static final LocalDate MONDAY = LocalDate.now().with(DayOfWeek.MONDAY);
+    private static final LocalDate MONDAY = LocalDate.of(2026, Month.JANUARY, 12); // 12/01/26 is a Monday
 
     @Nested
     class Invariants {
@@ -72,12 +72,13 @@ class LoadReportTest {
 
         @Test
         void constructor_shouldAllowNonNullUpdatedAt() {
-            assertThatNoException().isThrownBy(() -> new LoadReport(ATHLETE_ID, MONDAY, 100, 1, LocalDateTime.now()));
+            assertThatNoException().isThrownBy(() -> new LoadReport(ATHLETE_ID, MONDAY, 100, 1,
+                LocalDateTime.of(2026, Month.JANUARY, 12, 10, 0)));
         }
 
         @Test
         void constructor_shouldStoreAllFields() {
-            LocalDateTime updatedAt = LocalDateTime.now();
+            LocalDateTime updatedAt =  LocalDateTime.of(2026, Month.JANUARY, 12, 10, 0);
 
             LoadReport report = new LoadReport(ATHLETE_ID, MONDAY, 300, 5, updatedAt);
 

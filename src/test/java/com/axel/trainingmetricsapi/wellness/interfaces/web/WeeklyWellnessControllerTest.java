@@ -1,20 +1,20 @@
 package com.axel.trainingmetricsapi.wellness.interfaces.web;
 
-import com.axel.trainingmetricsapi.identity.interfaces.web.security.SecurityMockControllerSupport;
+import com.axel.trainingmetricsapi.athlete.domain.exception.AthleteNotFoundException;
+import com.axel.trainingmetricsapi.identity.interfaces.web.security.AuthenticatedCoach;
+import com.axel.trainingmetricsapi.identity.interfaces.web.security.AuthenticatedCoachResolver;
+import com.axel.trainingmetricsapi.shared.interfaces.web.ApiConstants;
+import com.axel.trainingmetricsapi.shared.interfaces.web.ControllerTestSupport;
 import com.axel.trainingmetricsapi.wellness.application.port.in.CreateWeeklyWellnessUseCase;
 import com.axel.trainingmetricsapi.wellness.application.port.in.DeleteWeeklyWellnessUseCase;
 import com.axel.trainingmetricsapi.wellness.application.port.in.GetWeeklyWellnessUseCase;
 import com.axel.trainingmetricsapi.wellness.application.port.in.GetWeeklyWellnessesByPeriodUseCase;
 import com.axel.trainingmetricsapi.wellness.application.port.in.UpdateWeeklyWellnessUseCase;
-import com.axel.trainingmetricsapi.identity.interfaces.web.security.AuthenticatedCoach;
-import com.axel.trainingmetricsapi.identity.interfaces.web.security.AuthenticatedCoachResolver;
 import com.axel.trainingmetricsapi.wellness.domain.WeeklyWellness;
-import com.axel.trainingmetricsapi.athlete.domain.exception.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.wellness.domain.exception.WeeklyWellnessAlreadyExistsException;
 import com.axel.trainingmetricsapi.wellness.domain.exception.WeeklyWellnessNotFoundException;
 import com.axel.trainingmetricsapi.wellness.interfaces.web.dto.WeeklyWellnessRequest;
 import com.axel.trainingmetricsapi.wellness.interfaces.web.dto.WeeklyWellnessResponse;
-import com.axel.trainingmetricsapi.shared.interfaces.web.ApiConstants;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -26,7 +26,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import tools.jackson.databind.ObjectMapper;
 
-import java.time.DayOfWeek;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.List;
@@ -34,13 +34,24 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.instancio.Select.field;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(WeeklyWellnessController.class)
-class WeeklyWellnessControllerTest extends SecurityMockControllerSupport {
+class WeeklyWellnessControllerTest extends ControllerTestSupport {
 
     private static final long ATHLETE_ID = 4L;
     private static final long COACH_ID = 2L;
@@ -66,6 +77,9 @@ class WeeklyWellnessControllerTest extends SecurityMockControllerSupport {
 
     @MockitoBean
     private AuthenticatedCoachResolver authenticatedCoachResolver;
+
+    @Autowired
+    private Clock clock;
 
     @Autowired
     private MockMvc mvc;
@@ -99,7 +113,8 @@ class WeeklyWellnessControllerTest extends SecurityMockControllerSupport {
 
     @Test
     void create_shouldReturn400_whenRequestIsInvalid() throws Exception {
-        WeeklyWellnessRequest invalidRequest = new WeeklyWellnessRequest(LocalDate.now().plusWeeks(1), 0, 6, null);
+        WeeklyWellnessRequest invalidRequest = new WeeklyWellnessRequest(
+            LocalDate.now(clock).plusWeeks(1), 0, 6, null);
 
         mvc.perform(post(URL_PREFIX).contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(invalidRequest)))
@@ -174,7 +189,7 @@ class WeeklyWellnessControllerTest extends SecurityMockControllerSupport {
 
         ArgumentCaptor<LocalDate> toCaptor = ArgumentCaptor.forClass(LocalDate.class);
         verify(getWeeklyWellnessesByPeriodUseCase).execute(eq(ATHLETE_ID), eq(COACH_ID), eq(from), toCaptor.capture());
-        assertThat(toCaptor.getValue()).isEqualTo(LocalDate.now());
+        assertThat(toCaptor.getValue()).isEqualTo(LocalDate.now(clock));
     }
 
     @Test
@@ -386,7 +401,7 @@ class WeeklyWellnessControllerTest extends SecurityMockControllerSupport {
 
     private WeeklyWellnessRequest aValidRequest() {
         return Instancio.of(WeeklyWellnessRequest.class)
-            .set(field(WeeklyWellnessRequest::weekStartDate), LocalDate.now().with(DayOfWeek.MONDAY))
+            .set(field(WeeklyWellnessRequest::weekStartDate), LocalDate.of(2026, Month.JANUARY, 12)) // 12/01/26 is a Monday
             .generate(field(WeeklyWellnessRequest::perceivedDifficulty), gen -> gen.ints().range(1, 5))
             .generate(field(WeeklyWellnessRequest::perceivedFatigue), gen -> gen.ints().range(1, 5))
             .generate(field(WeeklyWellnessRequest::motivation), gen -> gen.ints().range(1, 5))
@@ -395,7 +410,7 @@ class WeeklyWellnessControllerTest extends SecurityMockControllerSupport {
 
     private WeeklyWellness aValidWellness() {
         return Instancio.of(WeeklyWellness.class)
-            .set(field(WeeklyWellness::getWeekStartDate), LocalDate.now().with(DayOfWeek.MONDAY))
+            .set(field(WeeklyWellness::getWeekStartDate), LocalDate.of(2026, Month.JANUARY, 12)) // 12/01/26 is a Monday
             .generate(field(WeeklyWellness::getPerceivedDifficulty), gen -> gen.ints().range(1, 5))
             .generate(field(WeeklyWellness::getPerceivedFatigue), gen -> gen.ints().range(1, 5))
             .generate(field(WeeklyWellness::getMotivation), gen -> gen.ints().range(1, 5))

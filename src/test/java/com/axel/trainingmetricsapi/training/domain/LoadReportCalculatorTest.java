@@ -25,7 +25,7 @@ class LoadReportCalculatorTest {
             aSession(3, 30)   // load = 90
         );
 
-        LoadReport report = calculator.calculate(ATHLETE_ID, WEEK_START, sessions, LocalDateTime.now());
+        LoadReport report = calculator.calculate(ATHLETE_ID, WEEK_START, sessions, LocalDateTime.of(2026, Month.JANUARY, 12, 10, 0));
 
         assertThat(report.athleteId()).isEqualTo(ATHLETE_ID);
         assertThat(report.weekStartDate()).isEqualTo(WEEK_START);
@@ -38,7 +38,7 @@ class LoadReportCalculatorTest {
     void calculate_singleSession_returnsSingleSessionLoad() {
         TrainingSession session = aSession(8, 45); // load = 360
 
-        LoadReport report = calculator.calculate(ATHLETE_ID, WEEK_START, List.of(session), LocalDateTime.now());
+        LoadReport report = calculator.calculate(ATHLETE_ID, WEEK_START, List.of(session), LocalDateTime.of(2026, Month.JANUARY, 12, 10, 0));
 
         assertThat(report.totalFosterLoad()).isEqualTo(360);
         assertThat(report.sessionCount()).isEqualTo(1);

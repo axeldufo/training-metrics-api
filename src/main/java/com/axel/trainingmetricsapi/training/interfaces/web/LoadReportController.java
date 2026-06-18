@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
@@ -34,17 +35,19 @@ public class LoadReportController {
     private final GetLatestLoadReportUseCase getLatestLoadReportUseCase;
     private final GetLoadReportsByPeriodUseCase getLoadReportsByPeriodUseCase;
     private final AuthenticatedCoachResolver authenticatedCoachResolver;
+    private final Clock clock;
 
     public LoadReportController(LoadReportWebMapper loadReportWebMapper,
                                 GetLoadReportByWeekUseCase getLoadReportByWeekUseCase,
                                 GetLatestLoadReportUseCase getLatestLoadReportUseCase,
                                 GetLoadReportsByPeriodUseCase getLoadReportsByPeriodUseCase,
-                                AuthenticatedCoachResolver authenticatedCoachResolver) {
+                                AuthenticatedCoachResolver authenticatedCoachResolver, Clock clock) {
         this.loadReportWebMapper = loadReportWebMapper;
         this.getLoadReportByWeekUseCase = getLoadReportByWeekUseCase;
         this.getLatestLoadReportUseCase = getLatestLoadReportUseCase;
         this.getLoadReportsByPeriodUseCase = getLoadReportsByPeriodUseCase;
         this.authenticatedCoachResolver = authenticatedCoachResolver;
+        this.clock = clock;
     }
 
     @GetMapping(params = "weekStartDate")
@@ -87,7 +90,7 @@ public class LoadReportController {
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @PastOrPresent LocalDate to) {
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
         long coachId = coach.id();
-        LocalDate effectiveTo = Objects.requireNonNullElseGet(to, LocalDate::now);
+        LocalDate effectiveTo = Objects.requireNonNullElseGet(to, () -> LocalDate.now(clock));
         if (from.isAfter(effectiveTo)) {
             throw new InvalidPeriodException("from must be before or equal to to");
         }
