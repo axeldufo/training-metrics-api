@@ -4,8 +4,8 @@ import com.axel.trainingmetricsapi.wellness.domain.WeeklyWellness;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.Month;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.instancio.Select.field;
@@ -17,7 +17,7 @@ class WeeklyWellnessPersistenceMapperTest {
     @Test
     void domainToEntity_shouldMapAllFields() {
         WeeklyWellness wellness = Instancio.of(WeeklyWellness.class)
-            .set(field(WeeklyWellness::getWeekStartDate), LocalDate.now().with(DayOfWeek.MONDAY))
+            .set(field(WeeklyWellness::getWeekStartDate), LocalDate.of(2026, Month.JANUARY, 12)) // 12/01/26 is a Monday
             .generate(field(WeeklyWellness::getPerceivedDifficulty), gen -> gen.ints().range(1, 5))
             .generate(field(WeeklyWellness::getPerceivedFatigue), gen -> gen.ints().range(1, 5))
             .generate(field(WeeklyWellness::getMotivation), gen -> gen.ints().range(1, 5))
@@ -37,7 +37,7 @@ class WeeklyWellnessPersistenceMapperTest {
     @Test
     void entityToDomain_shouldMapAllFields() {
         WeeklyWellnessJpaEntity entity = Instancio.of(WeeklyWellnessJpaEntity.class)
-            .set(field(WeeklyWellnessJpaEntity::getWeekStartDate), LocalDate.now().with(DayOfWeek.MONDAY))
+            .set(field(WeeklyWellnessJpaEntity::getWeekStartDate), LocalDate.of(2026, Month.JANUARY, 12)) // 12/01/26 is a Monday
             .generate(field(WeeklyWellnessJpaEntity::getPerceivedDifficulty), gen -> gen.ints().range(1, 5))
             .generate(field(WeeklyWellnessJpaEntity::getPerceivedFatigue), gen -> gen.ints().range(1, 5))
             .generate(field(WeeklyWellnessJpaEntity::getMotivation), gen -> gen.ints().range(1, 5))

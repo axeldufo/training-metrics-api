@@ -10,6 +10,7 @@ import com.axel.trainingmetricsapi.training.domain.TrainingSession;
 import com.axel.trainingmetricsapi.training.domain.TrainingSessionRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -23,13 +24,15 @@ public class TrainingSessionChangedUseCaseImpl implements TrainingSessionChanged
     private final AcwrCalculator acwrCalculator;
     private final LoadReportRepository loadReportRepository;
     private final LoadReportCalculator loadReportCalculator;
+    private final Clock clock;
 
-    public TrainingSessionChangedUseCaseImpl(TrainingSessionRepository trainingSessionRepository, AcwrCachePort acwrCachePort, LoadReportRepository loadReportRepository) {
+    public TrainingSessionChangedUseCaseImpl(TrainingSessionRepository trainingSessionRepository, AcwrCachePort acwrCachePort, LoadReportRepository loadReportRepository, Clock clock) {
         this.trainingSessionRepository = trainingSessionRepository;
         this.acwrCachePort = acwrCachePort;
         this.acwrCalculator = new AcwrCalculator();
         this.loadReportRepository = loadReportRepository;
         this.loadReportCalculator = new LoadReportCalculator();
+        this.clock = clock;
     }
 
     @Override
@@ -41,7 +44,7 @@ public class TrainingSessionChangedUseCaseImpl implements TrainingSessionChanged
     private void refreshAcwrReport(long athleteId) {
         acwrCachePort.evict(athleteId);
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(clock);
         List<TrainingSession> sessions = trainingSessionRepository.findByAthleteIdAndPeriod(athleteId, today.minusDays(27), today);
         AcwrReport report = acwrCalculator.calculate(athleteId, sessions, today);
         acwrCachePort.put(athleteId, report);
@@ -58,6 +61,6 @@ public class TrainingSessionChangedUseCaseImpl implements TrainingSessionChanged
         }
 
         loadReportRepository.save(
-            loadReportCalculator.calculate(athleteId, weekStartDate, sessions, LocalDateTime.now()));
+            loadReportCalculator.calculate(athleteId, weekStartDate, sessions, LocalDateTime.now(clock)));
     }
 }

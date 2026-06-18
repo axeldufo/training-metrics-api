@@ -1,19 +1,19 @@
 package com.axel.trainingmetricsapi.training.interfaces.web;
 
-import com.axel.trainingmetricsapi.identity.interfaces.web.security.SecurityMockControllerSupport;
+import com.axel.trainingmetricsapi.athlete.domain.exception.AthleteNotFoundException;
+import com.axel.trainingmetricsapi.identity.interfaces.web.security.AuthenticatedCoach;
+import com.axel.trainingmetricsapi.identity.interfaces.web.security.AuthenticatedCoachResolver;
+import com.axel.trainingmetricsapi.shared.interfaces.web.ApiConstants;
+import com.axel.trainingmetricsapi.shared.interfaces.web.ControllerTestSupport;
 import com.axel.trainingmetricsapi.training.application.port.in.CreateTrainingSessionUseCase;
 import com.axel.trainingmetricsapi.training.application.port.in.DeleteTrainingSessionUseCase;
 import com.axel.trainingmetricsapi.training.application.port.in.GetTrainingSessionUseCase;
 import com.axel.trainingmetricsapi.training.application.port.in.GetTrainingSessionsByPeriodUseCase;
 import com.axel.trainingmetricsapi.training.application.port.in.UpdateTrainingSessionUseCase;
-import com.axel.trainingmetricsapi.identity.interfaces.web.security.AuthenticatedCoach;
-import com.axel.trainingmetricsapi.identity.interfaces.web.security.AuthenticatedCoachResolver;
 import com.axel.trainingmetricsapi.training.domain.TrainingSession;
-import com.axel.trainingmetricsapi.athlete.domain.exception.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.training.domain.exception.TrainingSessionNotFoundException;
 import com.axel.trainingmetricsapi.training.interfaces.web.dto.TrainingSessionRequest;
 import com.axel.trainingmetricsapi.training.interfaces.web.dto.TrainingSessionResponse;
-import com.axel.trainingmetricsapi.shared.interfaces.web.ApiConstants;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -25,6 +25,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import tools.jackson.databind.ObjectMapper;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.List;
@@ -32,13 +33,24 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.instancio.Select.field;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(TrainingSessionController.class)
-class TrainingSessionControllerTest extends SecurityMockControllerSupport {
+class TrainingSessionControllerTest extends ControllerTestSupport {
 
     private static final long ATHLETE_ID = 4L;
     private static final long COACH_ID = 2L;
@@ -64,6 +76,9 @@ class TrainingSessionControllerTest extends SecurityMockControllerSupport {
 
     @MockitoBean
     private AuthenticatedCoachResolver authenticatedCoachResolver;
+
+    @Autowired
+    private Clock clock;
 
     @Autowired
     private MockMvc mvc;
@@ -97,7 +112,8 @@ class TrainingSessionControllerTest extends SecurityMockControllerSupport {
 
     @Test
     void create_shouldReturnBadRequest_whenArgumentsNotValid() throws Exception {
-        TrainingSessionRequest trainingSessionRequest = new TrainingSessionRequest(LocalDate.now().plusDays(1), null, 11, -1, null);
+        TrainingSessionRequest trainingSessionRequest = new TrainingSessionRequest(
+            LocalDate.of(2099, Month.JANUARY, 5), null, 11, -1, null);
 
         mvc.perform(post(URL_PREFIX).contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(trainingSessionRequest)))
@@ -156,7 +172,7 @@ class TrainingSessionControllerTest extends SecurityMockControllerSupport {
             .param("to", to.toString()))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$[0].code").value("HTTP_VALIDATION_ERROR"))
-            .andExpect(jsonPath("$[0].field").value("to"));
+            .andExpect(jsonPath("$[0].field").value("from"));
 
         verify(getTrainingSessionsByPeriodUseCase, never()).execute(anyLong(), anyLong(), any(), any());
     }
@@ -174,7 +190,7 @@ class TrainingSessionControllerTest extends SecurityMockControllerSupport {
 
         ArgumentCaptor<LocalDate> toCaptor = ArgumentCaptor.forClass(LocalDate.class);
         verify(getTrainingSessionsByPeriodUseCase).execute(eq(ATHLETE_ID), eq(COACH_ID), eq(from), toCaptor.capture());
-        assertThat(toCaptor.getValue()).isEqualTo(LocalDate.now());
+        assertThat(toCaptor.getValue()).isEqualTo(LocalDate.now(clock));
     }
 
     @Test

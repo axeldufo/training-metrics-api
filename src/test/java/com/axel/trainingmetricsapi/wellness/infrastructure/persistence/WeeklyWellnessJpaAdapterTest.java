@@ -8,7 +8,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.List;
@@ -25,6 +24,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class WeeklyWellnessJpaAdapterTest {
 
+    private static final LocalDate MONDAY = LocalDate.of(2026, Month.JANUARY, 12); // 12/01/26 is a Monday
     private static final long ATHLETE_ID = 4L;
 
     @Mock
@@ -121,7 +121,7 @@ class WeeklyWellnessJpaAdapterTest {
 
     @Test
     void findByAthleteIdAndWeekStartDate_shouldReturnWellness_whenFound() {
-        LocalDate weekStartDate = LocalDate.now().with(DayOfWeek.MONDAY);
+        LocalDate weekStartDate = MONDAY;
         WeeklyWellnessJpaEntity entity = Instancio.create(WeeklyWellnessJpaEntity.class);
         WeeklyWellness expected = Instancio.create(WeeklyWellness.class);
         when(wellnessJpaRepository.findByAthleteIdAndWeekStartDate(ATHLETE_ID, weekStartDate))
@@ -135,7 +135,7 @@ class WeeklyWellnessJpaAdapterTest {
 
     @Test
     void findByAthleteIdAndWeekStartDate_shouldReturnEmpty_whenNotFound() {
-        LocalDate weekStartDate = LocalDate.now().with(DayOfWeek.MONDAY);
+        LocalDate weekStartDate = MONDAY;
         when(wellnessJpaRepository.findByAthleteIdAndWeekStartDate(ATHLETE_ID, weekStartDate))
             .thenReturn(Optional.empty());
 
@@ -190,27 +190,25 @@ class WeeklyWellnessJpaAdapterTest {
 
     @Test
     void existsByAthleteIdAndWeekStartDate_shouldReturnTrue_whenExists() {
-        LocalDate monday = LocalDate.now().with(DayOfWeek.MONDAY);
-        when(wellnessJpaRepository.existsByAthleteIdAndWeekStartDate(4L, monday)).thenReturn(true);
+        when(wellnessJpaRepository.existsByAthleteIdAndWeekStartDate(4L, MONDAY)).thenReturn(true);
 
-        assertThat(adapter.existsByAthleteIdAndWeekStartDate(4L, monday)).isTrue();
+        assertThat(adapter.existsByAthleteIdAndWeekStartDate(4L, MONDAY)).isTrue();
 
-        verify(wellnessJpaRepository).existsByAthleteIdAndWeekStartDate(4L, monday);
+        verify(wellnessJpaRepository).existsByAthleteIdAndWeekStartDate(4L, MONDAY);
     }
 
     @Test
     void existsByAthleteIdAndWeekStartDate_shouldReturnFalse_whenDoesNotExist() {
-        LocalDate monday = LocalDate.now().with(DayOfWeek.MONDAY);
-        when(wellnessJpaRepository.existsByAthleteIdAndWeekStartDate(4L, monday)).thenReturn(false);
+        when(wellnessJpaRepository.existsByAthleteIdAndWeekStartDate(4L, MONDAY)).thenReturn(false);
 
-        assertThat(adapter.existsByAthleteIdAndWeekStartDate(4L, monday)).isFalse();
+        assertThat(adapter.existsByAthleteIdAndWeekStartDate(4L, MONDAY)).isFalse();
 
-        verify(wellnessJpaRepository).existsByAthleteIdAndWeekStartDate(4L, monday);
+        verify(wellnessJpaRepository).existsByAthleteIdAndWeekStartDate(4L, MONDAY);
     }
 
     private WeeklyWellness aValidWellness() {
         return Instancio.of(WeeklyWellness.class)
-            .set(field(WeeklyWellness::getWeekStartDate), LocalDate.now().with(DayOfWeek.MONDAY))
+            .set(field(WeeklyWellness::getWeekStartDate), MONDAY)
             .generate(field(WeeklyWellness::getPerceivedDifficulty), gen -> gen.ints().range(1, 5))
             .generate(field(WeeklyWellness::getPerceivedFatigue), gen -> gen.ints().range(1, 5))
             .generate(field(WeeklyWellness::getMotivation), gen -> gen.ints().range(1, 5))

@@ -10,7 +10,7 @@ import com.axel.trainingmetricsapi.identity.domain.exception.CoachHasAthletesExc
 import com.axel.trainingmetricsapi.identity.domain.exception.CoachNotFoundException;
 import com.axel.trainingmetricsapi.identity.interfaces.web.dto.CoachUpdateRequest;
 import com.axel.trainingmetricsapi.identity.interfaces.web.dto.CoachResponse;
-import com.axel.trainingmetricsapi.identity.interfaces.web.security.SecurityMockControllerSupport;
+import com.axel.trainingmetricsapi.shared.interfaces.web.ControllerTestSupport;
 import com.axel.trainingmetricsapi.shared.interfaces.web.ApiConstants;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
@@ -31,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(CoachController.class)
-class CoachControllerTest extends SecurityMockControllerSupport {
+class CoachControllerTest extends ControllerTestSupport {
 
     static final String URL_PREFIX = ApiConstants.API_VERSION + "/coaches/me";
 

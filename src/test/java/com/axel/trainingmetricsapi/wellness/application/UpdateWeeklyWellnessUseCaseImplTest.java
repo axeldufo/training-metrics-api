@@ -2,9 +2,9 @@ package com.axel.trainingmetricsapi.wellness.application;
 
 import com.axel.trainingmetricsapi.athlete.domain.Athlete;
 import com.axel.trainingmetricsapi.athlete.domain.AthleteRepository;
+import com.axel.trainingmetricsapi.athlete.domain.exception.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.wellness.domain.WeeklyWellness;
 import com.axel.trainingmetricsapi.wellness.domain.WeeklyWellnessRepository;
-import com.axel.trainingmetricsapi.athlete.domain.exception.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.wellness.domain.exception.WeeklyWellnessAlreadyExistsException;
 import com.axel.trainingmetricsapi.wellness.domain.exception.WeeklyWellnessNotFoundException;
 import org.instancio.Instancio;
@@ -14,7 +14,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.Optional;
@@ -22,13 +21,19 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.instancio.Select.field;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class UpdateWeeklyWellnessUseCaseImplTest {
 
     private static final long ATHLETE_ID = 3L;
     private static final long COACH_ID = 2L;
+    private static final LocalDate MONDAY = LocalDate.of(2026, Month.JANUARY, 12); // 12/01/26 is a Monday
 
     @Mock
     private AthleteRepository athleteRepository;
@@ -41,14 +46,13 @@ class UpdateWeeklyWellnessUseCaseImplTest {
 
     @Test
     void execute_shouldReturnUpdatedWellness_whenValid() {
-        LocalDate monday = LocalDate.now().with(DayOfWeek.MONDAY);
         Athlete athlete = anAthleteOwnedByCoach();
-        WeeklyWellness incoming = aWellnessForAthlete(ATHLETE_ID, monday);
+        WeeklyWellness incoming = aWellnessForAthlete(ATHLETE_ID, MONDAY);
         long wellnessId = incoming.getId();
-        WeeklyWellness existing = aWellnessForAthlete(ATHLETE_ID, monday);
+        WeeklyWellness existing = aWellnessForAthlete(ATHLETE_ID, MONDAY);
         when(athleteRepository.findById(ATHLETE_ID)).thenReturn(Optional.of(athlete));
         when(weeklyWellnessRepository.findById(wellnessId)).thenReturn(Optional.of(existing));
-        WeeklyWellness saved = aWellnessForAthlete(ATHLETE_ID, monday);
+        WeeklyWellness saved = aWellnessForAthlete(ATHLETE_ID, MONDAY);
         when(weeklyWellnessRepository.save(incoming)).thenReturn(saved);
 
         WeeklyWellness result = useCase.execute(incoming, COACH_ID);
@@ -100,7 +104,7 @@ class UpdateWeeklyWellnessUseCaseImplTest {
     @Test
     void execute_shouldThrow_whenNotFound() {
         Athlete athlete = anAthleteOwnedByCoach();
-        WeeklyWellness incoming = aWellnessForAthlete(ATHLETE_ID, LocalDate.now().with(DayOfWeek.MONDAY));
+        WeeklyWellness incoming = aWellnessForAthlete(ATHLETE_ID, MONDAY);
         long wellnessId = incoming.getId();
         when(athleteRepository.findById(ATHLETE_ID)).thenReturn(Optional.of(athlete));
         when(weeklyWellnessRepository.findById(wellnessId)).thenReturn(Optional.empty());
@@ -113,11 +117,10 @@ class UpdateWeeklyWellnessUseCaseImplTest {
 
     @Test
     void execute_shouldThrow_whenOwnershipMismatch() {
-        LocalDate monday = LocalDate.now().with(DayOfWeek.MONDAY);
         Athlete athlete = anAthleteOwnedByCoach();
-        WeeklyWellness incoming = aWellnessForAthlete(ATHLETE_ID, monday);
+        WeeklyWellness incoming = aWellnessForAthlete(ATHLETE_ID, MONDAY);
         long wellnessId = incoming.getId();
-        WeeklyWellness existing = aWellnessForAthlete(99L, monday);
+        WeeklyWellness existing = aWellnessForAthlete(99L, MONDAY);
         when(athleteRepository.findById(ATHLETE_ID)).thenReturn(Optional.of(athlete));
         when(weeklyWellnessRepository.findById(wellnessId)).thenReturn(Optional.of(existing));
 
@@ -129,7 +132,7 @@ class UpdateWeeklyWellnessUseCaseImplTest {
 
     @Test
     void execute_shouldThrow_whenAthleteNotFound() {
-        WeeklyWellness incoming = aWellnessForAthlete(ATHLETE_ID, LocalDate.now().with(DayOfWeek.MONDAY));
+        WeeklyWellness incoming = aWellnessForAthlete(ATHLETE_ID, MONDAY);
         when(athleteRepository.findById(ATHLETE_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> useCase.execute(incoming, COACH_ID))
@@ -143,7 +146,7 @@ class UpdateWeeklyWellnessUseCaseImplTest {
         Athlete athlete = Instancio.of(Athlete.class)
             .set(field(Athlete::getCoachId), 99L)
             .create();
-        WeeklyWellness incoming = aWellnessForAthlete(ATHLETE_ID, LocalDate.now().with(DayOfWeek.MONDAY));
+        WeeklyWellness incoming = aWellnessForAthlete(ATHLETE_ID, MONDAY);
         when(athleteRepository.findById(ATHLETE_ID)).thenReturn(Optional.of(athlete));
 
         assertThatThrownBy(() -> useCase.execute(incoming, COACH_ID))

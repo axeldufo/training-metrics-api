@@ -11,7 +11,7 @@ import com.axel.trainingmetricsapi.athlete.interfaces.web.dto.AthleteRequest;
 import com.axel.trainingmetricsapi.athlete.interfaces.web.dto.AthleteResponse;
 import com.axel.trainingmetricsapi.identity.interfaces.web.security.AuthenticatedCoach;
 import com.axel.trainingmetricsapi.identity.interfaces.web.security.AuthenticatedCoachResolver;
-import com.axel.trainingmetricsapi.identity.interfaces.web.security.SecurityMockControllerSupport;
+import com.axel.trainingmetricsapi.shared.interfaces.web.ControllerTestSupport;
 import com.axel.trainingmetricsapi.shared.domain.PageResult;
 import com.axel.trainingmetricsapi.shared.interfaces.web.ApiConstants;
 import org.instancio.Instancio;
@@ -46,7 +46,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(AthleteController.class)
-class AthleteControllerTest extends SecurityMockControllerSupport {
+class AthleteControllerTest extends ControllerTestSupport {
 
     static final String URL_PREFIX = ApiConstants.API_VERSION + "/athletes";
 

@@ -2,9 +2,9 @@ package com.axel.trainingmetricsapi.wellness.application;
 
 import com.axel.trainingmetricsapi.athlete.domain.Athlete;
 import com.axel.trainingmetricsapi.athlete.domain.AthleteRepository;
+import com.axel.trainingmetricsapi.athlete.domain.exception.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.wellness.domain.WeeklyWellness;
 import com.axel.trainingmetricsapi.wellness.domain.WeeklyWellnessRepository;
-import com.axel.trainingmetricsapi.athlete.domain.exception.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.wellness.domain.exception.WeeklyWellnessNotFoundException;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
@@ -13,8 +13,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -28,7 +28,7 @@ class GetWeeklyWellnessByWeekUseCaseImplTest {
 
     private static final long ATHLETE_ID = 3L;
     private static final long COACH_ID = 2L;
-    private static final LocalDate MONDAY = LocalDate.now().with(DayOfWeek.MONDAY);
+    private static final LocalDate MONDAY = LocalDate.of(2026, Month.JANUARY, 12); // 12/01/26 is a Monday
 
     @Mock
     private AthleteRepository athleteRepository;

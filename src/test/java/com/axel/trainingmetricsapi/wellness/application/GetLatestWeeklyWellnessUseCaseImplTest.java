@@ -2,9 +2,9 @@ package com.axel.trainingmetricsapi.wellness.application;
 
 import com.axel.trainingmetricsapi.athlete.domain.Athlete;
 import com.axel.trainingmetricsapi.athlete.domain.AthleteRepository;
+import com.axel.trainingmetricsapi.athlete.domain.exception.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.wellness.domain.WeeklyWellness;
 import com.axel.trainingmetricsapi.wellness.domain.WeeklyWellnessRepository;
-import com.axel.trainingmetricsapi.athlete.domain.exception.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.wellness.domain.exception.WeeklyWellnessNotFoundException;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
@@ -13,14 +13,16 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.instancio.Select.field;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class GetLatestWeeklyWellnessUseCaseImplTest {
@@ -91,7 +93,7 @@ class GetLatestWeeklyWellnessUseCaseImplTest {
 
     private WeeklyWellness aWellness() {
         return Instancio.of(WeeklyWellness.class)
-            .set(field(WeeklyWellness::getWeekStartDate), LocalDate.now().with(DayOfWeek.MONDAY))
+            .set(field(WeeklyWellness::getWeekStartDate), LocalDate.of(2026, Month.JANUARY, 12)) // 12/01/26 is a Monday
             .generate(field(WeeklyWellness::getPerceivedDifficulty), gen -> gen.ints().range(1, 5))
             .generate(field(WeeklyWellness::getPerceivedFatigue), gen -> gen.ints().range(1, 5))
             .generate(field(WeeklyWellness::getMotivation), gen -> gen.ints().range(1, 5))

@@ -11,13 +11,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class LoadReportPersistenceMapperTest {
 
-    private final LoadReportPersistenceMapper mapper = new LoadReportPersistenceMapper();
-
+    private static final LocalDateTime UPDATED_AT = LocalDateTime.of(2026, Month.JANUARY, 12, 10, 0);
     private static final LocalDate MONDAY = LocalDate.of(2025, Month.MAY, 19);
+
+    private final LoadReportPersistenceMapper mapper = new LoadReportPersistenceMapper();
 
     @Test
     void domainToEntity_shouldMapAllFields_withNullEntityId() {
-        LoadReport report = new LoadReport(42L, MONDAY, 250, 3, LocalDateTime.now());
+        LoadReport report = new LoadReport(42L, MONDAY, 250, 3, UPDATED_AT);
 
         LoadReportJpaEntity entity = mapper.domainToEntity(report);
 
@@ -31,8 +32,7 @@ class LoadReportPersistenceMapperTest {
 
     @Test
     void entityToDomain_shouldMapAllFields() {
-        LocalDateTime updatedAt = LocalDateTime.now();
-        LoadReportJpaEntity entity = new LoadReportJpaEntity(99L, 42L, MONDAY, 250, 3, updatedAt);
+        LoadReportJpaEntity entity = new LoadReportJpaEntity(99L, 42L, MONDAY, 250, 3, UPDATED_AT);
 
         LoadReport report = mapper.entityToDomain(entity);
 
@@ -40,7 +40,7 @@ class LoadReportPersistenceMapperTest {
         assertThat(report.weekStartDate()).isEqualTo(MONDAY);
         assertThat(report.totalFosterLoad()).isEqualTo(250);
         assertThat(report.sessionCount()).isEqualTo(3);
-        assertThat(report.updatedAt()).isEqualTo(updatedAt);
+        assertThat(report.updatedAt()).isEqualTo(UPDATED_AT);
     }
 
     @Test

@@ -1,17 +1,17 @@
 package com.axel.trainingmetricsapi.wellness.interfaces.web;
 
-import com.axel.trainingmetricsapi.identity.interfaces.web.security.SecurityMockControllerSupport;
+import com.axel.trainingmetricsapi.identity.interfaces.web.security.AuthenticatedCoach;
+import com.axel.trainingmetricsapi.identity.interfaces.web.security.AuthenticatedCoachResolver;
+import com.axel.trainingmetricsapi.shared.interfaces.web.ApiConstants;
+import com.axel.trainingmetricsapi.shared.interfaces.web.ControllerTestSupport;
+import com.axel.trainingmetricsapi.training.domain.AcwrAlert;
 import com.axel.trainingmetricsapi.wellness.application.port.in.GetLatestWeeklyReportUseCase;
 import com.axel.trainingmetricsapi.wellness.application.port.in.GetWeeklyReportByWeekUseCase;
 import com.axel.trainingmetricsapi.wellness.application.port.in.GetWeeklyReportsByPeriodUseCase;
-import com.axel.trainingmetricsapi.identity.interfaces.web.security.AuthenticatedCoach;
-import com.axel.trainingmetricsapi.identity.interfaces.web.security.AuthenticatedCoachResolver;
-import com.axel.trainingmetricsapi.training.domain.AcwrAlert;
 import com.axel.trainingmetricsapi.wellness.domain.CorrelationAlert;
 import com.axel.trainingmetricsapi.wellness.domain.WeeklyReport;
 import com.axel.trainingmetricsapi.wellness.domain.exception.WeeklyReportNotFoundException;
 import com.axel.trainingmetricsapi.wellness.interfaces.web.dto.WeeklyReportResponse;
-import com.axel.trainingmetricsapi.shared.interfaces.web.ApiConstants;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,21 +19,26 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.DayOfWeek;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(WeeklyReportController.class)
-class WeeklyReportControllerTest extends SecurityMockControllerSupport {
+class WeeklyReportControllerTest extends ControllerTestSupport {
 
     private static final long ATHLETE_ID = 5L;
     private static final long COACH_ID = 2L;
@@ -54,6 +59,9 @@ class WeeklyReportControllerTest extends SecurityMockControllerSupport {
 
     @MockitoBean
     private AuthenticatedCoachResolver authenticatedCoachResolver;
+
+    @Autowired
+    private Clock clock;
 
     @Autowired
     private MockMvc mvc;
@@ -122,7 +130,7 @@ class WeeklyReportControllerTest extends SecurityMockControllerSupport {
 
     @Test
     void getByWeekStartDate_400_futureWeekStartDate() throws Exception {
-        LocalDate futureMonday = LocalDate.now().plusWeeks(2).with(DayOfWeek.MONDAY);
+        LocalDate futureMonday = LocalDate.of(2099, Month.JANUARY, 5); // known futur Monday
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
 
         mvc.perform(get(URL_PREFIX).param("weekStartDate", futureMonday.toString()))
@@ -233,18 +241,21 @@ class WeeklyReportControllerTest extends SecurityMockControllerSupport {
 
         ArgumentCaptor<LocalDate> toCaptor = ArgumentCaptor.forClass(LocalDate.class);
         verify(getWeeklyReportsByPeriodUseCase).execute(eq(ATHLETE_ID), eq(COACH_ID), eq(from), toCaptor.capture());
-        assertThat(toCaptor.getValue()).isEqualTo(LocalDate.now());
+        assertThat(toCaptor.getValue()).isEqualTo(LocalDate.now(clock));
     }
 
     @Test
-    void getByPeriod_400_fromAfterTo() throws Exception {
+    void getByPeriod_400_whenFromIsAfterTo() throws Exception {
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
+        LocalDate from = LocalDate.of(2024, Month.JANUARY, 20);
+        LocalDate to = LocalDate.of(2024, Month.JANUARY, 13);
 
         mvc.perform(get(URL_PREFIX)
-            .param("from", "2025-05-12")
-            .param("to", "2025-04-28"))
+            .param("from", from.toString())
+            .param("to", to.toString()))
             .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$[0].code").value("HTTP_VALIDATION_ERROR"));
+            .andExpect(jsonPath("$[0].code").value("HTTP_VALIDATION_ERROR"))
+            .andExpect(jsonPath("$[0].field").value("from"));
 
         verifyNoInteractions(getWeeklyReportsByPeriodUseCase);
         verifyNoInteractions(weeklyReportWebMapper);

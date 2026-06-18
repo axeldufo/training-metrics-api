@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
@@ -38,17 +39,19 @@ public class WeeklyReportController {
     private final GetWeeklyReportsByPeriodUseCase getWeeklyReportsByPeriodUseCase;
     private final WeeklyReportWebMapper weeklyReportWebMapper;
     private final AuthenticatedCoachResolver authenticatedCoachResolver;
+    private final Clock clock;
 
     public WeeklyReportController(GetWeeklyReportByWeekUseCase getWeeklyReportByWeekUseCase,
                                   GetLatestWeeklyReportUseCase getLatestWeeklyReportUseCase,
                                   GetWeeklyReportsByPeriodUseCase getWeeklyReportsByPeriodUseCase,
                                   WeeklyReportWebMapper weeklyReportWebMapper,
-                                  AuthenticatedCoachResolver authenticatedCoachResolver) {
+                                  AuthenticatedCoachResolver authenticatedCoachResolver, Clock clock) {
         this.getWeeklyReportByWeekUseCase = getWeeklyReportByWeekUseCase;
         this.getLatestWeeklyReportUseCase = getLatestWeeklyReportUseCase;
         this.getWeeklyReportsByPeriodUseCase = getWeeklyReportsByPeriodUseCase;
         this.weeklyReportWebMapper = weeklyReportWebMapper;
         this.authenticatedCoachResolver = authenticatedCoachResolver;
+        this.clock = clock;
     }
 
     @GetMapping(params = "weekStartDate")
@@ -92,7 +95,7 @@ public class WeeklyReportController {
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @PastOrPresent LocalDate to) {
         AuthenticatedCoach coach = authenticatedCoachResolver.resolve();
         long coachId = coach.id();
-        LocalDate effectiveTo = Objects.requireNonNullElseGet(to, LocalDate::now);
+        LocalDate effectiveTo = Objects.requireNonNullElseGet(to, () -> LocalDate.now(clock));
         if (from.isAfter(effectiveTo)) {
             throw new InvalidPeriodException("from must be before or equal to to");
         }

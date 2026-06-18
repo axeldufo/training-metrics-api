@@ -1,28 +1,29 @@
 package com.axel.trainingmetricsapi.training.interfaces.web;
 
-import com.axel.trainingmetricsapi.identity.interfaces.web.security.SecurityMockControllerSupport;
+import com.axel.trainingmetricsapi.identity.interfaces.web.security.AuthenticatedCoach;
+import com.axel.trainingmetricsapi.identity.interfaces.web.security.AuthenticatedCoachResolver;
+import com.axel.trainingmetricsapi.shared.interfaces.web.ApiConstants;
+import com.axel.trainingmetricsapi.shared.interfaces.web.ControllerTestSupport;
 import com.axel.trainingmetricsapi.training.application.port.in.GetLatestLoadReportUseCase;
 import com.axel.trainingmetricsapi.training.application.port.in.GetLoadReportByWeekUseCase;
 import com.axel.trainingmetricsapi.training.application.port.in.GetLoadReportsByPeriodUseCase;
-import com.axel.trainingmetricsapi.identity.interfaces.web.security.AuthenticatedCoach;
-import com.axel.trainingmetricsapi.identity.interfaces.web.security.AuthenticatedCoachResolver;
 import com.axel.trainingmetricsapi.training.domain.LoadReport;
 import com.axel.trainingmetricsapi.training.domain.exception.LoadReportNotFoundException;
 import com.axel.trainingmetricsapi.training.interfaces.web.dto.LoadReportResponse;
-import com.axel.trainingmetricsapi.shared.interfaces.web.ApiConstants;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.DayOfWeek;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -31,7 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(LoadReportController.class)
-class LoadReportControllerTest extends SecurityMockControllerSupport {
+class LoadReportControllerTest extends ControllerTestSupport {
 
     private static final long ATHLETE_ID = 4L;
     private static final long COACH_ID = 2L;
@@ -51,6 +52,9 @@ class LoadReportControllerTest extends SecurityMockControllerSupport {
 
     @MockitoBean
     private AuthenticatedCoachResolver authenticatedCoachResolver;
+
+    @Autowired
+    private Clock clock;
 
     @Autowired
     private MockMvc mvc;
@@ -95,7 +99,7 @@ class LoadReportControllerTest extends SecurityMockControllerSupport {
 
     @Test
     void getByWeekStartDate_shouldReturn400_whenWeekStartDateIsInFuture() throws Exception {
-        LocalDate futureMonday = LocalDate.now().plusWeeks(2).with(DayOfWeek.MONDAY);
+        LocalDate futureMonday = LocalDate.of(2099, Month.JANUARY, 5); // known futur Monday
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
 
         mvc.perform(get(BASE_URL).param("weekStartDate", futureMonday.toString()))
@@ -144,9 +148,10 @@ class LoadReportControllerTest extends SecurityMockControllerSupport {
         LocalDate monday1 = LocalDate.of(2025, Month.APRIL, 7);
         LocalDate monday2 = LocalDate.of(2025, Month.APRIL, 14);
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
+        LocalDateTime updatedAt = LocalDateTime.of(2025, Month.JANUARY, 12, 10, 0);
         List<LoadReport> reports = List.of(
-            new LoadReport(ATHLETE_ID, monday1, 150, 1, LocalDateTime.now()),
-            new LoadReport(ATHLETE_ID, monday2, 300, 2, LocalDateTime.now())
+            new LoadReport(ATHLETE_ID, monday1, 150, 1, updatedAt),
+            new LoadReport(ATHLETE_ID, monday2, 300, 2, updatedAt)
         );
         when(getLoadReportsByPeriodUseCase.execute(ATHLETE_ID, COACH_ID, from, to)).thenReturn(reports);
         when(loadReportWebMapper.domainToResponse(any(LoadReport.class))).thenAnswer(inv -> {
@@ -163,11 +168,13 @@ class LoadReportControllerTest extends SecurityMockControllerSupport {
 
     @Test
     void getByPeriod_shouldReturn400_whenFromIsInFuture() throws Exception {
-        LocalDate futureFromMonday = LocalDate.now().plusWeeks(2).with(DayOfWeek.MONDAY);
-        LocalDate futureToMonday = LocalDate.now().plusWeeks(3).with(DayOfWeek.MONDAY);
+        LocalDate futureFromMonday = LocalDate.of(2099, Month.JANUARY, 5); // known futur Monday
+        LocalDate futureToMonday = LocalDate.of(2099, Month.JANUARY, 12); // known futur Monday
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
 
-        mvc.perform(get(BASE_URL).param("from", futureFromMonday.toString()).param("to", futureToMonday.toString()))
+        mvc.perform(get(BASE_URL)
+            .param("from", futureFromMonday.toString())
+            .param("to", futureToMonday.toString()))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$[0].code").value("HTTP_VALIDATION_ERROR"));
 
@@ -177,10 +184,15 @@ class LoadReportControllerTest extends SecurityMockControllerSupport {
     @Test
     void getByPeriod_shouldReturn400_whenFromIsAfterTo() throws Exception {
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
+        LocalDate from = LocalDate.of(2024, Month.JANUARY, 20);
+        LocalDate to = LocalDate.of(2024, Month.JANUARY, 13);
 
-        mvc.perform(get(BASE_URL).param("from", "2025-05-26").param("to", "2025-04-01"))
+        mvc.perform(get(BASE_URL)
+                .param("from", from.toString())
+                .param("to", to.toString()))
             .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$[0].code").value("HTTP_VALIDATION_ERROR"));
+            .andExpect(jsonPath("$[0].code").value("HTTP_VALIDATION_ERROR"))
+            .andExpect(jsonPath("$[0].field").value("from"));
 
         verify(getLoadReportsByPeriodUseCase, never()).execute(anyLong(), anyLong(), any(), any());
     }
@@ -188,7 +200,7 @@ class LoadReportControllerTest extends SecurityMockControllerSupport {
     @Test
     void getByPeriod_shouldReturn200_withDefaultToToday_whenToNotProvided() throws Exception {
         LocalDate from = LocalDate.of(2025, Month.APRIL, 7);
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(clock);
         when(authenticatedCoachResolver.resolve()).thenReturn(new AuthenticatedCoach(COACH_ID));
         when(getLoadReportsByPeriodUseCase.execute(ATHLETE_ID, COACH_ID, from, today)).thenReturn(List.of());
 

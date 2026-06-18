@@ -3,11 +3,11 @@ package com.axel.trainingmetricsapi.wellness.infrastructure.persistence;
 import com.axel.trainingmetricsapi.TestContainersConfiguration;
 import com.axel.trainingmetricsapi.athlete.domain.Athlete;
 import com.axel.trainingmetricsapi.athlete.domain.AthleteRepository;
+import com.axel.trainingmetricsapi.identity.infrastructure.persistence.CoachJpaEntity;
+import com.axel.trainingmetricsapi.identity.infrastructure.persistence.CoachJpaRepository;
 import com.axel.trainingmetricsapi.shared.domain.Sport;
 import com.axel.trainingmetricsapi.wellness.domain.WeeklyWellness;
 import com.axel.trainingmetricsapi.wellness.domain.WeeklyWellnessRepository;
-import com.axel.trainingmetricsapi.identity.infrastructure.persistence.CoachJpaEntity;
-import com.axel.trainingmetricsapi.identity.infrastructure.persistence.CoachJpaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +17,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.List;
@@ -141,7 +140,7 @@ class WeeklyWellnessJpaAdapterIT {
 
     @Test
     void findByAthleteIdAndWeekStartDate_shouldReturnWellness_whenExists() {
-        LocalDate monday = LocalDate.now().with(DayOfWeek.MONDAY);
+        LocalDate monday = LocalDate.of(2026, Month.JANUARY, 12); // 12/01/26 is a Monday
         wellnessRepository.save(aWellness(athleteId, monday));
 
         Optional<WeeklyWellness> result = wellnessRepository.findByAthleteIdAndWeekStartDate(athleteId, monday);

@@ -198,8 +198,8 @@ class AcwrCalculatorTest {
         @Test
         void computeFromWeeklyLoads_allSessionCountZero_returnsNoData() {
             List<LoadReport> loadReports = List.of(
-                new LoadReport(ATHLETE_ID, LocalDate.of(2024, Month.JANUARY, 22), 0, 0, LocalDateTime.now()),
-                new LoadReport(ATHLETE_ID, LocalDate.of(2024, Month.JANUARY, 15), 0, 0, LocalDateTime.now())
+                new LoadReport(ATHLETE_ID, LocalDate.of(2024, Month.JANUARY, 22), 0, 0, LocalDateTime.of(2026, Month.JANUARY, 12, 10, 0)),
+                new LoadReport(ATHLETE_ID, LocalDate.of(2024, Month.JANUARY, 15), 0, 0, LocalDateTime.of(2026, Month.JANUARY, 12, 11, 0))
             );
 
             AcwrReport report = calculator.computeFromWeeklyLoads(ATHLETE_ID, WEEK_START, loadReports);
@@ -250,7 +250,8 @@ class AcwrCalculatorTest {
         void computeFromWeeklyLoads_currentWeekEmpty_acwrZero_reliabilityFromPreviousWeeks() {
             // current week has no sessions, 3 previous weeks have data → acwr=0.0, not reliable
             List<LoadReport> loadReports = List.of(
-                new LoadReport(ATHLETE_ID, LocalDate.of(2024, Month.JANUARY, 22), 0, 0, LocalDateTime.now()),
+                new LoadReport(ATHLETE_ID, LocalDate.of(2024, Month.JANUARY, 22), 0, 0,
+                    LocalDateTime.of(2026, Month.JANUARY, 12, 10, 0)),
                 aLoadReport(LocalDate.of(2024, Month.JANUARY, 15), 60),
                 aLoadReport(LocalDate.of(2024, Month.JANUARY, 8),  60),
                 aLoadReport(LocalDate.of(2024, Month.JANUARY, 1),  60)
@@ -266,7 +267,8 @@ class AcwrCalculatorTest {
         }
 
         private LoadReport aLoadReport(LocalDate weekStart, int totalFosterLoad) {
-            return new LoadReport(ATHLETE_ID, weekStart, totalFosterLoad, 1, LocalDateTime.now());
+            return new LoadReport(ATHLETE_ID, weekStart, totalFosterLoad, 1,
+                LocalDateTime.of(2026, Month.JANUARY, 12, 10, 0));
         }
     }
 }

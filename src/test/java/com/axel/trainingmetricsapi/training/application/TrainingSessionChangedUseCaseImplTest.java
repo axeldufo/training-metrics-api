@@ -1,12 +1,13 @@
 package com.axel.trainingmetricsapi.training.application;
 
+import com.axel.trainingmetricsapi.shared.domain.Sport;
 import com.axel.trainingmetricsapi.training.application.port.out.AcwrCachePort;
 import com.axel.trainingmetricsapi.training.domain.LoadReport;
 import com.axel.trainingmetricsapi.training.domain.LoadReportRepository;
-import com.axel.trainingmetricsapi.shared.domain.Sport;
 import com.axel.trainingmetricsapi.training.domain.TargetZone;
 import com.axel.trainingmetricsapi.training.domain.TrainingSession;
 import com.axel.trainingmetricsapi.training.domain.TrainingSessionRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -14,8 +15,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.Month;
+import java.time.ZoneOffset;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -41,12 +45,21 @@ class TrainingSessionChangedUseCaseImplTest {
     @Mock
     private LoadReportRepository loadReportRepository;
 
+    @Mock
+    private Clock clock;
+
     @InjectMocks
     private TrainingSessionChangedUseCaseImpl trainingSessionChangedUseCase;
 
+    @BeforeEach
+    void setUp() {
+        when(clock.instant()).thenReturn(Instant.parse("2026-01-12T00:00:00Z"));
+        when(clock.getZone()).thenReturn(ZoneOffset.UTC);
+    }
+
     @Test
     void execute_shouldEvictCacheAndRefreshAcwr() {
-        trainingSessionChangedUseCase.execute(ATHLETE_ID, LocalDate.now());
+        trainingSessionChangedUseCase.execute(ATHLETE_ID, LocalDate.of(2026, Month.JANUARY, 12));
 
         verify(acwrCachePort).evict(ATHLETE_ID);
         verify(acwrCachePort).put(eq(ATHLETE_ID), any());
@@ -54,7 +67,7 @@ class TrainingSessionChangedUseCaseImplTest {
 
     @Test
     void execute_shouldSaveLoadReport_whenSessionsExist() {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(clock);
         LocalDate sessionDate = MONDAY.plusDays(2);
         TrainingSession session = aSession(5, 60, MONDAY);
         when(trainingSessionRepository.findByAthleteIdAndPeriod(ATHLETE_ID, today.minusDays(27), today))
@@ -77,7 +90,7 @@ class TrainingSessionChangedUseCaseImplTest {
 
     @Test
     void execute_shouldDeleteLoadReport_whenNoSessionsRemain() {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(clock);
         LocalDate sessionDate = MONDAY.plusDays(1);
         when(trainingSessionRepository.findByAthleteIdAndPeriod(ATHLETE_ID, today.minusDays(27), today))
             .thenReturn(List.of());
