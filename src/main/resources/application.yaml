@@ -48,3 +48,20 @@ springdoc:
   swagger-ui:
     path: /swagger-ui/index.html
     enabled: true
+
+management:
+  server:
+    port: 8081
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,info,loggers
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    distribution:
+      percentiles-histogram:
+        "[http.server.requests]": true
+      percentiles:
+        "[http.server.requests]": 0.5, 0.95, 0.99
