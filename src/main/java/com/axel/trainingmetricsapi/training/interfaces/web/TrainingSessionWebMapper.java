@@ -3,34 +3,18 @@ package com.axel.trainingmetricsapi.training.interfaces.web;
 import com.axel.trainingmetricsapi.training.domain.TrainingSession;
 import com.axel.trainingmetricsapi.training.interfaces.web.dto.TrainingSessionRequest;
 import com.axel.trainingmetricsapi.training.interfaces.web.dto.TrainingSessionResponse;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.ReportingPolicy;
 
-@Component
-public class TrainingSessionWebMapper {
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
+public interface TrainingSessionWebMapper {
 
-    public TrainingSession requestToDomain(TrainingSessionRequest trainingSessionRequest, long athleteId) {
-        return new TrainingSession(
-            trainingSessionRequest.date(),
-            trainingSessionRequest.sport(),
-            trainingSessionRequest.rpe(),
-            trainingSessionRequest.durationInMin(),
-            trainingSessionRequest.targetZone(),
-            athleteId
-        );
-    }
+    @Mapping(target = "id", ignore = true)
+    @Mapping(source = "athleteId", target = "athleteId")
+    TrainingSession requestToDomain(TrainingSessionRequest trainingSessionRequest, long athleteId);
 
-    public TrainingSessionResponse domainToResponse(TrainingSession trainingSession) {
-        return new TrainingSessionResponse(
-            trainingSession.getId(),
-            trainingSession.getDate(),
-            trainingSession.getSport(),
-            trainingSession.getRpe(),
-            trainingSession.getDurationInMin(),
-            trainingSession.getTargetZone(),
-            trainingSession.getAthleteId(),
-            trainingSession.isAboveTargetZone(),
-            trainingSession.isBelowTargetZone()
-        );
-    }
-
+    @Mapping(source = "aboveTargetZone", target = "aboveTargetAlert")
+    @Mapping(source = "belowTargetZone", target = "belowTargetAlert")
+    TrainingSessionResponse domainToResponse(TrainingSession trainingSession);
 }

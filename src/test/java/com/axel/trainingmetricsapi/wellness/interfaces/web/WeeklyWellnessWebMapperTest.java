@@ -5,6 +5,7 @@ import com.axel.trainingmetricsapi.wellness.interfaces.web.dto.WeeklyWellnessReq
 import com.axel.trainingmetricsapi.wellness.interfaces.web.dto.WeeklyWellnessResponse;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
 
 import java.time.LocalDate;
 import java.time.Month;
@@ -14,7 +15,7 @@ import static org.instancio.Select.field;
 
 class WeeklyWellnessWebMapperTest {
 
-    private final WeeklyWellnessWebMapper mapper = new WeeklyWellnessWebMapper();
+    private final WeeklyWellnessWebMapper mapper = Mappers.getMapper(WeeklyWellnessWebMapper.class);
 
     @Test
     void requestToDomain_shouldMapAllFields() {

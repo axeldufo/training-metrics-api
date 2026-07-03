@@ -3,6 +3,7 @@ package com.axel.trainingmetricsapi.training.interfaces.web;
 import com.axel.trainingmetricsapi.training.domain.LoadReport;
 import com.axel.trainingmetricsapi.training.interfaces.web.dto.LoadReportResponse;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -14,7 +15,7 @@ class LoadReportWebMapperTest {
 
     private static final LocalDate MONDAY = LocalDate.of(2026, Month.JANUARY, 12); // 12/01/26 is a Monday
 
-    private final LoadReportWebMapper mapper = new LoadReportWebMapper();
+    private final LoadReportWebMapper mapper = Mappers.getMapper(LoadReportWebMapper.class);
 
     @Test
     void domainToResponse_shouldMapAllFields() {

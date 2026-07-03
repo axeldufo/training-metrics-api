@@ -2,18 +2,10 @@ package com.axel.trainingmetricsapi.training.interfaces.web;
 
 import com.axel.trainingmetricsapi.training.domain.LoadReport;
 import com.axel.trainingmetricsapi.training.interfaces.web.dto.LoadReportResponse;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.ReportingPolicy;
 
-@Component
-public class LoadReportWebMapper {
-
-    public LoadReportResponse domainToResponse(LoadReport report) {
-        return new LoadReportResponse(
-            report.athleteId(),
-            report.weekStartDate(),
-            report.totalFosterLoad(),
-            report.sessionCount(),
-            report.updatedAt()
-        );
-    }
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
+public interface LoadReportWebMapper {
+    LoadReportResponse domainToResponse(LoadReport report);
 }

@@ -2,6 +2,7 @@ package com.axel.trainingmetricsapi.training.infrastructure.persistence;
 
 import com.axel.trainingmetricsapi.training.domain.LoadReport;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -14,7 +15,7 @@ class LoadReportPersistenceMapperTest {
     private static final LocalDateTime UPDATED_AT = LocalDateTime.of(2026, Month.JANUARY, 12, 10, 0);
     private static final LocalDate MONDAY = LocalDate.of(2025, Month.MAY, 19);
 
-    private final LoadReportPersistenceMapper mapper = new LoadReportPersistenceMapper();
+    private final LoadReportPersistenceMapper mapper = Mappers.getMapper(LoadReportPersistenceMapper.class);
 
     @Test
     void domainToEntity_shouldMapAllFields_withNullEntityId() {

@@ -2,15 +2,10 @@ package com.axel.trainingmetricsapi.identity.interfaces.web;
 
 import com.axel.trainingmetricsapi.identity.domain.Coach;
 import com.axel.trainingmetricsapi.identity.interfaces.web.dto.CoachResponse;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.ReportingPolicy;
 
-@Component
-public class CoachWebMapper {
-
-    public CoachResponse domainToResponse(Coach coach) {
-        return new CoachResponse(
-            coach.getId(),
-            coach.getName());
-    }
-
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
+public interface CoachWebMapper {
+    CoachResponse domainToResponse(Coach coach);
 }

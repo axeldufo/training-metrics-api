@@ -3,29 +3,16 @@ package com.axel.trainingmetricsapi.wellness.interfaces.web;
 import com.axel.trainingmetricsapi.wellness.domain.WeeklyWellness;
 import com.axel.trainingmetricsapi.wellness.interfaces.web.dto.WeeklyWellnessRequest;
 import com.axel.trainingmetricsapi.wellness.interfaces.web.dto.WeeklyWellnessResponse;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.ReportingPolicy;
 
-@Component
-public class WeeklyWellnessWebMapper {
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
+public interface WeeklyWellnessWebMapper {
 
-    public WeeklyWellness requestToDomain(WeeklyWellnessRequest request, long athleteId) {
-        return new WeeklyWellness(
-            athleteId,
-            request.weekStartDate(),
-            request.perceivedDifficulty(),
-            request.perceivedFatigue(),
-            request.motivation()
-        );
-    }
+    @Mapping(target = "id", ignore = true)
+    @Mapping(source = "athleteId", target = "athleteId")
+    WeeklyWellness requestToDomain(WeeklyWellnessRequest request, long athleteId);
 
-    public WeeklyWellnessResponse domainToResponse(WeeklyWellness wellness) {
-        return new WeeklyWellnessResponse(
-            wellness.getId(),
-            wellness.getAthleteId(),
-            wellness.getWeekStartDate(),
-            wellness.getPerceivedDifficulty(),
-            wellness.getPerceivedFatigue(),
-            wellness.getMotivation()
-        );
-    }
+    WeeklyWellnessResponse domainToResponse(WeeklyWellness wellness);
 }

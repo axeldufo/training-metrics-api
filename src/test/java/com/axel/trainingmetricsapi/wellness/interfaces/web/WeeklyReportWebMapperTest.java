@@ -6,6 +6,7 @@ import com.axel.trainingmetricsapi.wellness.domain.WeeklyReport;
 import com.axel.trainingmetricsapi.wellness.domain.WellnessAlert;
 import com.axel.trainingmetricsapi.wellness.interfaces.web.dto.WeeklyReportResponse;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
 
 import java.time.LocalDate;
 import java.time.Month;
@@ -18,7 +19,7 @@ class WeeklyReportWebMapperTest {
     private static final long ATHLETE_ID = 1L;
     private static final LocalDate MONDAY = LocalDate.of(2025, Month.MAY, 19);
 
-    private final WeeklyReportWebMapper mapper = new WeeklyReportWebMapper();
+    private final WeeklyReportWebMapper mapper = Mappers.getMapper(WeeklyReportWebMapper.class);
 
     @Test
     void domainToResponse_nominal_allFieldsMapped() {

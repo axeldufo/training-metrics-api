@@ -3,6 +3,7 @@ package com.axel.trainingmetricsapi.training.infrastructure.persistence;
 import com.axel.trainingmetricsapi.training.domain.TrainingSession;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.instancio.Select.field;
@@ -10,7 +11,7 @@ import static org.instancio.Select.field;
 class TrainingSessionPersistenceMapperTest {
 
     private final TrainingSessionPersistenceMapper trainingSessionPersistenceMapper =
-        new TrainingSessionPersistenceMapper();
+        Mappers.getMapper(TrainingSessionPersistenceMapper.class);
 
     @Test
     void domainToEntity_shouldMapAllFields() {

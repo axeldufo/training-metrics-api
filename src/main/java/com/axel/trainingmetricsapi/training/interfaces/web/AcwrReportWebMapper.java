@@ -2,21 +2,10 @@ package com.axel.trainingmetricsapi.training.interfaces.web;
 
 import com.axel.trainingmetricsapi.training.domain.AcwrReport;
 import com.axel.trainingmetricsapi.training.interfaces.web.dto.AcwrReportResponse;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.ReportingPolicy;
 
-@Component
-public class AcwrReportWebMapper {
-
-    public AcwrReportResponse domainToResponse(AcwrReport report) {
-        return new AcwrReportResponse(
-            report.athleteId(),
-            report.calculatedAt(),
-            report.acuteLoad(),
-            report.chronicLoad(),
-            report.acwr(),
-            report.acwrAlert(),
-            report.weeksOfDataAvailable(),
-            report.acwrReliable()
-        );
-    }
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
+public interface AcwrReportWebMapper {
+    AcwrReportResponse domainToResponse(AcwrReport report);
 }

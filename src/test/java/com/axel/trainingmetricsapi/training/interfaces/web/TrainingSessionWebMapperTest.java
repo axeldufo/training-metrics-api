@@ -5,13 +5,14 @@ import com.axel.trainingmetricsapi.training.interfaces.web.dto.TrainingSessionRe
 import com.axel.trainingmetricsapi.training.interfaces.web.dto.TrainingSessionResponse;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.instancio.Select.field;
 
 class TrainingSessionWebMapperTest {
 
-    private final TrainingSessionWebMapper trainingSessionWebMapper = new TrainingSessionWebMapper();
+    private final TrainingSessionWebMapper trainingSessionWebMapper = Mappers.getMapper(TrainingSessionWebMapper.class);
 
     @Test
     void requestToDomain_shouldMapAllFields() {

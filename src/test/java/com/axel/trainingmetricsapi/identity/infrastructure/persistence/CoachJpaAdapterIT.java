@@ -35,7 +35,8 @@ class CoachJpaAdapterIT {
     @Autowired
     private AthleteRepository athleteRepository;
 
-    private final CoachPersistenceMapper coachPersistenceMapper = new CoachPersistenceMapper();
+    @Autowired
+    private CoachPersistenceMapper coachPersistenceMapper;
 
     @Test
     void findById_shouldReturnCoachFromDatabase() {

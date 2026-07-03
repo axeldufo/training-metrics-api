@@ -1,31 +1,11 @@
 package com.axel.trainingmetricsapi.wellness.infrastructure.persistence;
 
 import com.axel.trainingmetricsapi.wellness.domain.WeeklyWellness;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.ReportingPolicy;
 
-@Component
-public class WeeklyWellnessPersistenceMapper {
-
-    public WeeklyWellnessJpaEntity domainToEntity(WeeklyWellness wellness) {
-        return new WeeklyWellnessJpaEntity(
-            wellness.getId(),
-            wellness.getWeekStartDate(),
-            wellness.getPerceivedDifficulty(),
-            wellness.getPerceivedFatigue(),
-            wellness.getMotivation(),
-            wellness.getAthleteId()
-        );
-    }
-
-    public WeeklyWellness entityToDomain(WeeklyWellnessJpaEntity entity) {
-        WeeklyWellness wellness = new WeeklyWellness(
-            entity.getAthleteId(),
-            entity.getWeekStartDate(),
-            entity.getPerceivedDifficulty(),
-            entity.getPerceivedFatigue(),
-            entity.getMotivation()
-        );
-        wellness.setId(entity.getId());
-        return wellness;
-    }
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
+public interface WeeklyWellnessPersistenceMapper {
+    WeeklyWellnessJpaEntity domainToEntity(WeeklyWellness wellness);
+    WeeklyWellness entityToDomain(WeeklyWellnessJpaEntity entity);
 }
