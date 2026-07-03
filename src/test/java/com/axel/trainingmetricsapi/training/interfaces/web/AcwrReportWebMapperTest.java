@@ -4,6 +4,7 @@ import com.axel.trainingmetricsapi.training.domain.AcwrAlert;
 import com.axel.trainingmetricsapi.training.domain.AcwrReport;
 import com.axel.trainingmetricsapi.training.interfaces.web.dto.AcwrReportResponse;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
 
 import java.time.LocalDate;
 import java.time.Month;
@@ -12,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class AcwrReportWebMapperTest {
 
-    private final AcwrReportWebMapper mapper = new AcwrReportWebMapper();
+    private final AcwrReportWebMapper mapper = Mappers.getMapper(AcwrReportWebMapper.class);
 
     @Test
     void domainToResponse_shouldMapAllFields() {

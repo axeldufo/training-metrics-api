@@ -1,23 +1,16 @@
 package com.axel.trainingmetricsapi.training.infrastructure.persistence;
 
 import com.axel.trainingmetricsapi.training.domain.LoadReport;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.ReportingPolicy;
 
-@Component
-public class LoadReportPersistenceMapper {
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
+public interface  LoadReportPersistenceMapper {
 
-    public LoadReportJpaEntity domainToEntity(LoadReport report) {
-        return new LoadReportJpaEntity(null, report.athleteId(), report.weekStartDate(),
-            report.totalFosterLoad(), report.sessionCount(), null);
-    }
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    LoadReportJpaEntity domainToEntity(LoadReport report);
 
-    public LoadReport entityToDomain(LoadReportJpaEntity entity) {
-        return new LoadReport(
-            entity.getAthleteId(),
-            entity.getWeekStartDate(),
-            entity.getTotalFosterLoad(),
-            entity.getSessionCount(),
-            entity.getUpdatedAt()
-        );
-    }
+    LoadReport entityToDomain(LoadReportJpaEntity entity);
 }

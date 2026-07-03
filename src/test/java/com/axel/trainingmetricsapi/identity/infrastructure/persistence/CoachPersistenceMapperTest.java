@@ -3,12 +3,13 @@ package com.axel.trainingmetricsapi.identity.infrastructure.persistence;
 import com.axel.trainingmetricsapi.identity.domain.Coach;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class CoachPersistenceMapperTest {
 
-    private final CoachPersistenceMapper coachPersistenceMapper = new CoachPersistenceMapper();
+    private final CoachPersistenceMapper coachPersistenceMapper = Mappers.getMapper(CoachPersistenceMapper.class);
 
     @Test
     void entityToDomain_shouldMapAllFields() {

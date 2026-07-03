@@ -4,12 +4,13 @@ import com.axel.trainingmetricsapi.athlete.domain.Athlete;
 import com.axel.trainingmetricsapi.shared.domain.Sport;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class AthletePersistenceMapperTest {
 
-    private final AthletePersistenceMapper athletePersistenceMapper = new AthletePersistenceMapper();
+    private final AthletePersistenceMapper athletePersistenceMapper = Mappers.getMapper(AthletePersistenceMapper.class);
 
     @Test
     void domainToEntity_shouldMapAllFields() {

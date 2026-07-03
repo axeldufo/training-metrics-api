@@ -3,6 +3,7 @@ package com.axel.trainingmetricsapi.wellness.infrastructure.persistence;
 import com.axel.trainingmetricsapi.wellness.domain.WeeklyWellness;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
 
 import java.time.LocalDate;
 import java.time.Month;
@@ -12,7 +13,7 @@ import static org.instancio.Select.field;
 
 class WeeklyWellnessPersistenceMapperTest {
 
-    private final WeeklyWellnessPersistenceMapper mapper = new WeeklyWellnessPersistenceMapper();
+    private final WeeklyWellnessPersistenceMapper mapper = Mappers.getMapper(WeeklyWellnessPersistenceMapper.class);
 
     @Test
     void domainToEntity_shouldMapAllFields() {

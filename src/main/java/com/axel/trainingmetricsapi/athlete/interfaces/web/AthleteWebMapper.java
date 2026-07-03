@@ -3,30 +3,16 @@ package com.axel.trainingmetricsapi.athlete.interfaces.web;
 import com.axel.trainingmetricsapi.athlete.domain.Athlete;
 import com.axel.trainingmetricsapi.athlete.interfaces.web.dto.AthleteRequest;
 import com.axel.trainingmetricsapi.athlete.interfaces.web.dto.AthleteResponse;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.ReportingPolicy;
 
-@Component
-public class AthleteWebMapper {
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
+public interface AthleteWebMapper {
 
-    public AthleteResponse domainToResponse(Athlete athlete){
-        return new AthleteResponse(
-            athlete.getId(),
-            athlete.getFirstName(),
-            athlete.getLastName(),
-            athlete.getBirthDate(),
-            athlete.getSport(),
-            athlete.getCoachId(),
-            athlete.getWeightInKg());
-    }
+    AthleteResponse domainToResponse(Athlete athlete);
 
-    public Athlete requestToDomain(AthleteRequest athleteRequest, long coachId) {
-        return new Athlete(
-            athleteRequest.firstName(),
-            athleteRequest.lastName(),
-            athleteRequest.birthDate(),
-            athleteRequest.sport(),
-            coachId,
-            athleteRequest.weightInKg());
-    }
-
+    @Mapping(target = "id", ignore = true)
+    @Mapping(source = "coachId", target = "coachId")
+    Athlete requestToDomain(AthleteRequest request, long coachId);
 }

@@ -1,17 +1,18 @@
 package com.axel.trainingmetricsapi.athlete.interfaces.web;
 
 import com.axel.trainingmetricsapi.athlete.domain.Athlete;
-import com.axel.trainingmetricsapi.shared.domain.Sport;
 import com.axel.trainingmetricsapi.athlete.interfaces.web.dto.AthleteRequest;
 import com.axel.trainingmetricsapi.athlete.interfaces.web.dto.AthleteResponse;
+import com.axel.trainingmetricsapi.shared.domain.Sport;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class AthleteWebMapperTest {
 
-    private final AthleteWebMapper athleteWebMapper = new AthleteWebMapper();
+    private final AthleteWebMapper athleteWebMapper = Mappers.getMapper(AthleteWebMapper.class);
 
     @Test
     void requestToDomain_shouldMapAllFields() {
