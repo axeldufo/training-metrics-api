@@ -18,6 +18,7 @@
     <properties>
         <java.version>21</java.version>
         <sonar.organization>axeldufo</sonar.organization>
+        <sonar.cpd.exclusions>**/application/*UseCaseImpl.java</sonar.cpd.exclusions>
         <sonar.coverage.jacoco.xmlReportPaths>
             ${project.build.directory}/site/jacoco/jacoco.xml
         </sonar.coverage.jacoco.xmlReportPaths>
@@ -193,17 +194,6 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.sonarsource.scanner.maven</groupId>
-                <artifactId>sonar-maven-plugin</artifactId>
-                <configuration>
-                    <properties>
-                        <sonar.cpd.exclusions>
-                            **/application/*UseCaseImpl.java
-                        </sonar.cpd.exclusions>
-                    </properties>
-                </configuration>
             </plugin>
         </plugins>
     </build>
