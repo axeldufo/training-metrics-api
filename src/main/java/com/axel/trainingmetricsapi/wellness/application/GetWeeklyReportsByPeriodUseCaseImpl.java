@@ -15,11 +15,11 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
+import io.micrometer.observation.annotation.Observed;
 import java.util.List;
 
 @Slf4j
 @Service
-@Transactional(readOnly = true)
 public class GetWeeklyReportsByPeriodUseCaseImpl implements GetWeeklyReportsByPeriodUseCase {
 
     private final AthleteRepository athleteRepository;
@@ -32,6 +32,8 @@ public class GetWeeklyReportsByPeriodUseCaseImpl implements GetWeeklyReportsByPe
     }
 
     @Override
+    @Transactional(readOnly = true)
+    @Observed(name = "use-case.get-weekly-reports-by-period")
     public List<WeeklyReport> execute(long athleteId, long coachId, LocalDate from, LocalDate to) {
         Athlete athlete = athleteRepository.findById(athleteId)
             .orElseThrow(() -> new AthleteNotFoundException(athleteId));

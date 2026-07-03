@@ -9,10 +9,10 @@ import com.axel.trainingmetricsapi.training.domain.TrainingSessionRepository;
 import com.axel.trainingmetricsapi.athlete.domain.exception.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.training.domain.exception.TrainingSessionNotFoundException;
 import org.springframework.stereotype.Service;
+import io.micrometer.observation.annotation.Observed;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Transactional(readOnly = true)
 public class DeleteTrainingSessionUseCaseImpl implements DeleteTrainingSessionUseCase {
 
     private final AthleteRepository athleteRepository;
@@ -29,6 +29,7 @@ public class DeleteTrainingSessionUseCaseImpl implements DeleteTrainingSessionUs
 
     @Override
     @Transactional
+    @Observed(name = "use-case.delete-training-session")
     public void execute(long sessionId, long athleteId, long coachId) {
         Athlete athlete = athleteRepository.findById(athleteId)
             .orElseThrow(() -> new AthleteNotFoundException(athleteId));

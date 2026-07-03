@@ -6,10 +6,10 @@ import com.axel.trainingmetricsapi.identity.domain.CoachRepository;
 import com.axel.trainingmetricsapi.identity.domain.exception.CoachHasAthletesException;
 import com.axel.trainingmetricsapi.identity.domain.exception.CoachNotFoundException;
 import org.springframework.stereotype.Service;
+import io.micrometer.observation.annotation.Observed;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Transactional(readOnly = true)
 public class DeleteCoachUseCaseImpl implements DeleteCoachUseCase {
 
     private final CoachRepository coachRepository;
@@ -22,6 +22,7 @@ public class DeleteCoachUseCaseImpl implements DeleteCoachUseCase {
 
     @Override
     @Transactional
+    @Observed(name = "use-case.delete-coach")
     public void execute(long coachId) {
         if (!coachRepository.existsById(coachId)) {
             throw new CoachNotFoundException(coachId);

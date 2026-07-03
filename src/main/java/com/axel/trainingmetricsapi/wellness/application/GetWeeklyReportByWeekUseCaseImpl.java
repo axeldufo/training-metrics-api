@@ -20,10 +20,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.Comparator;
+import io.micrometer.observation.annotation.Observed;
 import java.util.List;
 
 @Service
-@Transactional(readOnly = true)
 public class GetWeeklyReportByWeekUseCaseImpl implements GetWeeklyReportByWeekUseCase {
 
     private final AthleteRepository athleteRepository;
@@ -46,6 +46,8 @@ public class GetWeeklyReportByWeekUseCaseImpl implements GetWeeklyReportByWeekUs
     }
 
     @Override
+    @Transactional(readOnly = true)
+    @Observed(name = "use-case.get-weekly-report-by-week")
     public WeeklyReport execute(long athleteId, long coachId, LocalDate weekStartDate) {
         Athlete athlete = athleteRepository.findById(athleteId)
             .orElseThrow(() -> new AthleteNotFoundException(athleteId));

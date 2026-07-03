@@ -9,10 +9,10 @@ import com.axel.trainingmetricsapi.training.domain.TrainingSessionRepository;
 import com.axel.trainingmetricsapi.athlete.domain.exception.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.training.domain.exception.TrainingSessionNotFoundException;
 import org.springframework.stereotype.Service;
+import io.micrometer.observation.annotation.Observed;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Transactional(readOnly = true)
 public class UpdateTrainingSessionUseCaseImpl implements UpdateTrainingSessionUseCase {
 
     private final AthleteRepository athleteRepository;
@@ -29,6 +29,7 @@ public class UpdateTrainingSessionUseCaseImpl implements UpdateTrainingSessionUs
 
     @Override
     @Transactional
+    @Observed(name = "use-case.update-training-session")
     public TrainingSession execute(TrainingSession session, long coachId) {
         long athleteId = session.getAthleteId();
         Athlete athlete = athleteRepository.findById(athleteId)

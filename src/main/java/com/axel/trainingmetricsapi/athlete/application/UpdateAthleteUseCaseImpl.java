@@ -5,10 +5,10 @@ import com.axel.trainingmetricsapi.athlete.domain.Athlete;
 import com.axel.trainingmetricsapi.athlete.domain.AthleteRepository;
 import com.axel.trainingmetricsapi.athlete.domain.exception.AthleteNotFoundException;
 import org.springframework.stereotype.Service;
+import io.micrometer.observation.annotation.Observed;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Transactional(readOnly = true)
 public class UpdateAthleteUseCaseImpl implements UpdateAthleteUseCase {
 
     private final AthleteRepository athleteRepository;
@@ -19,6 +19,7 @@ public class UpdateAthleteUseCaseImpl implements UpdateAthleteUseCase {
 
     @Override
     @Transactional
+    @Observed(name = "use-case.update-athlete")
     public Athlete execute(Athlete athlete, long coachId) {
         long athleteId = athlete.getId();
         Athlete existing = athleteRepository.findById(athleteId)

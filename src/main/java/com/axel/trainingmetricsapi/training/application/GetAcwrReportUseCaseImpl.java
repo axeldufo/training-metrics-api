@@ -14,10 +14,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.LocalDate;
+import io.micrometer.observation.annotation.Observed;
 import java.util.List;
 
 @Service
-@Transactional(readOnly = true)
 public class GetAcwrReportUseCaseImpl implements GetAcwrReportUseCase {
 
     private final AthleteRepository athleteRepository;
@@ -38,6 +38,8 @@ public class GetAcwrReportUseCaseImpl implements GetAcwrReportUseCase {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    @Observed(name = "use-case.get-acwr-report")
     public AcwrReport execute(long athleteId, long coachId) {
         Athlete athlete = athleteRepository.findById(athleteId)
             .orElseThrow(() -> new AthleteNotFoundException(athleteId));

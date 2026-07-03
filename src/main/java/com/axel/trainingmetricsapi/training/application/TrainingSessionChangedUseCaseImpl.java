@@ -14,6 +14,9 @@ import java.time.Clock;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import io.micrometer.observation.annotation.Observed;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 
 @Service
@@ -36,6 +39,8 @@ public class TrainingSessionChangedUseCaseImpl implements TrainingSessionChanged
     }
 
     @Override
+    @Transactional
+    @Observed(name = "use-case.training-session-changed")
     public void execute(long athleteId, LocalDate date) {
         refreshAcwrReport(athleteId);
         recalculateLoadReport(athleteId, date);
