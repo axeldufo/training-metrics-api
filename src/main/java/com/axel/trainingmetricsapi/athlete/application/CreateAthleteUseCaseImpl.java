@@ -6,10 +6,10 @@ import com.axel.trainingmetricsapi.athlete.domain.AthleteRepository;
 import com.axel.trainingmetricsapi.identity.domain.CoachRepository;
 import com.axel.trainingmetricsapi.identity.domain.exception.CoachNotFoundException;
 import org.springframework.stereotype.Service;
+import io.micrometer.observation.annotation.Observed;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Transactional(readOnly = true)
 public class CreateAthleteUseCaseImpl implements CreateAthleteUseCase {
 
     private final AthleteRepository athleteRepository;
@@ -22,6 +22,7 @@ public class CreateAthleteUseCaseImpl implements CreateAthleteUseCase {
 
     @Override
     @Transactional
+    @Observed(name = "use-case.create-athlete")
     public Athlete execute(Athlete athlete) {
         long coachId = athlete.getCoachId();
         if (!coachRepository.existsById(coachId)) {

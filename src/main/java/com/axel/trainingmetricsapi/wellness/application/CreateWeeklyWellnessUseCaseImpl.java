@@ -8,10 +8,10 @@ import com.axel.trainingmetricsapi.wellness.domain.WeeklyWellnessRepository;
 import com.axel.trainingmetricsapi.athlete.domain.exception.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.wellness.domain.exception.WeeklyWellnessAlreadyExistsException;
 import org.springframework.stereotype.Service;
+import io.micrometer.observation.annotation.Observed;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Transactional(readOnly = true)
 public class CreateWeeklyWellnessUseCaseImpl implements CreateWeeklyWellnessUseCase {
 
     private final AthleteRepository athleteRepository;
@@ -25,6 +25,7 @@ public class CreateWeeklyWellnessUseCaseImpl implements CreateWeeklyWellnessUseC
 
     @Override
     @Transactional
+    @Observed(name = "use-case.create-weekly-wellness")
     public WeeklyWellness execute(WeeklyWellness wellness, long coachId) {
         long athleteId = wellness.getAthleteId();
         Athlete athlete = athleteRepository.findById(athleteId)

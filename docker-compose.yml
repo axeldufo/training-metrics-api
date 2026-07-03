@@ -16,5 +16,13 @@ services:
     ports:
       - "6379:6379"
 
+  jaeger:
+    image: jaegertracing/jaeger:latest
+    ports:
+      - "16686:16686"
+      - "4318:4318"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+
 volumes:
   postgres_data:

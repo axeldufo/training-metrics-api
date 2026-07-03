@@ -10,10 +10,10 @@ import com.axel.trainingmetricsapi.wellness.domain.exception.WeeklyWellnessNotFo
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import io.micrometer.observation.annotation.Observed;
 import java.time.LocalDate;
 
 @Service
-@Transactional(readOnly = true)
 public class GetWeeklyWellnessByWeekUseCaseImpl implements GetWeeklyWellnessByWeekUseCase {
 
     private final AthleteRepository athleteRepository;
@@ -26,6 +26,8 @@ public class GetWeeklyWellnessByWeekUseCaseImpl implements GetWeeklyWellnessByWe
     }
 
     @Override
+    @Transactional(readOnly = true)
+    @Observed(name = "use-case.get-weekly-wellness-by-week")
     public WeeklyWellness execute(long athleteId, long coachId, LocalDate weekStartDate) {
         Athlete athlete = athleteRepository.findById(athleteId)
             .orElseThrow(() -> new AthleteNotFoundException(athleteId));

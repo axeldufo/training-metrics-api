@@ -6,10 +6,10 @@ import com.axel.trainingmetricsapi.identity.domain.AuthRepository;
 import com.axel.trainingmetricsapi.identity.domain.CoachAuthData;
 import com.axel.trainingmetricsapi.identity.domain.exception.InvalidCredentialsException;
 import org.springframework.stereotype.Service;
+import io.micrometer.observation.annotation.Observed;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Transactional(readOnly = true)
 public class LoginUseCaseImpl implements LoginUseCase {
 
     private final AuthRepository authRepository;
@@ -21,6 +21,8 @@ public class LoginUseCaseImpl implements LoginUseCase {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    @Observed(name = "use-case.login")
     public CoachAuthData execute(String email, String rawPassword) {
         CoachAuthData coachAuthData = authRepository.findByEmail(email)
             .orElseThrow(InvalidCredentialsException::new);

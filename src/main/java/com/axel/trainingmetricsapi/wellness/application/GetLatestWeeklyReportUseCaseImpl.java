@@ -10,10 +10,10 @@ import com.axel.trainingmetricsapi.wellness.domain.WeeklyReport;
 import com.axel.trainingmetricsapi.athlete.domain.exception.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.wellness.domain.exception.WeeklyReportNotFoundException;
 import org.springframework.stereotype.Service;
+import io.micrometer.observation.annotation.Observed;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Transactional(readOnly = true)
 public class GetLatestWeeklyReportUseCaseImpl implements GetLatestWeeklyReportUseCase {
 
     private final AthleteRepository athleteRepository;
@@ -29,6 +29,8 @@ public class GetLatestWeeklyReportUseCaseImpl implements GetLatestWeeklyReportUs
     }
 
     @Override
+    @Transactional(readOnly = true)
+    @Observed(name = "use-case.get-latest-weekly-report")
     public WeeklyReport execute(long athleteId, long coachId) {
         Athlete athlete = athleteRepository.findById(athleteId)
             .orElseThrow(() -> new AthleteNotFoundException(athleteId));

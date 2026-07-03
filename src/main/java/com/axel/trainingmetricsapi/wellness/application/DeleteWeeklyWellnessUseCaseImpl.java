@@ -8,10 +8,10 @@ import com.axel.trainingmetricsapi.wellness.domain.WeeklyWellnessRepository;
 import com.axel.trainingmetricsapi.athlete.domain.exception.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.wellness.domain.exception.WeeklyWellnessNotFoundException;
 import org.springframework.stereotype.Service;
+import io.micrometer.observation.annotation.Observed;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Transactional(readOnly = true)
 public class DeleteWeeklyWellnessUseCaseImpl implements DeleteWeeklyWellnessUseCase {
 
     private final AthleteRepository athleteRepository;
@@ -25,6 +25,7 @@ public class DeleteWeeklyWellnessUseCaseImpl implements DeleteWeeklyWellnessUseC
 
     @Override
     @Transactional
+    @Observed(name = "use-case.delete-weekly-wellness")
     public void execute(long wellnessId, long athleteId, long coachId) {
         Athlete athlete = athleteRepository.findById(athleteId)
             .orElseThrow(() -> new AthleteNotFoundException(athleteId));
