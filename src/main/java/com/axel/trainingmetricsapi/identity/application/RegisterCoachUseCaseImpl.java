@@ -6,7 +6,7 @@ import com.axel.trainingmetricsapi.identity.domain.AuthRepository;
 import com.axel.trainingmetricsapi.identity.domain.CoachAuthData;
 import com.axel.trainingmetricsapi.identity.domain.CoachCredentials;
 import com.axel.trainingmetricsapi.identity.domain.exception.EmailAlreadyExistsException;
-import com.axel.trainingmetricsapi.shared.infrastructure.aop.SensitiveArg;
+import com.axel.trainingmetricsapi.shared.application.annotation.SensitiveArg;
 import org.springframework.stereotype.Service;
 import io.micrometer.observation.annotation.Observed;
 import org.springframework.transaction.annotation.Transactional;

@@ -1,4 +1,4 @@
-package com.axel.trainingmetricsapi.shared.infrastructure.aop;
+package com.axel.trainingmetricsapi.shared.application.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
