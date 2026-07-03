@@ -1,4 +1,4 @@
-package com.axel.trainingmetricsapi.shared.infrastructure.config;
+package com.axel.trainingmetricsapi.shared.infrastructure.aop;
 
 import io.micrometer.observation.ObservationRegistry;
 import io.micrometer.observation.aop.ObservedAspect;
