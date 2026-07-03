@@ -8,10 +8,10 @@ import com.axel.trainingmetricsapi.training.domain.LoadReportRepository;
 import com.axel.trainingmetricsapi.athlete.domain.exception.AthleteNotFoundException;
 import com.axel.trainingmetricsapi.training.domain.exception.LoadReportNotFoundException;
 import org.springframework.stereotype.Service;
+import io.micrometer.observation.annotation.Observed;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Transactional(readOnly = true)
 public class GetLatestLoadReportUseCaseImpl implements GetLatestLoadReportUseCase {
 
     private final AthleteRepository athleteRepository;
@@ -24,6 +24,8 @@ public class GetLatestLoadReportUseCaseImpl implements GetLatestLoadReportUseCas
     }
 
     @Override
+    @Transactional(readOnly = true)
+    @Observed(name = "use-case.get-latest-load-report")
     public LoadReport execute(long athleteId, long coachId) {
         Athlete athlete = athleteRepository.findById(athleteId)
             .orElseThrow(() -> new AthleteNotFoundException(athleteId));

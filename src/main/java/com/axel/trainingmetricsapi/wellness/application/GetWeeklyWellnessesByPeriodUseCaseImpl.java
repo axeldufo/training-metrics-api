@@ -10,10 +10,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import io.micrometer.observation.annotation.Observed;
 import java.util.List;
 
 @Service
-@Transactional(readOnly = true)
 public class GetWeeklyWellnessesByPeriodUseCaseImpl implements GetWeeklyWellnessesByPeriodUseCase {
 
     private final AthleteRepository athleteRepository;
@@ -26,6 +26,8 @@ public class GetWeeklyWellnessesByPeriodUseCaseImpl implements GetWeeklyWellness
     }
 
     @Override
+    @Transactional(readOnly = true)
+    @Observed(name = "use-case.get-weekly-wellnesses-by-period")
     public List<WeeklyWellness> execute(long athleteId, long coachId, LocalDate from, LocalDate to) {
         Athlete athlete = athleteRepository.findById(athleteId)
             .orElseThrow(() -> new AthleteNotFoundException(athleteId));

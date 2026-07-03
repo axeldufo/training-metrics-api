@@ -7,10 +7,10 @@ import com.axel.trainingmetricsapi.identity.domain.CoachAuthData;
 import com.axel.trainingmetricsapi.identity.domain.CoachCredentials;
 import com.axel.trainingmetricsapi.identity.domain.exception.EmailAlreadyExistsException;
 import org.springframework.stereotype.Service;
+import io.micrometer.observation.annotation.Observed;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Transactional(readOnly = true)
 public class RegisterCoachUseCaseImpl implements RegisterCoachUseCase {
 
     private final AuthRepository authRepository;
@@ -23,6 +23,7 @@ public class RegisterCoachUseCaseImpl implements RegisterCoachUseCase {
 
     @Override
     @Transactional
+    @Observed(name = "use-case.register-coach")
     public CoachAuthData execute(CoachCredentials credentials) {
         String email = credentials.email();
         if (authRepository.existsByEmail(email)) {
